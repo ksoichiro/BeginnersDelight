@@ -49,8 +49,8 @@ docs/                 (documentation)
 - `./gradlew build` - Build for 1.21.1
 
 **Run Client**:
-- Fabric: `./gradlew :fabric-1.21.1:runClient`
-- NeoForge: `./gradlew :neoforge-1.21.1:runClient`
+- Fabric: `./gradlew :fabric:runClient`
+- NeoForge: `./gradlew :neoforge:runClient`
 
 ## Code Style
 
@@ -61,6 +61,7 @@ docs/                 (documentation)
 
 ## Development Notes
 
+- NeoForge subprojects require `loom.platform=neoforge` in their `gradle.properties` — without this, Architectury Loom does not create the `neoForge` dependency configuration
 - Structures use only vanilla blocks to ensure compatibility after mod removal
 - Structure generation state is persisted using `SavedData` to prevent regeneration
 - NBT structure files are placed in `common-1.21.1/src/main/resources/data/beginnersdelight/structure/`
