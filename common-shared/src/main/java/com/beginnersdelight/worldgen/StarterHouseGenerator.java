@@ -7,14 +7,16 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
+
+import net.minecraft.world.entity.Entity;
 
 import java.util.Optional;
 
@@ -41,6 +43,12 @@ public class StarterHouseGenerator {
 
         if (data.isGenerated()) {
             BeginnersDelight.LOGGER.debug("Starter house already generated, skipping");
+            // Restore world spawn from SavedData on every server start
+            BlockPos savedSpawn = data.getSpawnPos();
+            if (savedSpawn != null) {
+                overworld.setDefaultSpawnPos(savedSpawn, 0.0f);
+                BeginnersDelight.LOGGER.debug("Restored world spawn to: {}", savedSpawn);
+            }
             return;
         }
 
@@ -107,9 +115,10 @@ public class StarterHouseGenerator {
 
     /**
      * Finds a suitable surface position for placing the structure.
-     * Uses the minimum surface height across the footprint so the structure
-     * sits flush with the lowest terrain point. Gaps on higher terrain
-     * are filled by {@link #fillFoundation}.
+     * Samples surface Y across the footprint (skipping vegetation) and uses
+     * the minimum so the structure sits flush with the lowest terrain point.
+     * This prevents the structure from being placed on cliff edges with a
+     * large dirt foundation below.
      */
     private static BlockPos findSurfacePosition(ServerLevel level, BlockPos center,
                                                  net.minecraft.core.Vec3i structureSize) {
@@ -119,22 +128,62 @@ public class StarterHouseGenerator {
         int startX = center.getX() - halfX;
         int startZ = center.getZ() - halfZ;
 
-        // Use the minimum surface Y so the structure never floats
-        int minY = Integer.MAX_VALUE;
-        for (int x = startX; x < startX + structureSize.getX(); x++) {
-            for (int z = startZ; z < startZ + structureSize.getZ(); z++) {
-                int surfaceY = level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z);
-                if (surfaceY < minY) {
-                    minY = surfaceY;
-                }
+        // Sample surface Y at the four corners and center of the footprint
+        int endX = startX + structureSize.getX() - 1;
+        int endZ = startZ + structureSize.getZ() - 1;
+        int centerX = center.getX();
+        int centerZ = center.getZ();
+
+        int[][] samplePoints = {
+                {centerX, centerZ},
+                {startX, startZ},
+                {endX, startZ},
+                {startX, endZ},
+                {endX, endZ}
+        };
+
+        int resultY = Integer.MAX_VALUE;
+        for (int[] point : samplePoints) {
+            int y = findGroundY(level, point[0], point[1]);
+            if (y == -1) {
+                return null;
+            }
+            if (y < resultY) {
+                resultY = y;
             }
         }
 
-        if (minY == Integer.MAX_VALUE) {
+        if (resultY == Integer.MAX_VALUE) {
             return null;
         }
 
-        return new BlockPos(startX, minY, startZ);
+        return new BlockPos(startX, resultY, startZ);
+    }
+
+    /**
+     * Scans downward from the max build height at the given XZ coordinate
+     * to find the Y of the ground surface, skipping vegetation and fluids.
+     *
+     * @return the Y coordinate to place on (top of the ground block), or -1 if not found
+     */
+    private static int findGroundY(ServerLevel level, int x, int z) {
+        int maxY = level.getMaxBuildHeight() - 1;
+        int minY = level.getMinBuildHeight();
+
+        for (int y = maxY; y >= minY; y--) {
+            BlockState state = level.getBlockState(new BlockPos(x, y, z));
+            if (state.isAir() || !state.getFluidState().isEmpty()) {
+                continue;
+            }
+            if (state.is(BlockTags.LEAVES) || state.is(BlockTags.LOGS)
+                    || state.is(BlockTags.FLOWERS) || state.is(BlockTags.SAPLINGS)
+                    || state.is(Blocks.TALL_GRASS) || state.is(Blocks.SHORT_GRASS)
+                    || state.is(BlockTags.REPLACEABLE_BY_TREES)) {
+                continue;
+            }
+            return y + 1;
+        }
+        return -1;
     }
 
     /**
@@ -143,10 +192,6 @@ public class StarterHouseGenerator {
      * This bypasses Minecraft's safe-spawn search that places players on the roof.
      */
     public static void onPlayerJoin(ServerPlayer player) {
-        if (player.getRespawnPosition() != null) {
-            return;
-        }
-
         ServerLevel overworld = player.server.overworld();
         StarterHouseData data = StarterHouseData.get(overworld);
         BlockPos spawnPos = data.getSpawnPos();
@@ -155,10 +200,46 @@ public class StarterHouseGenerator {
             return;
         }
 
+        // Only teleport players who have never been teleported to the starter house
+        if (data.hasBeenTeleported(player.getUUID())) {
+            return;
+        }
+
+        data.markTeleported(player.getUUID());
         player.teleportTo(overworld,
                 spawnPos.getX() + 0.5, spawnPos.getY(), spawnPos.getZ() + 0.5,
                 player.getYRot(), player.getXRot());
         BeginnersDelight.LOGGER.debug("Teleported player {} to starter house", player.getName().getString());
+    }
+
+    /**
+     * Teleports a player back into the starter house when they respawn after
+     * death without a bed respawn point set.
+     */
+    public static void onPlayerRespawn(ServerPlayer newPlayer, boolean conqueredEnd,
+                                        Entity.RemovalReason removalReason) {
+        // Only handle death respawns, not end portal returns
+        if (conqueredEnd) {
+            return;
+        }
+
+        // If the player has a bed/anchor respawn point, let Minecraft handle it
+        if (newPlayer.getRespawnPosition() != null) {
+            return;
+        }
+
+        ServerLevel overworld = newPlayer.server.overworld();
+        StarterHouseData data = StarterHouseData.get(overworld);
+        BlockPos spawnPos = data.getSpawnPos();
+
+        if (!data.isGenerated() || spawnPos == null) {
+            return;
+        }
+
+        newPlayer.teleportTo(overworld,
+                spawnPos.getX() + 0.5, spawnPos.getY(), spawnPos.getZ() + 0.5,
+                newPlayer.getYRot(), newPlayer.getXRot());
+        BeginnersDelight.LOGGER.debug("Respawned player {} at starter house", newPlayer.getName().getString());
     }
 
     /**

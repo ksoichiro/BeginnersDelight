@@ -18,6 +18,9 @@ public class BeginnersDelight {
 
         // Teleport new players into the starter house on first join
         PlayerEvent.PLAYER_JOIN.register(StarterHouseGenerator::onPlayerJoin);
+
+        // Teleport players back to the starter house on death respawn (no bed set)
+        PlayerEvent.PLAYER_RESPAWN.register(StarterHouseGenerator::onPlayerRespawn);
     }
 }
 

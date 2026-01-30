@@ -4,8 +4,14 @@ import com.beginnersdelight.BeginnersDelight;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.saveddata.SavedData;
+
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
 
 /**
  * Persists whether the starter house has already been generated,
@@ -19,9 +25,11 @@ public class StarterHouseData extends SavedData {
     private static final String TAG_SPAWN_X = "spawn_x";
     private static final String TAG_SPAWN_Y = "spawn_y";
     private static final String TAG_SPAWN_Z = "spawn_z";
+    private static final String TAG_TELEPORTED_PLAYERS = "teleported_players";
 
     private boolean generated;
     private BlockPos spawnPos;
+    private final Set<UUID> teleportedPlayers = new HashSet<>();
 
     public StarterHouseData() {
         this.generated = false;
@@ -38,6 +46,16 @@ public class StarterHouseData extends SavedData {
                     tag.getInt(TAG_SPAWN_Z)
             );
         }
+        if (tag.contains(TAG_TELEPORTED_PLAYERS)) {
+            ListTag list = tag.getList(TAG_TELEPORTED_PLAYERS, Tag.TAG_COMPOUND);
+            for (int i = 0; i < list.size(); i++) {
+                CompoundTag entry = list.getCompound(i);
+                data.teleportedPlayers.add(new UUID(
+                        entry.getLong("most"),
+                        entry.getLong("least")
+                ));
+            }
+        }
         return data;
     }
 
@@ -49,6 +67,14 @@ public class StarterHouseData extends SavedData {
             tag.putInt(TAG_SPAWN_Y, spawnPos.getY());
             tag.putInt(TAG_SPAWN_Z, spawnPos.getZ());
         }
+        ListTag list = new ListTag();
+        for (UUID uuid : teleportedPlayers) {
+            CompoundTag entry = new CompoundTag();
+            entry.putLong("most", uuid.getMostSignificantBits());
+            entry.putLong("least", uuid.getLeastSignificantBits());
+            list.add(entry);
+        }
+        tag.put(TAG_TELEPORTED_PLAYERS, list);
         return tag;
     }
 
@@ -67,6 +93,15 @@ public class StarterHouseData extends SavedData {
 
     public void setSpawnPos(BlockPos spawnPos) {
         this.spawnPos = spawnPos;
+        setDirty();
+    }
+
+    public boolean hasBeenTeleported(UUID playerUuid) {
+        return teleportedPlayers.contains(playerUuid);
+    }
+
+    public void markTeleported(UUID playerUuid) {
+        teleportedPlayers.add(playerUuid);
         setDirty();
     }
 
