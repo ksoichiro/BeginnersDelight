@@ -143,12 +143,12 @@ com.beginnersdelight
 
 ### 5.2 Checklist
 
-- [ ] Structure generates on new world creation
-- [ ] Structure contains bed and chest
-- [ ] Chest contains starter items
-- [ ] Structure does not regenerate on world reload
-- [ ] Second player spawns at the same location
-- [ ] World loads normally after mod removal
+- [x] Structure generates on new world creation
+- [x] Structure contains bed and chest
+- [x] Chest contains starter items
+- [x] Structure does not regenerate on world reload
+- [x] Second player spawns at the same location
+- [x] World loads normally after mod removal
 
 ## Implementation Notes
 
