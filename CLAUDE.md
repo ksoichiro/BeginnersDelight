@@ -14,6 +14,7 @@
 
 - Java 21 (Minecraft Java Edition 1.21.1) + NeoForge 21.1.x, Fabric Loader, Architectury API
 - Java 17 (Minecraft Java Edition 1.20.1) + Forge 47.4.x, Fabric Loader, Architectury API
+- Java 17 (Minecraft Java Edition 1.19.2) + Forge 43.4.x, Fabric Loader, Architectury API
 
 ## Project Structure
 
@@ -21,13 +22,16 @@
 common-shared/        (shared version-agnostic sources, NOT a Gradle subproject)
 common-1.21.1/        (version-specific common module for 1.21.1)
 common-1.20.1/        (version-specific common module for 1.20.1)
+common-1.19.2/        (version-specific common module for 1.19.2)
 fabric-base/          (shared Fabric sources, NOT a Gradle subproject)
 fabric-1.21.1/        (version-specific Fabric subproject)
 fabric-1.20.1/        (version-specific Fabric subproject)
+fabric-1.19.2/        (version-specific Fabric subproject)
 neoforge-base/        (shared NeoForge sources, NOT a Gradle subproject)
 neoforge-1.21.1/      (version-specific NeoForge subproject)
 forge-base/           (shared Forge sources, NOT a Gradle subproject)
 forge-1.20.1/         (version-specific Forge subproject)
+forge-1.19.2/         (version-specific Forge subproject)
 props/                (version-specific properties)
 docs/                 (documentation)
 ```
@@ -36,12 +40,12 @@ docs/                 (documentation)
 
 - **Mod ID**: `beginnersdelight`
 - **Package**: `com.beginnersdelight`
-- **Minecraft**: 1.21.1, 1.20.1
-- **Architectury API**: 13.0.8 (1.21.1), 9.2.14 (1.20.1)
+- **Minecraft**: 1.21.1, 1.20.1, 1.19.2
+- **Architectury API**: 13.0.8 (1.21.1), 9.2.14 (1.20.1), 6.6.92 (1.19.2)
 - **Fabric Loader**: 0.17.3
-- **Fabric API**: 0.116.7+1.21.1 (1.21.1), 0.92.2+1.20.1 (1.20.1)
+- **Fabric API**: 0.116.7+1.21.1 (1.21.1), 0.92.2+1.20.1 (1.20.1), 0.77.0+1.19.2 (1.19.2)
 - **NeoForge**: 21.1.209 (1.21.1 only)
-- **Forge**: 47.4.0 (1.20.1 only)
+- **Forge**: 47.4.0 (1.20.1), 43.4.0 (1.19.2)
 
 ## Build Configuration
 
@@ -54,7 +58,7 @@ docs/                 (documentation)
 **Build**:
 - `./gradlew build` - Build for default version (1.21.1)
 - `./gradlew build -Ptarget_mc_version=1.20.1` - Build for specific version
-- `./gradlew buildAll` - Build for all supported versions (1.20.1, 1.21.1)
+- `./gradlew buildAll` - Build for all supported versions (1.19.2, 1.20.1, 1.21.1)
 
 **Clean**:
 - `./gradlew cleanAll` - Clean all supported versions
@@ -66,6 +70,10 @@ docs/                 (documentation)
 **Run Client** (1.20.1):
 - Fabric: `./gradlew :fabric:runClient -Ptarget_mc_version=1.20.1`
 - Forge: `./gradlew :forge:runClient -Ptarget_mc_version=1.20.1`
+
+**Run Client** (1.19.2):
+- Fabric: `./gradlew :fabric:runClient -Ptarget_mc_version=1.19.2`
+- Forge: `./gradlew :forge:runClient -Ptarget_mc_version=1.19.2`
 
 ## Code Style
 

@@ -13,6 +13,7 @@ Key conversions:
 Usage:
     python3 convert_nbt_1_21_to_1_20.py <input.nbt> <output.nbt>
     python3 convert_nbt_1_21_to_1_20.py --batch <input_dir> <output_dir>
+    python3 convert_nbt_1_21_to_1_20.py --batch --data-version 3120 <input_dir> <output_dir>
 """
 
 import sys
@@ -241,7 +242,7 @@ def save_nbt_deterministic(nbt_data: nbtlib.File, output_path: str) -> None:
         f.write(compressed_data)
 
 
-def convert_nbt_structure(input_path: str, output_path: str) -> bool:
+def convert_nbt_structure(input_path: str, output_path: str, data_version: int = 3465) -> bool:
     """
     Convert an NBT structure file from 1.21.1 to 1.20.1 format.
 
@@ -262,8 +263,8 @@ def convert_nbt_structure(input_path: str, output_path: str) -> bool:
 
         if "DataVersion" in nbt_data:
             original_version = nbt_data["DataVersion"]
-            nbt_data["DataVersion"] = tag.Int(3465)  # Minecraft 1.20.1
-            print(f"  Updated DataVersion: {original_version} -> 3465 (1.20.1)")
+            nbt_data["DataVersion"] = tag.Int(data_version)
+            print(f"  Updated DataVersion: {original_version} -> {data_version}")
 
         converted_count = 0
 
@@ -341,7 +342,7 @@ def convert_nbt_structure(input_path: str, output_path: str) -> bool:
         return False
 
 
-def convert_batch(input_dir: str, output_dir: str) -> int:
+def convert_batch(input_dir: str, output_dir: str, data_version: int = 3465) -> int:
     """Convert all NBT files in a directory."""
     input_path = Path(input_dir)
     output_path = Path(output_dir)
@@ -366,7 +367,7 @@ def convert_batch(input_dir: str, output_dir: str) -> int:
     for nbt_file in nbt_files:
         output_file = output_path / nbt_file.name
         print(f"Converting: {nbt_file.name}")
-        if convert_nbt_structure(str(nbt_file), str(output_file)):
+        if convert_nbt_structure(str(nbt_file), str(output_file), data_version):
             success_count += 1
 
     print()
@@ -376,11 +377,15 @@ def convert_batch(input_dir: str, output_dir: str) -> int:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Convert Minecraft structure NBT files from 1.21.1 to 1.20.1 format"
+        description="Convert Minecraft structure NBT files from 1.21.1 to older format"
     )
     parser.add_argument(
         "--batch", action="store_true",
         help="Batch convert all NBT files in input directory"
+    )
+    parser.add_argument(
+        "--data-version", type=int, default=3465,
+        help="Target DataVersion (default: 3465 for 1.20.1, use 3120 for 1.19.2)"
     )
     parser.add_argument("input", help="Input NBT file (or directory if --batch)")
     parser.add_argument("output", help="Output NBT file (or directory if --batch)")
@@ -388,11 +393,11 @@ def main():
     args = parser.parse_args()
 
     if args.batch:
-        success_count = convert_batch(args.input, args.output)
+        success_count = convert_batch(args.input, args.output, args.data_version)
         sys.exit(0 if success_count > 0 else 1)
     else:
         print(f"Converting: {args.input} -> {args.output}")
-        success = convert_nbt_structure(args.input, args.output)
+        success = convert_nbt_structure(args.input, args.output, args.data_version)
         sys.exit(0 if success else 1)
 
 
