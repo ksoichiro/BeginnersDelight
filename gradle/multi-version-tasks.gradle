@@ -1,0 +1,125 @@
+// Multi-version build tasks
+// Defines custom Gradle tasks for building the mod across multiple Minecraft versions.
+
+def supportedVersions = ['1.20.1', '1.21.1']
+def taskGroup = 'beginners delight build'
+
+// ============================================================
+// Clean Tasks
+// ============================================================
+
+supportedVersions.each { version ->
+    def versionSuffix = version.replace('.', '_')
+
+    tasks.register("clean${versionSuffix}") {
+        group = taskGroup
+        description = "Clean build outputs for Minecraft ${version}"
+
+        doLast {
+            project.exec {
+                commandLine './gradlew', 'clean', "-Ptarget_mc_version=${version}"
+            }
+        }
+    }
+}
+
+tasks.register('cleanAll') {
+    group = taskGroup
+    description = "Clean build outputs for all supported Minecraft versions (${supportedVersions.join(', ')})"
+
+    doLast {
+        supportedVersions.each { version ->
+            logger.lifecycle(">>> Cleaning for Minecraft ${version}...")
+
+            project.exec {
+                commandLine './gradlew', 'clean', "-Ptarget_mc_version=${version}"
+            }
+        }
+
+        logger.lifecycle('')
+        logger.lifecycle('All versions cleaned successfully.')
+    }
+}
+
+// ============================================================
+// Build Tasks
+// ============================================================
+
+supportedVersions.each { version ->
+    def versionSuffix = version.replace('.', '_')
+
+    tasks.register("build${versionSuffix}") {
+        group = taskGroup
+        description = "Build mod for Minecraft ${version}"
+
+        doFirst {
+            logger.lifecycle('')
+            logger.lifecycle('====================================')
+            logger.lifecycle("Building for Minecraft ${version}...")
+            logger.lifecycle('====================================')
+            logger.lifecycle('')
+        }
+
+        doLast {
+            project.exec {
+                commandLine './gradlew', 'clean', 'build', "-Ptarget_mc_version=${version}", '-x', 'test'
+            }
+        }
+    }
+}
+
+tasks.register('buildAll') {
+    group = taskGroup
+    description = "Build mod for all supported Minecraft versions (${supportedVersions.join(', ')})"
+
+    doFirst {
+        logger.lifecycle('')
+        logger.lifecycle('====================================================')
+        logger.lifecycle('Building for ALL supported Minecraft versions...')
+        logger.lifecycle("Versions: ${supportedVersions.join(', ')}")
+        logger.lifecycle('====================================================')
+        logger.lifecycle('')
+    }
+
+    doLast {
+        def failed = []
+
+        supportedVersions.each { version ->
+            logger.lifecycle('')
+            logger.lifecycle(">>> Building for Minecraft ${version}...")
+            logger.lifecycle('')
+
+            try {
+                project.exec {
+                    commandLine './gradlew', 'clean', 'build', "-Ptarget_mc_version=${version}", '-x', 'test'
+                    errorOutput = System.err
+                }
+                logger.lifecycle("SUCCESS: Minecraft ${version}")
+            } catch (Exception e) {
+                logger.error("FAILED: Minecraft ${version}")
+                failed.add(version)
+            }
+        }
+
+        logger.lifecycle('')
+        logger.lifecycle('====================================================')
+        logger.lifecycle('Build Summary:')
+        logger.lifecycle('====================================================')
+
+        if (failed.isEmpty()) {
+            logger.lifecycle('All versions built successfully!')
+            supportedVersions.each { version ->
+                logger.lifecycle("   - Minecraft ${version}")
+            }
+        } else {
+            logger.lifecycle("${failed.size()} version(s) failed:")
+            failed.each { version ->
+                logger.lifecycle("   - Minecraft ${version}")
+            }
+            throw new GradleException("Build failed for: ${failed.join(', ')}")
+        }
+
+        logger.lifecycle('====================================================')
+        logger.lifecycle('')
+    }
+}

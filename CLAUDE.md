@@ -46,7 +46,12 @@ docs/                 (documentation)
 ## Commands
 
 **Build**:
-- `./gradlew build` - Build for 1.21.1
+- `./gradlew build` - Build for default version (1.21.1)
+- `./gradlew build -Ptarget_mc_version=1.20.1` - Build for specific version
+- `./gradlew buildAll` - Build for all supported versions (1.20.1, 1.21.1)
+
+**Clean**:
+- `./gradlew cleanAll` - Clean all supported versions
 
 **Run Client**:
 - Fabric: `./gradlew :fabric:runClient`

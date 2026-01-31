@@ -102,3 +102,6 @@ subprojects {
         }
     }
 }
+
+// Multi-version build tasks (cleanAll, buildAll, etc.)
+apply from: 'gradle/multi-version-tasks.gradle'
