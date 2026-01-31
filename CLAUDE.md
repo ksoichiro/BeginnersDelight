@@ -13,16 +13,21 @@
 ## Active Technologies
 
 - Java 21 (Minecraft Java Edition 1.21.1) + NeoForge 21.1.x, Fabric Loader, Architectury API
+- Java 17 (Minecraft Java Edition 1.20.1) + Forge 47.4.x, Fabric Loader, Architectury API
 
 ## Project Structure
 
 ```
 common-shared/        (shared version-agnostic sources, NOT a Gradle subproject)
-common-1.21.1/        (version-specific common module)
+common-1.21.1/        (version-specific common module for 1.21.1)
+common-1.20.1/        (version-specific common module for 1.20.1)
 fabric-base/          (shared Fabric sources, NOT a Gradle subproject)
 fabric-1.21.1/        (version-specific Fabric subproject)
+fabric-1.20.1/        (version-specific Fabric subproject)
 neoforge-base/        (shared NeoForge sources, NOT a Gradle subproject)
 neoforge-1.21.1/      (version-specific NeoForge subproject)
+forge-base/           (shared Forge sources, NOT a Gradle subproject)
+forge-1.20.1/         (version-specific Forge subproject)
 props/                (version-specific properties)
 docs/                 (documentation)
 ```
@@ -31,11 +36,12 @@ docs/                 (documentation)
 
 - **Mod ID**: `beginnersdelight`
 - **Package**: `com.beginnersdelight`
-- **Minecraft**: 1.21.1
-- **Architectury API**: 13.0.8
+- **Minecraft**: 1.21.1, 1.20.1
+- **Architectury API**: 13.0.8 (1.21.1), 9.2.14 (1.20.1)
 - **Fabric Loader**: 0.17.3
-- **Fabric API**: 0.116.7+1.21.1
-- **NeoForge**: 21.1.209
+- **Fabric API**: 0.116.7+1.21.1 (1.21.1), 0.92.2+1.20.1 (1.20.1)
+- **NeoForge**: 21.1.209 (1.21.1 only)
+- **Forge**: 47.4.0 (1.20.1 only)
 
 ## Build Configuration
 
@@ -53,9 +59,13 @@ docs/                 (documentation)
 **Clean**:
 - `./gradlew cleanAll` - Clean all supported versions
 
-**Run Client**:
+**Run Client** (1.21.1):
 - Fabric: `./gradlew :fabric:runClient`
 - NeoForge: `./gradlew :neoforge:runClient`
+
+**Run Client** (1.20.1):
+- Fabric: `./gradlew :fabric:runClient -Ptarget_mc_version=1.20.1`
+- Forge: `./gradlew :forge:runClient -Ptarget_mc_version=1.20.1`
 
 ## Code Style
 
