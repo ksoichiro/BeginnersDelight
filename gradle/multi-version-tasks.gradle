@@ -128,6 +128,19 @@ tasks.register('buildAll') {
 // Collect Release JARs
 // ============================================================
 
+tasks.register('release') {
+    group = taskGroup
+    description = "Clean, build all versions, and collect release JARs"
+
+    doLast {
+        ['cleanAll', 'buildAll', 'collectJars'].each { taskName ->
+            project.exec {
+                commandLine './gradlew', taskName
+            }
+        }
+    }
+}
+
 tasks.register('collectJars') {
     group = taskGroup
     description = "Collect release JARs from all versions into build/release/"
