@@ -4,6 +4,8 @@
 
 A multi-loader Minecraft mod that generates a small starter house at the world spawn point, helping new players survive their first night safely.
 
+![Beginner's Delight Overview](docs/screenshots/featured-for-readme.png)
+
 ## Features
 
 - **Starter House at Spawn**: Automatically generates a small shelter at the world spawn point on first world creation
