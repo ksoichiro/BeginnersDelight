@@ -25,12 +25,20 @@ def targetMcVersion = settings.target_mc_version
 include "common-${targetMcVersion}"
 logger.lifecycle("Common module: common-${targetMcVersion}")
 
-// Platform-specific projects
-// Project names are 'fabric'/'neoforge' as required by Architectury Plugin.
-include 'fabric'
-project(':fabric').projectDir = file("fabric-${targetMcVersion}")
-logger.lifecycle("Fabric module: fabric-${targetMcVersion}")
+// Load enabled_platforms from props file
+def propsFile = file("props/${targetMcVersion}.properties")
+if (!propsFile.exists()) {
+    throw new GradleException("Version properties not found: ${propsFile.absolutePath}")
+}
+def props = new Properties()
+propsFile.withInputStream { props.load(it) }
+def enabledPlatforms = props.getProperty('enabled_platforms', '').split(',')
 
-include 'neoforge'
-project(':neoforge').projectDir = file("neoforge-${targetMcVersion}")
-logger.lifecycle("NeoForge module: neoforge-${targetMcVersion}")
+// Platform-specific projects
+// Project names are 'fabric'/'neoforge'/'forge' as required by Architectury Plugin.
+enabledPlatforms.each { platform ->
+    platform = platform.trim()
+    include platform
+    project(":${platform}").projectDir = file("${platform}-${targetMcVersion}")
+    logger.lifecycle("${platform.capitalize()} module: ${platform}-${targetMcVersion}")
+}

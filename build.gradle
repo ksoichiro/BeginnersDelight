@@ -50,8 +50,16 @@ subprojects {
     ext.architectury_api_version = rootProject.ext.architectury_api_version
     ext.fabric_loader_version = rootProject.ext.fabric_loader_version
     ext.fabric_api_version = rootProject.ext.fabric_api_version
-    ext.neoforge_version = rootProject.ext.neoforge_version
+    ext.enabled_platforms = rootProject.ext.enabled_platforms
     ext.java_version = rootProject.ext.java_version
+
+    // Conditionally propagate platform-specific versions
+    if (rootProject.ext.has('neoforge_version')) {
+        ext.neoforge_version = rootProject.ext.neoforge_version
+    }
+    if (rootProject.ext.has('forge_version')) {
+        ext.forge_version = rootProject.ext.forge_version
+    }
 
     repositories {
         maven { url 'https://maven.architectury.dev/' }
@@ -83,8 +91,8 @@ subprojects {
         it.options.release = project.ext.java_version as Integer
     }
 
-    // Common resource processing for platform modules (fabric, neoforge)
-    if (project.name in ['fabric', 'neoforge']) {
+    // Common resource processing for platform modules (fabric, neoforge, forge)
+    if (project.name in ['fabric', 'neoforge', 'forge']) {
         tasks.withType(ProcessResources).configureEach {
             inputs.property 'pack_format', project.ext.pack_format
 
