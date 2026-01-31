@@ -91,6 +91,12 @@ subprojects {
         it.options.release = project.ext.java_version as Integer
     }
 
+    // Ensure run tasks (runClient, runServer) use the correct JDK version
+    // Forge 1.18.2/1.19.2 bundle older ASM that cannot handle Java 21 class files
+    tasks.withType(JavaExec).configureEach {
+        javaLauncher.set(javaToolchains.launcherFor(java.toolchain))
+    }
+
     // Common resource processing for platform modules (fabric, neoforge, forge)
     if (project.name in ['fabric', 'neoforge', 'forge']) {
         tasks.withType(ProcessResources).configureEach {
