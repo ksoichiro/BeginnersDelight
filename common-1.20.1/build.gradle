@@ -34,6 +34,7 @@ tasks.register('convertNbtStructures', Exec) {
     def scriptPath = rootProject.file('scripts/convert_nbt_1_21_to_1_20.py')
 
     inputs.dir(inputDir).optional()
+    inputs.file(scriptPath)
     outputs.dir(outputDir)
 
     doFirst {
