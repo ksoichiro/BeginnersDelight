@@ -2,7 +2,10 @@ package com.beginnersdelight.worldgen;
 
 import com.beginnersdelight.BeginnersDelight;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -17,6 +20,8 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
 
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity;
 
 import java.util.Optional;
 
@@ -26,6 +31,10 @@ import java.util.Optional;
  * on the terrain surface.
  */
 public class StarterHouseGenerator {
+
+    private static final ResourceKey<LootTable> STARTER_HOUSE_LOOT = ResourceKey.create(
+            Registries.LOOT_TABLE,
+            ResourceLocation.fromNamespaceAndPath(BeginnersDelight.MOD_ID, "chests/starter_house"));
 
     private static final String[] STRUCTURE_VARIANTS = {
             "starter_house1",
@@ -93,6 +102,9 @@ public class StarterHouseGenerator {
 
         BeginnersDelight.LOGGER.info("Placing structure '{}' at {}", variant, placePos);
         template.placeInWorld(level, placePos, placePos, settings, random, 2);
+
+        // Assign loot table to any chests placed by the structure template
+        assignLootTables(level, placePos, template.getSize(), random);
 
         // Fill gaps below the structure floor to prevent floating on slopes
         fillFoundation(level, placePos, template.getSize());
@@ -240,6 +252,29 @@ public class StarterHouseGenerator {
                 spawnPos.getX() + 0.5, spawnPos.getY(), spawnPos.getZ() + 0.5,
                 newPlayer.getYRot(), newPlayer.getXRot());
         BeginnersDelight.LOGGER.debug("Respawned player {} at starter house", newPlayer.getName().getString());
+    }
+
+    /**
+     * Scans the placed structure for container block entities (chests, barrels, etc.)
+     * and assigns the starter house loot table to them.
+     * This allows NBT structure files to contain plain chests without
+     * pre-configured LootTable tags.
+     */
+    private static void assignLootTables(ServerLevel level, BlockPos placePos,
+                                          net.minecraft.core.Vec3i structureSize,
+                                          RandomSource random) {
+        for (int x = placePos.getX(); x < placePos.getX() + structureSize.getX(); x++) {
+            for (int y = placePos.getY(); y < placePos.getY() + structureSize.getY(); y++) {
+                for (int z = placePos.getZ(); z < placePos.getZ() + structureSize.getZ(); z++) {
+                    BlockPos pos = new BlockPos(x, y, z);
+                    BlockEntity blockEntity = level.getBlockEntity(pos);
+                    if (blockEntity instanceof RandomizableContainerBlockEntity container) {
+                        container.setLootTable(STARTER_HOUSE_LOOT, random.nextLong());
+                        BeginnersDelight.LOGGER.debug("Assigned loot table to container at {}", pos);
+                    }
+                }
+            }
+        }
     }
 
     /**
