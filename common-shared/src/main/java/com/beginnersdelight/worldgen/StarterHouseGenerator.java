@@ -184,8 +184,12 @@ public class StarterHouseGenerator {
 
         for (int y = maxY; y >= minY; y--) {
             BlockState state = level.getBlockState(new BlockPos(x, y, z));
-            if (state.isAir() || !state.getFluidState().isEmpty()) {
+            if (state.isAir()) {
                 continue;
+            }
+            // Treat water/lava surface as ground to avoid placing structures underwater
+            if (!state.getFluidState().isEmpty()) {
+                return y + 1;
             }
             if (state.is(BlockTags.LEAVES) || state.is(BlockTags.LOGS)
                     || state.is(BlockTags.FLOWERS) || state.is(BlockTags.SAPLINGS)
@@ -288,10 +292,12 @@ public class StarterHouseGenerator {
 
         for (int x = placePos.getX(); x < placePos.getX() + structureSize.getX(); x++) {
             for (int z = placePos.getZ(); z < placePos.getZ() + structureSize.getZ(); z++) {
-                // Fill downward from just below the floor until we hit existing terrain
+                // Fill downward from just below the floor until we hit existing terrain,
+                // replacing both air and water to support structures placed over water
                 for (int y = floorY - 1; y >= floorY - 10; y--) {
                     BlockPos pos = new BlockPos(x, y, z);
-                    if (!level.getBlockState(pos).isAir()) {
+                    BlockState existing = level.getBlockState(pos);
+                    if (!existing.isAir() && existing.getFluidState().isEmpty()) {
                         break;
                     }
                     level.setBlock(pos, dirt, 2);
