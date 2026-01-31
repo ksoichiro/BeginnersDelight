@@ -29,3 +29,6 @@ hs_err_pid*
 
 # Architectury
 .architectury-transformer/
+
+# Generated NBT files (converted from 1.21.1 at build time)
+common-1.20.1/src/main/resources/data/beginnersdelight/structures/*.nbt

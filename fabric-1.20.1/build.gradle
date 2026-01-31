@@ -65,6 +65,8 @@ loom {
 }
 
 processResources {
+    dependsOn project(commonModule).tasks.named('convertNbtStructures')
+
     from(project(commonModule).sourceSets.main.resources) {
         exclude 'beginnersdelight.mixins.json'
     }

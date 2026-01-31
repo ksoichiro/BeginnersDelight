@@ -18,6 +18,61 @@ dependencies {
     modImplementation "dev.architectury:architectury:$rootProject.architectury_api_version"
 }
 
+// NBT Structure Multi-Version Conversion
+// Converts 1.21.1 NBT structure files to 1.20.1 format (DataVersion update + directory rename)
+tasks.register('convertNbtStructures', Exec) {
+    group = 'build'
+    description = 'Convert NBT structure files from 1.21.1 to 1.20.1 format'
+
+    onlyIf {
+        project.ext.minecraft_version == '1.20.1'
+    }
+
+    // 1.21.1 uses 'structure' (singular), 1.20.1 uses 'structures' (plural)
+    def inputDir = rootProject.file('common-1.21.1/src/main/resources/data/beginnersdelight/structure')
+    def outputDir = file('src/main/resources/data/beginnersdelight/structures')
+    def scriptPath = rootProject.file('scripts/convert_nbt_1_21_to_1_20.py')
+
+    inputs.dir(inputDir).optional()
+    outputs.dir(outputDir)
+
+    doFirst {
+        try {
+            exec {
+                commandLine 'python3', '-c', 'import nbtlib'
+                standardOutput = new ByteArrayOutputStream()
+                errorOutput = new ByteArrayOutputStream()
+            }
+        } catch (Exception e) {
+            throw new GradleException(
+                'Python 3 with nbtlib is required for NBT conversion. ' +
+                'Install with: pip3 install nbtlib'
+            )
+        }
+
+        if (!inputDir.exists()) {
+            logger.warn("Input directory does not exist: ${inputDir}")
+            logger.warn("Skipping NBT conversion")
+            return
+        }
+
+        if (!scriptPath.exists()) {
+            throw new GradleException("NBT conversion script not found: ${scriptPath}")
+        }
+
+        logger.lifecycle('')
+        logger.lifecycle('Converting NBT structures from 1.21.1 to 1.20.1 format...')
+        logger.lifecycle("  Input:  ${inputDir}")
+        logger.lifecycle("  Output: ${outputDir}")
+        logger.lifecycle('')
+    }
+
+    commandLine 'python3', scriptPath.absolutePath, '--batch', inputDir.absolutePath, outputDir.absolutePath
+}
+
+// Run NBT conversion before processing resources
+processResources.dependsOn convertNbtStructures
+
 // Expand pack_format variable in pack.mcmeta
 processResources {
     inputs.property 'pack_format', project.ext.pack_format
@@ -29,5 +84,6 @@ processResources {
 
 // Set duplicates strategy for sourcesJar to avoid conflicts
 tasks.named('sourcesJar') {
+    dependsOn convertNbtStructures
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
