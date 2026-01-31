@@ -34,7 +34,10 @@ public class StarterHouseGenerator {
     private static final String[] STRUCTURE_VARIANTS = {
             "starter_house1",
             "starter_house2",
-            "starter_house3"
+            "starter_house3",
+            "starter_house4",
+            "starter_house5",
+            "starter_house6"
     };
 
     /**
