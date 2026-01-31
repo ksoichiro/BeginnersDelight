@@ -18,6 +18,15 @@ dependencies {
     modImplementation "dev.architectury:architectury:$rootProject.architectury_api_version"
 }
 
+// Add generated NBT files to resource source set
+sourceSets {
+    main {
+        resources {
+            srcDir 'build/generated/nbt'
+        }
+    }
+}
+
 // NBT Structure Multi-Version Conversion
 // Converts 1.21.1 NBT structure files to 1.20.1 format (DataVersion update + directory rename)
 tasks.register('convertNbtStructures', Exec) {
@@ -30,7 +39,7 @@ tasks.register('convertNbtStructures', Exec) {
 
     // 1.21.1 uses 'structure' (singular), 1.20.1 uses 'structures' (plural)
     def inputDir = rootProject.file('common-1.21.1/src/main/resources/data/beginnersdelight/structure')
-    def outputDir = file('src/main/resources/data/beginnersdelight/structures')
+    def outputDir = file('build/generated/nbt/data/beginnersdelight/structures')
     def scriptPath = rootProject.file('scripts/convert_nbt_1_21_to_1_20.py')
 
     inputs.dir(inputDir).optional()
