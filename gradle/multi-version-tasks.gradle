@@ -1,7 +1,7 @@
 // Multi-version build tasks
 // Defines custom Gradle tasks for building the mod across multiple Minecraft versions.
 
-def supportedVersions = ['1.16.5', '1.17.1', '1.18.2', '1.19.2', '1.20.1', '1.21.1']
+def supportedVersions = ['1.16.5', '1.17.1', '1.18.2', '1.19.2', '1.20.1', '1.21.1', '1.21.3']
 def taskGroup = 'beginners delight build'
 
 // ============================================================
