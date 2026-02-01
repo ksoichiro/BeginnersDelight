@@ -12,6 +12,7 @@
 
 ## Active Technologies
 
+- Java 21 (Minecraft Java Edition 1.21.4) + NeoForge 21.4.x, Fabric Loader, Architectury API
 - Java 21 (Minecraft Java Edition 1.21.3) + NeoForge 21.3.x, Fabric Loader, Architectury API
 - Java 21 (Minecraft Java Edition 1.21.1) + NeoForge 21.1.x, Fabric Loader, Architectury API
 - Java 17 (Minecraft Java Edition 1.20.1) + Forge 47.4.x, Fabric Loader, Architectury API
@@ -24,6 +25,7 @@
 
 ```
 common-shared/        (shared version-agnostic sources, NOT a Gradle subproject)
+common-1.21.4/        (version-specific common module for 1.21.4)
 common-1.21.3/        (version-specific common module for 1.21.3)
 common-1.21.1/        (version-specific common module for 1.21.1)
 common-1.20.1/        (version-specific common module for 1.20.1)
@@ -32,6 +34,7 @@ common-1.18.2/        (version-specific common module for 1.18.2)
 common-1.17.1/        (version-specific common module for 1.17.1)
 common-1.16.5/        (version-specific common module for 1.16.5)
 fabric-base/          (shared Fabric sources, NOT a Gradle subproject)
+fabric-1.21.4/        (version-specific Fabric subproject)
 fabric-1.21.3/        (version-specific Fabric subproject)
 fabric-1.21.1/        (version-specific Fabric subproject)
 fabric-1.20.1/        (version-specific Fabric subproject)
@@ -40,6 +43,7 @@ fabric-1.18.2/        (version-specific Fabric subproject)
 fabric-1.17.1/        (version-specific Fabric subproject)
 fabric-1.16.5/        (version-specific Fabric subproject)
 neoforge-base/        (shared NeoForge sources, NOT a Gradle subproject)
+neoforge-1.21.4/      (version-specific NeoForge subproject)
 neoforge-1.21.3/      (version-specific NeoForge subproject)
 neoforge-1.21.1/      (version-specific NeoForge subproject)
 forge-base/           (shared Forge sources, NOT a Gradle subproject)
@@ -56,11 +60,11 @@ docs/                 (documentation)
 
 - **Mod ID**: `beginnersdelight`
 - **Package**: `com.beginnersdelight`
-- **Minecraft**: 1.21.3, 1.21.1, 1.20.1, 1.19.2, 1.18.2, 1.17.1, 1.16.5
-- **Architectury API**: 14.0.4 (1.21.3), 13.0.8 (1.21.1), 9.2.14 (1.20.1), 6.6.92 (1.19.2), 4.12.94 (1.18.2), 2.10.12 (1.17.1), 1.32.68 (1.16.5)
+- **Minecraft**: 1.21.4, 1.21.3, 1.21.1, 1.20.1, 1.19.2, 1.18.2, 1.17.1, 1.16.5
+- **Architectury API**: 15.0.1 (1.21.4), 14.0.4 (1.21.3), 13.0.8 (1.21.1), 9.2.14 (1.20.1), 6.6.92 (1.19.2), 4.12.94 (1.18.2), 2.10.12 (1.17.1), 1.32.68 (1.16.5)
 - **Fabric Loader**: 0.17.3
-- **Fabric API**: 0.112.1+1.21.3 (1.21.3), 0.116.7+1.21.1 (1.21.1), 0.92.2+1.20.1 (1.20.1), 0.77.0+1.19.2 (1.19.2), 0.76.0+1.18.2 (1.18.2), 0.46.1+1.17 (1.17.1), 0.42.0+1.16 (1.16.5)
-- **NeoForge**: 21.3.95 (1.21.3), 21.1.209 (1.21.1)
+- **Fabric API**: 0.119.4+1.21.4 (1.21.4), 0.112.1+1.21.3 (1.21.3), 0.116.7+1.21.1 (1.21.1), 0.92.2+1.20.1 (1.20.1), 0.77.0+1.19.2 (1.19.2), 0.76.0+1.18.2 (1.18.2), 0.46.1+1.17 (1.17.1), 0.42.0+1.16 (1.16.5)
+- **NeoForge**: 21.4.156 (1.21.4), 21.3.95 (1.21.3), 21.1.209 (1.21.1)
 - **Forge**: 47.4.0 (1.20.1), 43.4.0 (1.19.2), 40.2.0 (1.18.2), 37.1.1 (1.17.1), 36.2.34 (1.16.5)
 
 ## Build Configuration
@@ -72,16 +76,20 @@ docs/                 (documentation)
 ## Commands
 
 **Build**:
-- `./gradlew build` - Build for default version (1.21.3)
+- `./gradlew build` - Build for default version (1.21.4)
 - `./gradlew build -Ptarget_mc_version=1.20.1` - Build for specific version
-- `./gradlew buildAll` - Build for all supported versions (1.16.5, 1.17.1, 1.18.2, 1.19.2, 1.20.1, 1.21.1, 1.21.3)
+- `./gradlew buildAll` - Build for all supported versions (1.16.5, 1.17.1, 1.18.2, 1.19.2, 1.20.1, 1.21.1, 1.21.3, 1.21.4)
 
 **Clean**:
 - `./gradlew cleanAll` - Clean all supported versions
 
-**Run Client** (1.21.3):
+**Run Client** (1.21.4):
 - Fabric: `./gradlew :fabric:runClient`
 - NeoForge: `./gradlew :neoforge:runClient`
+
+**Run Client** (1.21.3):
+- Fabric: `./gradlew :fabric:runClient -Ptarget_mc_version=1.21.3`
+- NeoForge: `./gradlew :neoforge:runClient -Ptarget_mc_version=1.21.3`
 
 **Run Client** (1.21.1):
 - Fabric: `./gradlew :fabric:runClient -Ptarget_mc_version=1.21.1`
