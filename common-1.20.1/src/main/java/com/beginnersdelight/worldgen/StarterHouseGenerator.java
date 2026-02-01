@@ -16,10 +16,14 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlac
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
 
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity;
 
+import net.minecraft.world.phys.AABB;
+
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -108,6 +112,13 @@ public class StarterHouseGenerator {
 
         // Fill gaps below the structure floor to prevent floating on slopes
         fillFoundation(level, placePos, template.getSize());
+
+        // Blend surrounding terrain so the structure doesn't look like it sits
+        // in a pit (high terrain) or on a cliff (low terrain)
+        blendSurroundingTerrain(level, placePos, template.getSize());
+
+        // Remove item entities (seeds, sticks, etc.) dropped by destroyed vegetation
+        removeDroppedItems(level, placePos, template.getSize());
 
         // Calculate the interior spawn position (center, one block above floor)
         net.minecraft.core.Vec3i size = template.getSize();
@@ -278,20 +289,64 @@ public class StarterHouseGenerator {
     /**
      * Fills the gap between the structure floor and the terrain below,
      * using blocks that match the surrounding terrain for a natural look.
+     * Also clears blocks above the floor level in the margin area so the
+     * surroundings are flat at the same height as the structure floor.
+     *
+     * Processing order:
+     * 1. Clear above floorY and convert exposed dirt to grass — this ensures
+     *    the perimeter shows grass (not underground dirt) before sampling.
+     * 2. Detect dominant surface block from the corrected perimeter.
+     * 3. Fill foundation downward with the detected block.
      */
     private static void fillFoundation(ServerLevel level, BlockPos placePos,
                                         net.minecraft.core.Vec3i structureSize) {
         int floorY = placePos.getY();
         int margin = 2;
 
+        int strMinX = placePos.getX();
+        int strMaxX = placePos.getX() + structureSize.getX();
+        int strMinZ = placePos.getZ();
+        int strMaxZ = placePos.getZ() + structureSize.getZ();
+
+        // Phase 1: Clear blocks above the floor level and convert exposed dirt
+        // to grass. This must happen before surface detection so the sampled
+        // perimeter reflects the actual surface block, not underground dirt.
+        for (int x = strMinX - margin; x < strMaxX + margin; x++) {
+            for (int z = strMinZ - margin; z < strMaxZ + margin; z++) {
+                if (isOutsideChamfer(x, z, strMinX, strMaxX, strMinZ, strMaxZ, margin)) {
+                    continue;
+                }
+
+                boolean inMargin = x < strMinX || x >= strMaxX || z < strMinZ || z >= strMaxZ;
+
+                int clearFrom = inMargin ? floorY : floorY + structureSize.getY();
+                for (int y = clearFrom; y < floorY + structureSize.getY() + 10; y++) {
+                    BlockPos pos = new BlockPos(x, y, z);
+                    BlockState existing = level.getBlockState(pos);
+                    if (!existing.isAir()) {
+                        level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
+                    }
+                }
+                if (inMargin) {
+                    BlockPos surfacePos = new BlockPos(x, floorY - 1, z);
+                    if (level.getBlockState(surfacePos).is(Blocks.DIRT)) {
+                        level.setBlock(surfacePos, Blocks.GRASS_BLOCK.defaultBlockState(), 2);
+                    }
+                }
+            }
+        }
+
+        // Phase 2: Detect dominant surface block from the now-corrected perimeter
         BlockState dominantBlock = detectDominantSurfaceBlock(level, placePos, structureSize, margin);
         BlockState surfaceBlock = mapToSurfaceBlock(dominantBlock);
         BlockState subsurfaceBlock = mapToSubsurfaceBlock(surfaceBlock);
 
-        for (int x = placePos.getX() - margin; x < placePos.getX() + structureSize.getX() + margin; x++) {
-            for (int z = placePos.getZ() - margin; z < placePos.getZ() + structureSize.getZ() + margin; z++) {
-                // Fill downward from just below the floor until we hit existing terrain,
-                // replacing both air and water to support structures placed over water
+        // Phase 3: Fill foundation downward
+        for (int x = strMinX - margin; x < strMaxX + margin; x++) {
+            for (int z = strMinZ - margin; z < strMaxZ + margin; z++) {
+                if (isOutsideChamfer(x, z, strMinX, strMaxX, strMinZ, strMaxZ, margin)) {
+                    continue;
+                }
                 for (int y = floorY - 1; y >= floorY - 10; y--) {
                     BlockPos pos = new BlockPos(x, y, z);
                     BlockState existing = level.getBlockState(pos);
@@ -367,6 +422,108 @@ public class StarterHouseGenerator {
             counts.merge(state.getBlock(), 1, Integer::sum);
             return;
         }
+    }
+
+    /**
+     * Removes item entities (seeds, sticks, saplings, etc.) that were dropped
+     * when vegetation was destroyed during terrain modification.
+     * Covers the structure footprint plus the foundation margin and blend radius.
+     */
+    private static void removeDroppedItems(ServerLevel level, BlockPos placePos,
+                                            net.minecraft.core.Vec3i structureSize) {
+        int margin = 2;
+        int blendRadius = 3;
+        int extend = margin + blendRadius;
+        AABB area = new AABB(
+                placePos.getX() - extend, placePos.getY() - 10, placePos.getZ() - extend,
+                placePos.getX() + structureSize.getX() + extend,
+                placePos.getY() + structureSize.getY() + 10,
+                placePos.getZ() + structureSize.getZ() + extend);
+        List<ItemEntity> items = level.getEntitiesOfClass(ItemEntity.class, area);
+        for (ItemEntity item : items) {
+            item.discard();
+        }
+    }
+
+    /**
+     * Smooths the terrain around the structure so the transition between the
+     * flat foundation and the natural terrain is gradual rather than abrupt.
+     */
+    private static void blendSurroundingTerrain(ServerLevel level, BlockPos placePos,
+                                                  net.minecraft.core.Vec3i structureSize) {
+        int floorY = placePos.getY();
+        int margin = 2;
+        int blendRadius = 3;
+
+        BlockState dominantBlock = detectDominantSurfaceBlock(level, placePos, structureSize, margin);
+        BlockState surfaceBlock = mapToSurfaceBlock(dominantBlock);
+        BlockState subsurfaceBlock = mapToSubsurfaceBlock(surfaceBlock);
+
+        int innerMinX = placePos.getX() - margin;
+        int innerMaxX = placePos.getX() + structureSize.getX() + margin - 1;
+        int innerMinZ = placePos.getZ() - margin;
+        int innerMaxZ = placePos.getZ() + structureSize.getZ() + margin - 1;
+
+        int outerMinX = innerMinX - blendRadius;
+        int outerMaxX = innerMaxX + blendRadius;
+        int outerMinZ = innerMinZ - blendRadius;
+        int outerMaxZ = innerMaxZ + blendRadius;
+
+        for (int x = outerMinX; x <= outerMaxX; x++) {
+            for (int z = outerMinZ; z <= outerMaxZ; z++) {
+                if (x >= innerMinX && x <= innerMaxX && z >= innerMinZ && z <= innerMaxZ) {
+                    continue;
+                }
+
+                int distX = 0;
+                if (x < innerMinX) distX = innerMinX - x;
+                else if (x > innerMaxX) distX = x - innerMaxX;
+
+                int distZ = 0;
+                if (z < innerMinZ) distZ = innerMinZ - z;
+                else if (z > innerMaxZ) distZ = z - innerMaxZ;
+
+                int dist = Math.max(distX, distZ);
+                if (dist <= 0 || dist > blendRadius) continue;
+
+                int naturalY = findGroundY(level, x, z);
+                if (naturalY == -1) continue;
+
+                double ratio = (double) dist / blendRadius;
+                int targetY = floorY + (int) Math.round((naturalY - floorY) * ratio);
+
+                if (naturalY > targetY) {
+                    for (int y = targetY; y < naturalY; y++) {
+                        level.setBlock(new BlockPos(x, y, z), Blocks.AIR.defaultBlockState(), 2);
+                    }
+                    if (targetY > level.getMinBuildHeight()) {
+                        level.setBlock(new BlockPos(x, targetY - 1, z), surfaceBlock, 2);
+                    }
+                } else if (naturalY < targetY) {
+                    for (int y = naturalY; y < targetY; y++) {
+                        BlockState fill = (y == targetY - 1) ? surfaceBlock : subsurfaceBlock;
+                        level.setBlock(new BlockPos(x, y, z), fill, 2);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Returns true if the position is outside the chamfered rectangle,
+     * i.e. at the outermost corner blocks that should be skipped.
+     */
+    private static boolean isOutsideChamfer(int x, int z,
+                                             int strMinX, int strMaxX,
+                                             int strMinZ, int strMaxZ,
+                                             int margin) {
+        int distX = 0;
+        if (x < strMinX) distX = strMinX - x;
+        else if (x >= strMaxX) distX = x - strMaxX + 1;
+        int distZ = 0;
+        if (z < strMinZ) distZ = strMinZ - z;
+        else if (z >= strMaxZ) distZ = z - strMaxZ + 1;
+        return distX + distZ > 2 * margin - 1;
     }
 
     /**
