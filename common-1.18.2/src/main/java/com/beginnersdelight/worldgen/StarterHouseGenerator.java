@@ -165,6 +165,9 @@ public class StarterHouseGenerator {
             return null;
         }
 
+        // Ensure placement is at or above sea level to prevent flooding
+        resultY = Math.max(resultY, level.getSeaLevel());
+
         return new BlockPos(startX, resultY, startZ);
     }
 
@@ -277,12 +280,16 @@ public class StarterHouseGenerator {
         int floorY = placePos.getY();
         BlockState dirt = Blocks.DIRT.defaultBlockState();
 
-        for (int x = placePos.getX(); x < placePos.getX() + structureSize.getX(); x++) {
-            for (int z = placePos.getZ(); z < placePos.getZ() + structureSize.getZ(); z++) {
-                // Fill downward from just below the floor until we hit existing terrain
+        int margin = 2;
+
+        for (int x = placePos.getX() - margin; x < placePos.getX() + structureSize.getX() + margin; x++) {
+            for (int z = placePos.getZ() - margin; z < placePos.getZ() + structureSize.getZ() + margin; z++) {
+                // Fill downward from just below the floor until we hit existing terrain,
+                // replacing both air and water to support structures placed over water
                 for (int y = floorY - 1; y >= floorY - 10; y--) {
                     BlockPos pos = new BlockPos(x, y, z);
-                    if (!level.getBlockState(pos).isAir()) {
+                    BlockState existing = level.getBlockState(pos);
+                    if (!existing.isAir() && existing.getFluidState().isEmpty()) {
                         break;
                     }
                     level.setBlock(pos, dirt, 2);
