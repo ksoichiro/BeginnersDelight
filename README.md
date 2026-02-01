@@ -64,12 +64,12 @@ cd BeginnersDelight
 ```
 
 **Output Files** (1.21.1):
-- `fabric-1.21.1/build/libs/beginnersdelight-0.1.0-fabric.jar` - Fabric loader JAR
-- `neoforge-1.21.1/build/libs/beginnersdelight-0.1.0-neoforge.jar` - NeoForge loader JAR
+- `fabric-1.21.1/build/libs/beginnersdelight-0.2.0-fabric.jar` - Fabric loader JAR
+- `neoforge-1.21.1/build/libs/beginnersdelight-0.2.0-neoforge.jar` - NeoForge loader JAR
 
 **Output Files** (1.20.1):
-- `fabric-1.20.1/build/libs/beginnersdelight-0.1.0-fabric.jar` - Fabric loader JAR
-- `forge-1.20.1/build/libs/beginnersdelight-0.1.0-forge.jar` - Forge loader JAR
+- `fabric-1.20.1/build/libs/beginnersdelight-0.2.0-fabric.jar` - Fabric loader JAR
+- `forge-1.20.1/build/libs/beginnersdelight-0.2.0-forge.jar` - Forge loader JAR
 
 ## Development Setup
 
