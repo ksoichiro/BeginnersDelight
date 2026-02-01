@@ -88,7 +88,11 @@ subprojects {
 
     tasks.withType(JavaCompile).configureEach {
         it.options.encoding = 'UTF-8'
-        it.options.release = project.ext.java_version as Integer
+        // --release flag is only available in Java 9+
+        def javaVersionInt = project.ext.java_version as Integer
+        if (javaVersionInt >= 9) {
+            it.options.release = javaVersionInt
+        }
     }
 
     // Ensure run tasks (runClient, runServer) use the correct JDK version
