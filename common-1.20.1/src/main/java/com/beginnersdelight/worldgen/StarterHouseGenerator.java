@@ -19,6 +19,8 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -274,15 +276,17 @@ public class StarterHouseGenerator {
     }
 
     /**
-     * Fills the gap between the structure floor and the terrain below with
-     * dirt blocks, creating a natural-looking foundation on slopes.
+     * Fills the gap between the structure floor and the terrain below,
+     * using blocks that match the surrounding terrain for a natural look.
      */
     private static void fillFoundation(ServerLevel level, BlockPos placePos,
                                         net.minecraft.core.Vec3i structureSize) {
         int floorY = placePos.getY();
-        BlockState dirt = Blocks.DIRT.defaultBlockState();
-
         int margin = 2;
+
+        BlockState dominantBlock = detectDominantSurfaceBlock(level, placePos, structureSize, margin);
+        BlockState surfaceBlock = mapToSurfaceBlock(dominantBlock);
+        BlockState subsurfaceBlock = mapToSubsurfaceBlock(surfaceBlock);
 
         for (int x = placePos.getX() - margin; x < placePos.getX() + structureSize.getX() + margin; x++) {
             for (int z = placePos.getZ() - margin; z < placePos.getZ() + structureSize.getZ() + margin; z++) {
@@ -294,9 +298,104 @@ public class StarterHouseGenerator {
                     if (!existing.isAir() && existing.getFluidState().isEmpty()) {
                         break;
                     }
-                    level.setBlock(pos, dirt, 2);
+                    BlockState fill = (y == floorY - 1) ? surfaceBlock : subsurfaceBlock;
+                    level.setBlock(pos, fill, 2);
                 }
             }
         }
+    }
+
+    /**
+     * Samples blocks around the structure perimeter at ground level to
+     * determine the dominant surface block type in the surrounding terrain.
+     */
+    private static BlockState detectDominantSurfaceBlock(ServerLevel level, BlockPos placePos,
+                                                          net.minecraft.core.Vec3i structureSize,
+                                                          int margin) {
+        Map<net.minecraft.world.level.block.Block, Integer> counts = new HashMap<>();
+        int sampleY = placePos.getY();
+
+        int minX = placePos.getX() - margin - 1;
+        int maxX = placePos.getX() + structureSize.getX() + margin;
+        int minZ = placePos.getZ() - margin - 1;
+        int maxZ = placePos.getZ() + structureSize.getZ() + margin;
+
+        // Sample the perimeter just outside the fill area
+        for (int x = minX; x <= maxX; x++) {
+            sampleColumn(level, x, minZ, sampleY, counts);
+            sampleColumn(level, x, maxZ, sampleY, counts);
+        }
+        for (int z = minZ + 1; z < maxZ; z++) {
+            sampleColumn(level, minX, z, sampleY, counts);
+            sampleColumn(level, maxX, z, sampleY, counts);
+        }
+
+        // Find the most common block
+        net.minecraft.world.level.block.Block dominant = null;
+        int maxCount = 0;
+        for (Map.Entry<net.minecraft.world.level.block.Block, Integer> entry : counts.entrySet()) {
+            if (entry.getValue() > maxCount) {
+                maxCount = entry.getValue();
+                dominant = entry.getKey();
+            }
+        }
+
+        if (dominant == null) {
+            return Blocks.GRASS_BLOCK.defaultBlockState();
+        }
+        return dominant.defaultBlockState();
+    }
+
+    /**
+     * Scans downward from the given Y to find the first solid surface block
+     * at the given XZ coordinate and adds it to the count map.
+     */
+    private static void sampleColumn(ServerLevel level, int x, int z, int startY,
+                                      Map<net.minecraft.world.level.block.Block, Integer> counts) {
+        for (int y = startY; y >= startY - 5; y--) {
+            BlockState state = level.getBlockState(new BlockPos(x, y, z));
+            if (state.isAir() || !state.getFluidState().isEmpty()) {
+                continue;
+            }
+            // Skip vegetation
+            // 1.20.1: Blocks.GRASS instead of Blocks.SHORT_GRASS (renamed in 1.20.3+)
+            if (state.is(BlockTags.LEAVES) || state.is(BlockTags.LOGS)
+                    || state.is(BlockTags.FLOWERS) || state.is(BlockTags.SAPLINGS)
+                    || state.is(Blocks.TALL_GRASS) || state.is(Blocks.GRASS)) {
+                continue;
+            }
+            counts.merge(state.getBlock(), 1, Integer::sum);
+            return;
+        }
+    }
+
+    /**
+     * Maps a detected terrain block to the appropriate surface fill block.
+     * Gravity-affected blocks are replaced with their solid equivalents.
+     */
+    private static BlockState mapToSurfaceBlock(BlockState detected) {
+        net.minecraft.world.level.block.Block block = detected.getBlock();
+        if (block == Blocks.SAND) {
+            return Blocks.SANDSTONE.defaultBlockState();
+        }
+        if (block == Blocks.RED_SAND) {
+            return Blocks.RED_SANDSTONE.defaultBlockState();
+        }
+        if (block == Blocks.GRAVEL) {
+            return Blocks.STONE.defaultBlockState();
+        }
+        // Grass, stone, dirt, etc. — use as-is
+        return detected;
+    }
+
+    /**
+     * Maps a surface fill block to the appropriate subsurface fill block.
+     * Grass blocks become dirt below the surface; others remain the same.
+     */
+    private static BlockState mapToSubsurfaceBlock(BlockState surfaceBlock) {
+        if (surfaceBlock.is(Blocks.GRASS_BLOCK)) {
+            return Blocks.DIRT.defaultBlockState();
+        }
+        return surfaceBlock;
     }
 }
