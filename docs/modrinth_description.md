@@ -49,13 +49,40 @@ The chest in the starter house contains helpful items for early game:
 
 ### Multi-Loader & Multi-Version Support
 This mod is built with **Architectury** and supports **multiple Minecraft versions and mod loaders**!
+- **1.21.5**: Fabric and NeoForge
+- **1.21.4**: Fabric and NeoForge
+- **1.21.3**: Fabric and NeoForge
 - **1.21.1**: Fabric and NeoForge
 - **1.20.1**: Fabric and Forge
 - **1.19.2**: Fabric and Forge
+- **1.18.2**: Fabric and Forge
+- **1.17.1**: Fabric and Forge
+- **1.16.5**: Fabric and Forge
 - Download the correct version for your Minecraft version and mod loader
 - Shared codebase ensures consistent experience across versions and loaders
 
 ### Requirements
+
+#### Minecraft 1.21.5
+- **Mod Loader**:
+  - Fabric Loader 0.17.3+ with Fabric API 0.128.1+1.21.5, OR
+  - NeoForge 21.5.96+
+- **Dependencies**:
+  - Architectury API 16.1.4+
+
+#### Minecraft 1.21.4
+- **Mod Loader**:
+  - Fabric Loader 0.17.3+ with Fabric API 0.119.4+1.21.4, OR
+  - NeoForge 21.4.156+
+- **Dependencies**:
+  - Architectury API 15.0.1+
+
+#### Minecraft 1.21.3
+- **Mod Loader**:
+  - Fabric Loader 0.17.3+ with Fabric API 0.112.1+1.21.3, OR
+  - NeoForge 21.3.95+
+- **Dependencies**:
+  - Architectury API 14.0.4+
 
 #### Minecraft 1.21.1
 - **Mod Loader**:
@@ -77,6 +104,27 @@ This mod is built with **Architectury** and supports **multiple Minecraft versio
   - Forge 43.4.0+
 - **Dependencies**:
   - Architectury API 6.6.92+
+
+#### Minecraft 1.18.2
+- **Mod Loader**:
+  - Fabric Loader 0.17.3+ with Fabric API 0.76.0+1.18.2, OR
+  - Forge 40.2.0+
+- **Dependencies**:
+  - Architectury API 4.12.94+
+
+#### Minecraft 1.17.1
+- **Mod Loader**:
+  - Fabric Loader 0.17.3+ with Fabric API 0.46.1+1.17, OR
+  - Forge 37.1.1+
+- **Dependencies**:
+  - Architectury API 2.10.12+
+
+#### Minecraft 1.16.5
+- **Mod Loader**:
+  - Fabric Loader 0.17.3+ with Fabric API 0.42.0+1.16, OR
+  - Forge 36.2.34+
+- **Dependencies**:
+  - Architectury API 1.32.68+
 
 ### Compatibility
 - Works alongside other world generation mods
@@ -127,6 +175,6 @@ Check out the **Gallery** above for screenshots showcasing:
 
 ---
 
-**Developed for Minecraft Java Edition 1.21.1 / 1.20.1 / 1.19.2**
+**Developed for Minecraft Java Edition 1.21.5 / 1.21.4 / 1.21.3 / 1.21.1 / 1.20.1 / 1.19.2 / 1.18.2 / 1.17.1 / 1.16.5**
 
 A safe start for every adventure. 🏠

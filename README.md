@@ -19,14 +19,20 @@ A multi-loader Minecraft mod that generates a small starter house at the world s
 
 | Minecraft | Mod Loader | Dependencies |
 |-----------|-----------|--------------|
+| 1.21.5 | Fabric Loader 0.17.3+ with Fabric API 0.128.1+1.21.5 | Architectury API 16.1.4+ |
+| 1.21.5 | NeoForge 21.5.96+ | Architectury API 16.1.4+ |
+| 1.21.4 | Fabric Loader 0.17.3+ with Fabric API 0.119.4+1.21.4 | Architectury API 15.0.1+ |
+| 1.21.4 | NeoForge 21.4.156+ | Architectury API 15.0.1+ |
+| 1.21.3 | Fabric Loader 0.17.3+ with Fabric API 0.112.1+1.21.3 | Architectury API 14.0.4+ |
+| 1.21.3 | NeoForge 21.3.95+ | Architectury API 14.0.4+ |
 | 1.21.1 | Fabric Loader 0.17.3+ with Fabric API 0.116.7+1.21.1 | Architectury API 13.0.8+ |
 | 1.21.1 | NeoForge 21.1.209+ | Architectury API 13.0.8+ |
 | 1.20.1 | Fabric Loader 0.17.3+ with Fabric API 0.92.2+1.20.1 | Architectury API 9.2.14+ |
 | 1.20.1 | Forge 47.4.0+ | Architectury API 9.2.14+ |
 | 1.19.2 | Fabric Loader 0.17.3+ with Fabric API 0.77.0+1.19.2 | Architectury API 6.6.92+ |
+| 1.19.2 | Forge 43.4.0+ | Architectury API 6.6.92+ |
 | 1.18.2 | Fabric Loader 0.17.3+ with Fabric API 0.76.0+1.18.2 | Architectury API 4.12.94+ |
 | 1.18.2 | Forge 40.2.0+ | Architectury API 4.12.94+ |
-| 1.19.2 | Forge 43.4.0+ | Architectury API 6.6.92+ |
 | 1.17.1 | Fabric Loader 0.17.3+ with Fabric API 0.46.1+1.17 | Architectury API 2.10.12+ |
 | 1.17.1 | Forge 37.1.1+ | Architectury API 2.10.12+ |
 | 1.16.5 | Fabric Loader 0.17.3+ with Fabric API 0.42.0+1.16 | Architectury API 1.32.68+ |
@@ -35,8 +41,11 @@ A multi-loader Minecraft mod that generates a small starter house at the world s
 ## Requirements
 
 ### For Players
-- **Minecraft**: Java Edition 1.21.1, 1.20.1, 1.19.2, 1.18.2, 1.17.1, or 1.16.5
+- **Minecraft**: Java Edition 1.21.5, 1.21.4, 1.21.3, 1.21.1, 1.20.1, 1.19.2, 1.18.2, 1.17.1, or 1.16.5
 - **Mod Loader** (choose one for your Minecraft version):
+  - **1.21.5**: Fabric Loader 0.17.3+ with Fabric API, OR NeoForge 21.5.96+
+  - **1.21.4**: Fabric Loader 0.17.3+ with Fabric API, OR NeoForge 21.4.156+
+  - **1.21.3**: Fabric Loader 0.17.3+ with Fabric API, OR NeoForge 21.3.95+
   - **1.21.1**: Fabric Loader 0.17.3+ with Fabric API, OR NeoForge 21.1.209+
   - **1.20.1**: Fabric Loader 0.17.3+ with Fabric API, OR Forge 47.4.0+
   - **1.19.2**: Fabric Loader 0.17.3+ with Fabric API, OR Forge 43.4.0+
@@ -44,7 +53,7 @@ A multi-loader Minecraft mod that generates a small starter house at the world s
   - **1.17.1**: Fabric Loader 0.17.3+ with Fabric API, OR Forge 37.1.1+
   - **1.16.5**: Fabric Loader 0.17.3+ with Fabric API, OR Forge 36.2.34+
 - **Dependencies**:
-  - Architectury API (13.0.8+ for 1.21.1, 9.2.14+ for 1.20.1, 6.6.92+ for 1.19.2, 4.12.94+ for 1.18.2, 2.10.12+ for 1.17.1, 1.32.68+ for 1.16.5)
+  - Architectury API (16.1.4+ for 1.21.5, 15.0.1+ for 1.21.4, 14.0.4+ for 1.21.3, 13.0.8+ for 1.21.1, 9.2.14+ for 1.20.1, 6.6.92+ for 1.19.2, 4.12.94+ for 1.18.2, 2.10.12+ for 1.17.1, 1.32.68+ for 1.16.5)
 
 ### For Developers
 - **Java Development Kit (JDK)**: 21 or higher
@@ -63,9 +72,9 @@ cd BeginnersDelight
 ./gradlew build -Ptarget_mc_version=1.20.1
 ```
 
-**Output Files** (1.21.1):
-- `fabric-1.21.1/build/libs/beginnersdelight-0.2.0-fabric.jar` - Fabric loader JAR
-- `neoforge-1.21.1/build/libs/beginnersdelight-0.2.0-neoforge.jar` - NeoForge loader JAR
+**Output Files** (1.21.5):
+- `fabric-1.21.5/build/libs/beginnersdelight-0.2.0-fabric.jar` - Fabric loader JAR
+- `neoforge-1.21.5/build/libs/beginnersdelight-0.2.0-neoforge.jar` - NeoForge loader JAR
 
 **Output Files** (1.20.1):
 - `fabric-1.20.1/build/libs/beginnersdelight-0.2.0-fabric.jar` - Fabric loader JAR
@@ -84,11 +93,29 @@ cd BeginnersDelight
 ### Run in Development Environment
 
 ```bash
-# Fabric client (1.21.1)
+# Fabric client (1.21.5)
 ./gradlew :fabric:runClient
 
-# NeoForge client (1.21.1)
+# NeoForge client (1.21.5)
 ./gradlew :neoforge:runClient
+
+# Fabric client (1.21.4)
+./gradlew :fabric:runClient -Ptarget_mc_version=1.21.4
+
+# NeoForge client (1.21.4)
+./gradlew :neoforge:runClient -Ptarget_mc_version=1.21.4
+
+# Fabric client (1.21.3)
+./gradlew :fabric:runClient -Ptarget_mc_version=1.21.3
+
+# NeoForge client (1.21.3)
+./gradlew :neoforge:runClient -Ptarget_mc_version=1.21.3
+
+# Fabric client (1.21.1)
+./gradlew :fabric:runClient -Ptarget_mc_version=1.21.1
+
+# NeoForge client (1.21.1)
+./gradlew :neoforge:runClient -Ptarget_mc_version=1.21.1
 
 # Fabric client (1.20.1)
 ./gradlew :fabric:runClient -Ptarget_mc_version=1.20.1
@@ -122,6 +149,57 @@ cd BeginnersDelight
 ```
 
 ## Installation
+
+### For Minecraft 1.21.5
+
+#### Fabric
+1. Install Minecraft 1.21.5
+2. Install Fabric Loader 0.17.3+
+3. Download and install Fabric API 0.128.1+1.21.5
+4. Download and install Architectury API 16.1.4+
+5. Copy the Fabric JAR to `.minecraft/mods/` folder
+6. Launch Minecraft with Fabric profile
+
+#### NeoForge
+1. Install Minecraft 1.21.5
+2. Install NeoForge 21.5.96+
+3. Download and install Architectury API 16.1.4+
+4. Copy the NeoForge JAR to `.minecraft/mods/` folder
+5. Launch Minecraft with NeoForge profile
+
+### For Minecraft 1.21.4
+
+#### Fabric
+1. Install Minecraft 1.21.4
+2. Install Fabric Loader 0.17.3+
+3. Download and install Fabric API 0.119.4+1.21.4
+4. Download and install Architectury API 15.0.1+
+5. Copy the Fabric JAR to `.minecraft/mods/` folder
+6. Launch Minecraft with Fabric profile
+
+#### NeoForge
+1. Install Minecraft 1.21.4
+2. Install NeoForge 21.4.156+
+3. Download and install Architectury API 15.0.1+
+4. Copy the NeoForge JAR to `.minecraft/mods/` folder
+5. Launch Minecraft with NeoForge profile
+
+### For Minecraft 1.21.3
+
+#### Fabric
+1. Install Minecraft 1.21.3
+2. Install Fabric Loader 0.17.3+
+3. Download and install Fabric API 0.112.1+1.21.3
+4. Download and install Architectury API 14.0.4+
+5. Copy the Fabric JAR to `.minecraft/mods/` folder
+6. Launch Minecraft with Fabric profile
+
+#### NeoForge
+1. Install Minecraft 1.21.3
+2. Install NeoForge 21.3.95+
+3. Download and install Architectury API 14.0.4+
+4. Copy the NeoForge JAR to `.minecraft/mods/` folder
+5. Launch Minecraft with NeoForge profile
 
 ### For Minecraft 1.21.1
 
@@ -230,7 +308,7 @@ cd BeginnersDelight
 ```
 BeginnersDelight/
 ├── common-shared/           # Shared version-agnostic sources (included via srcDir)
-├── common-1.21.1/           # Common module for MC 1.21.1
+├── common-1.21.5/           # Common module for MC 1.21.5
 │   └── src/main/
 │       ├── java/com/beginnersdelight/
 │       │   ├── BeginnersDelight.java    # Common entry point
@@ -238,12 +316,18 @@ BeginnersDelight/
 │       │   └── registry/                # Registry management
 │       └── resources/
 │           └── data/beginnersdelight/   # Structures, loot tables
+├── common-1.21.4/           # Common module for MC 1.21.4
+├── common-1.21.3/           # Common module for MC 1.21.3
+├── common-1.21.1/           # Common module for MC 1.21.1
 ├── common-1.20.1/           # Common module for MC 1.20.1
 ├── common-1.19.2/           # Common module for MC 1.19.2
 ├── common-1.18.2/           # Common module for MC 1.18.2
 ├── common-1.17.1/           # Common module for MC 1.17.1
 ├── common-1.16.5/           # Common module for MC 1.16.5
 ├── fabric-base/             # Shared Fabric sources
+├── fabric-1.21.5/           # Fabric subproject for MC 1.21.5
+├── fabric-1.21.4/           # Fabric subproject for MC 1.21.4
+├── fabric-1.21.3/           # Fabric subproject for MC 1.21.3
 ├── fabric-1.21.1/           # Fabric subproject for MC 1.21.1
 ├── fabric-1.20.1/           # Fabric subproject for MC 1.20.1
 ├── fabric-1.19.2/           # Fabric subproject for MC 1.19.2
@@ -251,6 +335,9 @@ BeginnersDelight/
 ├── fabric-1.17.1/           # Fabric subproject for MC 1.17.1
 ├── fabric-1.16.5/           # Fabric subproject for MC 1.16.5
 ├── neoforge-base/           # Shared NeoForge sources
+├── neoforge-1.21.5/         # NeoForge subproject for MC 1.21.5
+├── neoforge-1.21.4/         # NeoForge subproject for MC 1.21.4
+├── neoforge-1.21.3/         # NeoForge subproject for MC 1.21.3
 ├── neoforge-1.21.1/         # NeoForge subproject for MC 1.21.1
 ├── forge-base/              # Shared Forge sources
 ├── forge-1.20.1/            # Forge subproject for MC 1.20.1
@@ -269,7 +356,7 @@ BeginnersDelight/
 - **Build DSL**: Groovy DSL (for Architectury Loom compatibility)
 - **Mappings**: Mojang mappings (official Minecraft class names)
 - **Shadow Plugin**: Bundles common module into loader-specific JARs
-- **Structure Files**: NBT format, placed in `common-1.21.1/src/main/resources/data/beginnersdelight/structure/`
+- **Structure Files**: NBT format, placed in `common-1.21.5/src/main/resources/data/beginnersdelight/structure/`
 - **Persistence**: Uses `SavedData` to prevent structure regeneration across server restarts
 
 ## License
@@ -291,4 +378,4 @@ For issues, feature requests, or questions:
 
 ---
 
-**Developed for Minecraft Java Edition 1.21.1 / 1.20.1 / 1.19.2 / 1.18.2 / 1.17.1 / 1.16.5**
+**Developed for Minecraft Java Edition 1.21.5 / 1.21.4 / 1.21.3 / 1.21.1 / 1.20.1 / 1.19.2 / 1.18.2 / 1.17.1 / 1.16.5**
