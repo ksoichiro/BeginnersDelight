@@ -16,6 +16,7 @@
 - Java 17 (Minecraft Java Edition 1.20.1) + Forge 47.4.x, Fabric Loader, Architectury API
 - Java 17 (Minecraft Java Edition 1.19.2) + Forge 43.4.x, Fabric Loader, Architectury API
 - Java 17 (Minecraft Java Edition 1.18.2) + Forge 40.2.x, Fabric Loader, Architectury API
+- Java 16 (Minecraft Java Edition 1.17.1) + Forge 37.1.x, Fabric Loader, Architectury API
 
 ## Project Structure
 
@@ -25,17 +26,20 @@ common-1.21.1/        (version-specific common module for 1.21.1)
 common-1.20.1/        (version-specific common module for 1.20.1)
 common-1.19.2/        (version-specific common module for 1.19.2)
 common-1.18.2/        (version-specific common module for 1.18.2)
+common-1.17.1/        (version-specific common module for 1.17.1)
 fabric-base/          (shared Fabric sources, NOT a Gradle subproject)
 fabric-1.21.1/        (version-specific Fabric subproject)
 fabric-1.20.1/        (version-specific Fabric subproject)
 fabric-1.19.2/        (version-specific Fabric subproject)
 fabric-1.18.2/        (version-specific Fabric subproject)
+fabric-1.17.1/        (version-specific Fabric subproject)
 neoforge-base/        (shared NeoForge sources, NOT a Gradle subproject)
 neoforge-1.21.1/      (version-specific NeoForge subproject)
 forge-base/           (shared Forge sources, NOT a Gradle subproject)
 forge-1.20.1/         (version-specific Forge subproject)
 forge-1.19.2/         (version-specific Forge subproject)
 forge-1.18.2/         (version-specific Forge subproject)
+forge-1.17.1/         (version-specific Forge subproject)
 props/                (version-specific properties)
 docs/                 (documentation)
 ```
@@ -44,12 +48,12 @@ docs/                 (documentation)
 
 - **Mod ID**: `beginnersdelight`
 - **Package**: `com.beginnersdelight`
-- **Minecraft**: 1.21.1, 1.20.1, 1.19.2, 1.18.2
-- **Architectury API**: 13.0.8 (1.21.1), 9.2.14 (1.20.1), 6.6.92 (1.19.2), 4.12.94 (1.18.2)
+- **Minecraft**: 1.21.1, 1.20.1, 1.19.2, 1.18.2, 1.17.1
+- **Architectury API**: 13.0.8 (1.21.1), 9.2.14 (1.20.1), 6.6.92 (1.19.2), 4.12.94 (1.18.2), 2.10.12 (1.17.1)
 - **Fabric Loader**: 0.17.3
-- **Fabric API**: 0.116.7+1.21.1 (1.21.1), 0.92.2+1.20.1 (1.20.1), 0.77.0+1.19.2 (1.19.2), 0.76.0+1.18.2 (1.18.2)
+- **Fabric API**: 0.116.7+1.21.1 (1.21.1), 0.92.2+1.20.1 (1.20.1), 0.77.0+1.19.2 (1.19.2), 0.76.0+1.18.2 (1.18.2), 0.46.1+1.17 (1.17.1)
 - **NeoForge**: 21.1.209 (1.21.1 only)
-- **Forge**: 47.4.0 (1.20.1), 43.4.0 (1.19.2), 40.2.0 (1.18.2)
+- **Forge**: 47.4.0 (1.20.1), 43.4.0 (1.19.2), 40.2.0 (1.18.2), 37.1.1 (1.17.1)
 
 ## Build Configuration
 
@@ -62,7 +66,7 @@ docs/                 (documentation)
 **Build**:
 - `./gradlew build` - Build for default version (1.21.1)
 - `./gradlew build -Ptarget_mc_version=1.20.1` - Build for specific version
-- `./gradlew buildAll` - Build for all supported versions (1.18.2, 1.19.2, 1.20.1, 1.21.1)
+- `./gradlew buildAll` - Build for all supported versions (1.17.1, 1.18.2, 1.19.2, 1.20.1, 1.21.1)
 
 **Clean**:
 - `./gradlew cleanAll` - Clean all supported versions
@@ -83,6 +87,10 @@ docs/                 (documentation)
 - Fabric: `./gradlew :fabric:runClient -Ptarget_mc_version=1.18.2`
 - Forge: `./gradlew :forge:runClient -Ptarget_mc_version=1.18.2`
 
+**Run Client** (1.17.1):
+- Fabric: `./gradlew :fabric:runClient -Ptarget_mc_version=1.17.1`
+- Forge: `./gradlew :forge:runClient -Ptarget_mc_version=1.17.1`
+
 ## Code Style
 
 - Java 21: Follow standard conventions
@@ -96,6 +104,8 @@ docs/                 (documentation)
 - Structures use only vanilla blocks to ensure compatibility after mod removal
 - Structure generation state is persisted using `SavedData` to prevent regeneration
 - NBT structure files are placed in `common-1.21.1/src/main/resources/data/beginnersdelight/structure/`
+- **MC 1.17.1 `runClient` limitation (macOS)**: `runClient` does not work for MC 1.17.1 on macOS due to two issues: (1) Forge: LWJGL 3.2.x `glfwSetWindowIcon` crash, and Loom's DLI-based native management prevents overriding; (2) Fabric: Architectury Loom 1.11's `fabric-loom-native-support` requires Java 17+, incompatible with 1.17.1's Java 16 toolchain. Use Prism Launcher for testing 1.17.1 on macOS
+- **Fabric 1.17.1 duplicate loader**: Fabric API 0.46.1+1.17 pulls in a remapped `fabric-loader` 0.13.2 via Loom, conflicting with the direct 0.17.3 dependency. Excluded via `runtimeClasspath { exclude group: 'remapped.net.fabricmc', module: 'fabric-loader-bf9e8a5d' }` in `fabric-1.17.1/build.gradle`
 
 ## Workflow Guidelines
 
