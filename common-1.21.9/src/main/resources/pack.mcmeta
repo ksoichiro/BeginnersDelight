@@ -1,0 +1,7 @@
+{
+  "pack": {
+    "description": "Beginner's Delight Mod Resources",
+    "min_format": ${pack_format},
+    "max_format": ${pack_format}
+  }
+}
