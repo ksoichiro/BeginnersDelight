@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Minecraft 1.21.6 support (Fabric + NeoForge)
+- Minecraft 1.21.7 support (Fabric + NeoForge)
+
 ## [0.2.0] - 2026-02-02
 
 ### Added

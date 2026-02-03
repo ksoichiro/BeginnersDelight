@@ -49,6 +49,8 @@ The chest in the starter house contains helpful items for early game:
 
 ### Multi-Loader & Multi-Version Support
 This mod is built with **Architectury** and supports **multiple Minecraft versions and mod loaders**!
+- **1.21.7**: Fabric and NeoForge
+- **1.21.6**: Fabric and NeoForge
 - **1.21.5**: Fabric and NeoForge
 - **1.21.4**: Fabric and NeoForge
 - **1.21.3**: Fabric and NeoForge
@@ -62,6 +64,20 @@ This mod is built with **Architectury** and supports **multiple Minecraft versio
 - Shared codebase ensures consistent experience across versions and loaders
 
 ### Requirements
+
+#### Minecraft 1.21.7
+- **Mod Loader**:
+  - Fabric Loader 0.17.3+ with Fabric API 0.129.0+1.21.7, OR
+  - NeoForge 21.7.2-beta+
+- **Dependencies**:
+  - Architectury API 17.0.8+
+
+#### Minecraft 1.21.6
+- **Mod Loader**:
+  - Fabric Loader 0.17.3+ with Fabric API 0.128.1+1.21.6, OR
+  - NeoForge 21.6.20-beta+
+- **Dependencies**:
+  - Architectury API 17.0.6+
 
 #### Minecraft 1.21.5
 - **Mod Loader**:
@@ -175,6 +191,6 @@ Check out the **Gallery** above for screenshots showcasing:
 
 ---
 
-**Developed for Minecraft Java Edition 1.21.5 / 1.21.4 / 1.21.3 / 1.21.1 / 1.20.1 / 1.19.2 / 1.18.2 / 1.17.1 / 1.16.5**
+**Developed for Minecraft Java Edition 1.21.7 / 1.21.6 / 1.21.5 / 1.21.4 / 1.21.3 / 1.21.1 / 1.20.1 / 1.19.2 / 1.18.2 / 1.17.1 / 1.16.5**
 
 A safe start for every adventure. 🏠
