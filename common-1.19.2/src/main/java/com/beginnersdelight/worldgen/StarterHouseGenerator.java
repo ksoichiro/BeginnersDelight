@@ -105,7 +105,21 @@ public class StarterHouseGenerator {
         }
 
         BeginnersDelight.LOGGER.info("Placing structure '{}' at {}", variant, placePos);
-        template.placeInWorld(level, placePos, placePos, settings, random, 2);
+
+        // Pre-clear vegetation and ground-cover blocks to prevent them from dropping
+        // items when their supporting blocks are removed during terrain modification.
+        // Uses UPDATE_KNOWN_SHAPE to suppress shape update propagation so adjacent
+        // soft blocks don't cascade-break into item entities.
+        clearVegetation(level, placePos, template.getSize());
+
+        // Use UPDATE_KNOWN_SHAPE to suppress shape updates during placement.
+        // Without this, doors and other multi-block structures can break when the
+        // upper half is placed before the lower half and shape updates fire on
+        // the not-yet-placed neighbor.
+        template.placeInWorld(level, placePos, placePos, settings, random, 2 | 16);
+
+        // Remove any item entities that were dropped during structure placement
+        removeDroppedItems(level, placePos, template.getSize());
 
         // Assign loot table to any chests placed by the structure template
         assignLootTables(level, placePos, template.getSize(), random);
@@ -424,6 +438,47 @@ public class StarterHouseGenerator {
     }
 
     /**
+     * Pre-clears vegetation and ground-cover blocks (grass, flowers, leaf litter, etc.)
+     * in the area that will be modified by structure placement and terrain blending.
+     * Uses UPDATE_KNOWN_SHAPE (flag 16) to suppress shape update propagation so that
+     * removing one soft block does not cascade-break adjacent soft blocks into items.
+     */
+    private static void clearVegetation(ServerLevel level, BlockPos placePos,
+                                         net.minecraft.core.Vec3i structureSize) {
+        int margin = 2;
+        int blendRadius = 3;
+        int extend = margin + blendRadius + 1;
+
+        int minX = placePos.getX() - extend;
+        int maxX = placePos.getX() + structureSize.getX() + extend;
+        int minZ = placePos.getZ() - extend;
+        int maxZ = placePos.getZ() + structureSize.getZ() + extend;
+        int minY = placePos.getY();
+        int maxY = placePos.getY() + structureSize.getY() + 10;
+
+        for (int x = minX; x < maxX; x++) {
+            for (int z = minZ; z < maxZ; z++) {
+                for (int y = maxY; y >= minY; y--) {
+                    BlockPos pos = new BlockPos(x, y, z);
+                    BlockState state = level.getBlockState(pos);
+                    if (!state.isAir() && isVegetation(state)) {
+                        level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2 | 16);
+                    }
+                }
+            }
+        }
+    }
+
+    // 1.19.2: No BlockTags.REPLACEABLE_BY_TREES — use explicit block/tag checks instead
+    private static boolean isVegetation(BlockState state) {
+        return state.is(BlockTags.LEAVES)
+                || state.is(BlockTags.SAPLINGS)
+                || state.is(BlockTags.FLOWERS)
+                || state.is(Blocks.TALL_GRASS)
+                || state.is(Blocks.GRASS);
+    }
+
+    /**
      * Removes item entities (seeds, sticks, saplings, etc.) that were dropped
      * when vegetation was destroyed during terrain modification.
      * Covers the structure footprint plus the foundation margin and blend radius.
@@ -432,7 +487,9 @@ public class StarterHouseGenerator {
                                             net.minecraft.core.Vec3i structureSize) {
         int margin = 2;
         int blendRadius = 3;
-        int extend = margin + blendRadius;
+        // +1 accounts for items dropped by shape updates on blocks adjacent to the
+        // outermost modified blocks (e.g. leaf litter losing support at the blend edge)
+        int extend = margin + blendRadius + 1;
         AABB area = new AABB(
                 placePos.getX() - extend, placePos.getY() - 10, placePos.getZ() - extend,
                 placePos.getX() + structureSize.getX() + extend,
