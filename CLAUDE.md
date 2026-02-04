@@ -12,6 +12,7 @@
 
 ## Active Technologies
 
+- Java 21 (Minecraft Java Edition 1.21.10) + NeoForge 21.10.x, Fabric Loader, Architectury API
 - Java 21 (Minecraft Java Edition 1.21.9) + NeoForge 21.9.x, Fabric Loader, Architectury API
 - Java 21 (Minecraft Java Edition 1.21.8) + NeoForge 21.8.x, Fabric Loader, Architectury API
 - Java 21 (Minecraft Java Edition 1.21.7) + NeoForge 21.7.x, Fabric Loader, Architectury API
@@ -30,6 +31,7 @@
 
 ```
 common-shared/        (shared version-agnostic sources, NOT a Gradle subproject)
+common-1.21.10/       (version-specific common module for 1.21.10)
 common-1.21.9/        (version-specific common module for 1.21.9)
 common-1.21.8/        (version-specific common module for 1.21.8)
 common-1.21.7/        (version-specific common module for 1.21.7)
@@ -44,6 +46,7 @@ common-1.18.2/        (version-specific common module for 1.18.2)
 common-1.17.1/        (version-specific common module for 1.17.1)
 common-1.16.5/        (version-specific common module for 1.16.5)
 fabric-base/          (shared Fabric sources, NOT a Gradle subproject)
+fabric-1.21.10/       (version-specific Fabric subproject)
 fabric-1.21.9/        (version-specific Fabric subproject)
 fabric-1.21.8/        (version-specific Fabric subproject)
 fabric-1.21.7/        (version-specific Fabric subproject)
@@ -58,6 +61,7 @@ fabric-1.18.2/        (version-specific Fabric subproject)
 fabric-1.17.1/        (version-specific Fabric subproject)
 fabric-1.16.5/        (version-specific Fabric subproject)
 neoforge-base/        (shared NeoForge sources, NOT a Gradle subproject)
+neoforge-1.21.10/     (version-specific NeoForge subproject)
 neoforge-1.21.9/      (version-specific NeoForge subproject)
 neoforge-1.21.8/      (version-specific NeoForge subproject)
 neoforge-1.21.7/      (version-specific NeoForge subproject)
@@ -80,11 +84,11 @@ docs/                 (documentation)
 
 - **Mod ID**: `beginnersdelight`
 - **Package**: `com.beginnersdelight`
-- **Minecraft**: 1.21.9, 1.21.8, 1.21.7, 1.21.6, 1.21.5, 1.21.4, 1.21.3, 1.21.1, 1.20.1, 1.19.2, 1.18.2, 1.17.1, 1.16.5
-- **Architectury API**: 18.0.5 (1.21.9), 17.0.8 (1.21.8), 17.0.8 (1.21.7), 17.0.6 (1.21.6), 16.1.4 (1.21.5), 15.0.1 (1.21.4), 14.0.4 (1.21.3), 13.0.8 (1.21.1), 9.2.14 (1.20.1), 6.6.92 (1.19.2), 4.12.94 (1.18.2), 2.10.12 (1.17.1), 1.32.68 (1.16.5)
+- **Minecraft**: 1.21.10, 1.21.9, 1.21.8, 1.21.7, 1.21.6, 1.21.5, 1.21.4, 1.21.3, 1.21.1, 1.20.1, 1.19.2, 1.18.2, 1.17.1, 1.16.5
+- **Architectury API**: 18.0.8 (1.21.10), 18.0.5 (1.21.9), 17.0.8 (1.21.8), 17.0.8 (1.21.7), 17.0.6 (1.21.6), 16.1.4 (1.21.5), 15.0.1 (1.21.4), 14.0.4 (1.21.3), 13.0.8 (1.21.1), 9.2.14 (1.20.1), 6.6.92 (1.19.2), 4.12.94 (1.18.2), 2.10.12 (1.17.1), 1.32.68 (1.16.5)
 - **Fabric Loader**: 0.17.3
-- **Fabric API**: 0.134.1+1.21.9 (1.21.9), 0.136.1+1.21.8 (1.21.8), 0.129.0+1.21.7 (1.21.7), 0.128.1+1.21.6 (1.21.6), 0.128.1+1.21.5 (1.21.5), 0.119.4+1.21.4 (1.21.4), 0.112.1+1.21.3 (1.21.3), 0.116.7+1.21.1 (1.21.1), 0.92.2+1.20.1 (1.20.1), 0.77.0+1.19.2 (1.19.2), 0.76.0+1.18.2 (1.18.2), 0.46.1+1.17 (1.17.1), 0.42.0+1.16 (1.16.5)
-- **NeoForge**: 21.9.16-beta (1.21.9), 21.8.52 (1.21.8), 21.7.2-beta (1.21.7), 21.6.20-beta (1.21.6), 21.5.96 (1.21.5), 21.4.156 (1.21.4), 21.3.95 (1.21.3), 21.1.209 (1.21.1)
+- **Fabric API**: 0.138.4+1.21.10 (1.21.10), 0.134.1+1.21.9 (1.21.9), 0.136.1+1.21.8 (1.21.8), 0.129.0+1.21.7 (1.21.7), 0.128.1+1.21.6 (1.21.6), 0.128.1+1.21.5 (1.21.5), 0.119.4+1.21.4 (1.21.4), 0.112.1+1.21.3 (1.21.3), 0.116.7+1.21.1 (1.21.1), 0.92.2+1.20.1 (1.20.1), 0.77.0+1.19.2 (1.19.2), 0.76.0+1.18.2 (1.18.2), 0.46.1+1.17 (1.17.1), 0.42.0+1.16 (1.16.5)
+- **NeoForge**: 21.10.64 (1.21.10), 21.9.16-beta (1.21.9), 21.8.52 (1.21.8), 21.7.2-beta (1.21.7), 21.6.20-beta (1.21.6), 21.5.96 (1.21.5), 21.4.156 (1.21.4), 21.3.95 (1.21.3), 21.1.209 (1.21.1)
 - **Forge**: 47.4.0 (1.20.1), 43.4.0 (1.19.2), 40.2.0 (1.18.2), 37.1.1 (1.17.1), 36.2.34 (1.16.5)
 
 ## Build Configuration
@@ -96,16 +100,20 @@ docs/                 (documentation)
 ## Commands
 
 **Build**:
-- `./gradlew build` - Build for default version (1.21.9)
+- `./gradlew build` - Build for default version (1.21.10)
 - `./gradlew build -Ptarget_mc_version=1.20.1` - Build for specific version
-- `./gradlew buildAll` - Build for all supported versions (1.16.5, 1.17.1, 1.18.2, 1.19.2, 1.20.1, 1.21.1, 1.21.3, 1.21.4, 1.21.5, 1.21.6, 1.21.7, 1.21.8, 1.21.9)
+- `./gradlew buildAll` - Build for all supported versions (1.16.5, 1.17.1, 1.18.2, 1.19.2, 1.20.1, 1.21.1, 1.21.3, 1.21.4, 1.21.5, 1.21.6, 1.21.7, 1.21.8, 1.21.9, 1.21.10)
 
 **Clean**:
 - `./gradlew cleanAll` - Clean all supported versions
 
-**Run Client** (1.21.9):
+**Run Client** (1.21.10):
 - Fabric: `./gradlew :fabric:runClient`
 - NeoForge: `./gradlew :neoforge:runClient`
+
+**Run Client** (1.21.9):
+- Fabric: `./gradlew :fabric:runClient -Ptarget_mc_version=1.21.9`
+- NeoForge: `./gradlew :neoforge:runClient -Ptarget_mc_version=1.21.9`
 
 **Run Client** (1.21.8):
 - Fabric: `./gradlew :fabric:runClient -Ptarget_mc_version=1.21.8`
