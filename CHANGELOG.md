@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-02-06
+
 ### Added
 
 - Minecraft 1.21.11 support (Fabric + NeoForge)
@@ -57,6 +59,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Structure generation state persistence using SavedData to prevent regeneration
 - One-time generation per world with per-player tracking
 
-[Unreleased]: https://github.com/ksoichiro/BeginnersDelight/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/ksoichiro/BeginnersDelight/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/ksoichiro/BeginnersDelight/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/ksoichiro/BeginnersDelight/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/ksoichiro/BeginnersDelight/releases/tag/v0.1.0
