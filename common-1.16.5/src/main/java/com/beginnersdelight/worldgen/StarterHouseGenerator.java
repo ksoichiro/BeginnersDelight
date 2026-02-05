@@ -213,7 +213,8 @@ public class StarterHouseGenerator {
             }
             if (state.is(BlockTags.LEAVES) || state.is(BlockTags.LOGS)
                     || state.is(BlockTags.FLOWERS) || state.is(BlockTags.SAPLINGS)
-                    || state.is(Blocks.TALL_GRASS) || state.is(Blocks.GRASS)) {
+                    || state.is(Blocks.TALL_GRASS) || state.is(Blocks.GRASS)
+                    || state.is(Blocks.SNOW)) {
                 continue;
             }
             return y + 1;
@@ -337,6 +338,10 @@ public class StarterHouseGenerator {
                     BlockPos pos = new BlockPos(x, y, z);
                     BlockState existing = level.getBlockState(pos);
                     if (!existing.isAir()) {
+                        // Preserve thin ground covers (snow, moss carpet) in margin area
+                        if (inMargin && isThinGroundCover(existing)) {
+                            continue;
+                        }
                         level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
                     }
                 }
@@ -425,10 +430,11 @@ public class StarterHouseGenerator {
             if (state.isAir() || !state.getFluidState().isEmpty()) {
                 continue;
             }
-            // Skip vegetation
+            // Skip vegetation and thin ground cover
             if (state.is(BlockTags.LEAVES) || state.is(BlockTags.LOGS)
                     || state.is(BlockTags.FLOWERS) || state.is(BlockTags.SAPLINGS)
-                    || state.is(Blocks.TALL_GRASS) || state.is(Blocks.GRASS)) {
+                    || state.is(Blocks.TALL_GRASS) || state.is(Blocks.GRASS)
+                    || state.is(Blocks.SNOW)) {
                 continue;
             }
             counts.merge(state.getBlock(), 1, Integer::sum);
@@ -441,6 +447,9 @@ public class StarterHouseGenerator {
      * in the area that will be modified by structure placement and terrain blending.
      * Uses UPDATE_KNOWN_SHAPE (flag 16) to suppress shape update propagation so that
      * removing one soft block does not cascade-break adjacent soft blocks into items.
+     *
+     * Thin ground covers (snow) are only cleared within the structure footprint
+     * to preserve the natural terrain appearance around the structure.
      */
     private static void clearVegetation(ServerLevel level, BlockPos placePos,
                                          net.minecraft.core.Vec3i structureSize) {
@@ -455,12 +464,26 @@ public class StarterHouseGenerator {
         int minY = placePos.getY();
         int maxY = placePos.getY() + structureSize.getY() + 10;
 
+        // Structure footprint boundaries
+        int strMinX = placePos.getX();
+        int strMaxX = placePos.getX() + structureSize.getX();
+        int strMinZ = placePos.getZ();
+        int strMaxZ = placePos.getZ() + structureSize.getZ();
+
         for (int x = minX; x < maxX; x++) {
             for (int z = minZ; z < maxZ; z++) {
+                boolean inStructure = x >= strMinX && x < strMaxX && z >= strMinZ && z < strMaxZ;
                 for (int y = maxY; y >= minY; y--) {
                     BlockPos pos = new BlockPos(x, y, z);
                     BlockState state = level.getBlockState(pos);
-                    if (!state.isAir() && isVegetation(state)) {
+                    if (state.isAir()) {
+                        continue;
+                    }
+                    // Only clear thin ground covers (snow) inside the structure
+                    boolean shouldClear = inStructure
+                            ? isVegetation(state)
+                            : isVegetationExcludingThinCover(state);
+                    if (shouldClear) {
                         level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2 | 16);
                     }
                 }
@@ -470,11 +493,24 @@ public class StarterHouseGenerator {
 
     // 1.16.5: No BlockTags.REPLACEABLE_BY_TREES — use explicit block/tag checks instead
     private static boolean isVegetation(BlockState state) {
+        return isVegetationExcludingThinCover(state) || state.is(Blocks.SNOW);
+    }
+
+    private static boolean isVegetationExcludingThinCover(BlockState state) {
         return state.is(BlockTags.LEAVES)
                 || state.is(BlockTags.SAPLINGS)
                 || state.is(BlockTags.FLOWERS)
                 || state.is(Blocks.TALL_GRASS)
                 || state.is(Blocks.GRASS);
+    }
+
+    /**
+     * Returns true if the block is a thin ground cover that should be ignored
+     * when determining the ground surface (snow layers, etc.).
+     * These blocks cause structures to appear floating one block above ground.
+     */
+    private static boolean isThinGroundCover(BlockState state) {
+        return state.is(Blocks.SNOW);
     }
 
     /**
