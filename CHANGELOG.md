@@ -9,12 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Minecraft 1.21.6 support (Fabric + NeoForge)
-- Minecraft 1.21.7 support (Fabric + NeoForge)
-- Minecraft 1.21.8 support (Fabric + NeoForge)
 - Minecraft 1.21.11 support (Fabric + NeoForge)
 - Minecraft 1.21.10 support (Fabric + NeoForge)
 - Minecraft 1.21.9 support (Fabric + NeoForge)
+- Minecraft 1.21.8 support (Fabric + NeoForge)
+- Minecraft 1.21.7 support (Fabric + NeoForge)
+- Minecraft 1.21.6 support (Fabric + NeoForge)
+
+### Fixed
+
+- Prevent structures from floating on snow layers by placing foundation beneath snow
+- Preserve surrounding snow blocks during structure placement
+- Prevent item drops during structure placement (vegetation removal)
 
 ## [0.2.0] - 2026-02-02
 
