@@ -31,55 +31,26 @@
 ## Project Structure
 
 ```
-common-shared/        (shared version-agnostic sources, NOT a Gradle subproject)
-common-1.21.11/       (version-specific common module for 1.21.11)
-common-1.21.10/       (version-specific common module for 1.21.10)
-common-1.21.9/        (version-specific common module for 1.21.9)
-common-1.21.8/        (version-specific common module for 1.21.8)
-common-1.21.7/        (version-specific common module for 1.21.7)
-common-1.21.6/        (version-specific common module for 1.21.6)
-common-1.21.5/        (version-specific common module for 1.21.5)
-common-1.21.4/        (version-specific common module for 1.21.4)
-common-1.21.3/        (version-specific common module for 1.21.3)
-common-1.21.1/        (version-specific common module for 1.21.1)
-common-1.20.1/        (version-specific common module for 1.20.1)
-common-1.19.2/        (version-specific common module for 1.19.2)
-common-1.18.2/        (version-specific common module for 1.18.2)
-common-1.17.1/        (version-specific common module for 1.17.1)
-common-1.16.5/        (version-specific common module for 1.16.5)
-fabric-base/          (shared Fabric sources, NOT a Gradle subproject)
-fabric-1.21.11/       (version-specific Fabric subproject)
-fabric-1.21.10/       (version-specific Fabric subproject)
-fabric-1.21.9/        (version-specific Fabric subproject)
-fabric-1.21.8/        (version-specific Fabric subproject)
-fabric-1.21.7/        (version-specific Fabric subproject)
-fabric-1.21.6/        (version-specific Fabric subproject)
-fabric-1.21.5/        (version-specific Fabric subproject)
-fabric-1.21.4/        (version-specific Fabric subproject)
-fabric-1.21.3/        (version-specific Fabric subproject)
-fabric-1.21.1/        (version-specific Fabric subproject)
-fabric-1.20.1/        (version-specific Fabric subproject)
-fabric-1.19.2/        (version-specific Fabric subproject)
-fabric-1.18.2/        (version-specific Fabric subproject)
-fabric-1.17.1/        (version-specific Fabric subproject)
-fabric-1.16.5/        (version-specific Fabric subproject)
-neoforge-base/        (shared NeoForge sources, NOT a Gradle subproject)
-neoforge-1.21.11/     (version-specific NeoForge subproject)
-neoforge-1.21.10/     (version-specific NeoForge subproject)
-neoforge-1.21.9/      (version-specific NeoForge subproject)
-neoforge-1.21.8/      (version-specific NeoForge subproject)
-neoforge-1.21.7/      (version-specific NeoForge subproject)
-neoforge-1.21.6/      (version-specific NeoForge subproject)
-neoforge-1.21.5/      (version-specific NeoForge subproject)
-neoforge-1.21.4/      (version-specific NeoForge subproject)
-neoforge-1.21.3/      (version-specific NeoForge subproject)
-neoforge-1.21.1/      (version-specific NeoForge subproject)
-forge-base/           (shared Forge sources, NOT a Gradle subproject)
-forge-1.20.1/         (version-specific Forge subproject)
-forge-1.19.2/         (version-specific Forge subproject)
-forge-1.18.2/         (version-specific Forge subproject)
-forge-1.17.1/         (version-specific Forge subproject)
-forge-1.16.5/         (version-specific Forge subproject)
+common/
+  shared/             (shared version-agnostic sources, NOT a Gradle subproject)
+  1.21.11/            (version-specific common module)
+  1.21.10/            (version-specific common module)
+  ...                 (1.21.9, 1.21.8, ..., 1.16.5)
+fabric/
+  base/               (shared Fabric sources, NOT a Gradle subproject)
+  1.21.11/            (version-specific Fabric subproject)
+  1.21.10/            (version-specific Fabric subproject)
+  ...                 (1.21.9, 1.21.8, ..., 1.16.5)
+neoforge/
+  base/               (shared NeoForge sources, NOT a Gradle subproject)
+  1.21.11/            (version-specific NeoForge subproject)
+  1.21.10/            (version-specific NeoForge subproject)
+  ...                 (1.21.9, 1.21.8, ..., 1.21.1)
+forge/
+  base/               (shared Forge sources, NOT a Gradle subproject)
+  1.20.1/             (version-specific Forge subproject)
+  1.19.2/             (version-specific Forge subproject)
+  ...                 (1.18.2, 1.17.1, 1.16.5)
 props/                (version-specific properties)
 docs/                 (documentation)
 ```
@@ -183,9 +154,9 @@ docs/                 (documentation)
 - NeoForge subprojects require `loom.platform=neoforge` in their `gradle.properties` — without this, Architectury Loom does not create the `neoForge` dependency configuration
 - Structures use only vanilla blocks to ensure compatibility after mod removal
 - Structure generation state is persisted using `SavedData` to prevent regeneration
-- NBT structure files are placed in `common-{version}/src/main/resources/data/beginnersdelight/structure/`
+- NBT structure files are placed in `common/{version}/src/main/resources/data/beginnersdelight/structure/`
 - **MC 1.17.1 `runClient` limitation (macOS)**: `runClient` does not work for MC 1.17.1 on macOS due to two issues: (1) Forge: LWJGL 3.2.x `glfwSetWindowIcon` crash, and Loom's DLI-based native management prevents overriding; (2) Fabric: Architectury Loom 1.11's `fabric-loom-native-support` requires Java 17+, incompatible with 1.17.1's Java 16 toolchain. Use Prism Launcher for testing 1.17.1 on macOS
-- **Fabric 1.17.1 duplicate loader**: Fabric API 0.46.1+1.17 pulls in a remapped `fabric-loader` 0.13.2 via Loom, conflicting with the direct 0.17.3 dependency. Excluded via `runtimeClasspath { exclude group: 'remapped.net.fabricmc', module: 'fabric-loader-bf9e8a5d' }` in `fabric-1.17.1/build.gradle`
+- **Fabric 1.17.1 duplicate loader**: Fabric API 0.46.1+1.17 pulls in a remapped `fabric-loader` 0.13.2 via Loom, conflicting with the direct 0.17.3 dependency. Excluded via `runtimeClasspath { exclude group: 'remapped.net.fabricmc', module: 'fabric-loader-bf9e8a5d' }` in `fabric/1.17.1/build.gradle`
 - **MC 1.21.3 API differences from 1.21.1**: `LevelHeightAccessor.getMaxBuildHeight()`/`getMinBuildHeight()` removed — use `getHeight()`/`getMinY()` instead. `ServerPlayer.teleportTo(ServerLevel, double, double, double, float, float)` removed — use `teleportTo(ServerLevel, double, double, double, Set<Relative>, float, float, boolean)` with `Set.of()` for absolute coordinates.
 - **MC 1.21.5 API differences from 1.21.4**: `SavedData` now uses Codec-based serialization via `SavedDataType` record instead of `SavedData.Factory` and `save(CompoundTag)`. `CompoundTag` getters (`getBoolean()`, `getInt()`, `getLong()`, etc.) return `Optional<T>` — use `getBooleanOr()`, `getIntOr()` etc. for defaults, or `getCompoundOrEmpty()`/`getListOrEmpty()` for non-null access. `getList(String, int)` simplified to `getList(String)`. `ServerPlayer.getRespawnPosition()` replaced by `getRespawnConfig()`.
 - **NeoForge 1.21.7 `@OnlyIn` limitation**: NeoForge 21.7.3-beta removed the `@OnlyIn` annotation, causing Architectury API (which still uses it) to crash on startup. Pinned to NeoForge 21.7.2-beta with `versionRange="[21.7.0,21.7.3)"` until Architectury API is fixed ([architectury/architectury-api#649](https://github.com/architectury/architectury-api/issues/649)).

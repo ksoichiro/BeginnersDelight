@@ -47,8 +47,8 @@ Key changes:
 
 Tasks:
 1. Create `props/1.19.2.properties`
-2. Create `common-1.19.2/` with version-adapted sources
-3. Create `fabric-1.19.2/` and `forge-1.19.2/`
+2. Create `common/1.19.2/` with version-adapted sources
+3. Create `fabric/1.19.2/` and `forge/1.19.2/`
 4. Add NBT conversion for 1.19.2 DataVersion
 5. Update `settings.gradle` and `multi-version-tasks.gradle`
 6. Build and test
@@ -70,8 +70,8 @@ Key changes:
 
 Tasks:
 1. Create `props/1.18.2.properties`
-2. Create `common-1.18.2/` with version-adapted sources
-3. Create `fabric-1.18.2/` and `forge-1.18.2/`
+2. Create `common/1.18.2/` with version-adapted sources
+3. Create `fabric/1.18.2/` and `forge/1.18.2/`
 4. Add NBT conversion for 1.18.2 DataVersion
 5. Update build configuration
 6. Build and test — pay attention to Y-coordinate handling
@@ -93,8 +93,8 @@ Key changes:
 
 Tasks:
 1. Create `props/1.17.1.properties`
-2. Create `common-1.17.1/` with version-adapted sources
-3. Create `fabric-1.17.1/` and `forge-1.17.1/`
+2. Create `common/1.17.1/` with version-adapted sources
+3. Create `fabric/1.17.1/` and `forge/1.17.1/`
 4. Add NBT conversion for 1.17.1 DataVersion
 5. Update build configuration
 6. Verify Java 16 compatibility (no Java 17 features used)
@@ -118,8 +118,8 @@ Key changes:
 
 Tasks:
 1. Create `props/1.16.5.properties`
-2. Create `common-1.16.5/` with Java 8 compatible sources
-3. Create `fabric-1.16.5/` and `forge-1.16.5/`
+2. Create `common/1.16.5/` with Java 8 compatible sources
+3. Create `fabric/1.16.5/` and `forge/1.16.5/`
 4. Add NBT conversion for 1.16.5 DataVersion
 5. Update build configuration
 6. Refactor any Java 17+ features to Java 8

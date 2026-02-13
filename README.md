@@ -91,12 +91,12 @@ cd BeginnersDelight
 ```
 
 **Output Files** (1.21.11):
-- `fabric-1.21.11/build/libs/beginnersdelight-0.2.0-fabric.jar` - Fabric loader JAR
-- `neoforge-1.21.11/build/libs/beginnersdelight-0.2.0-neoforge.jar` - NeoForge loader JAR
+- `fabric/1.21.11/build/libs/beginnersdelight-0.2.0-fabric.jar` - Fabric loader JAR
+- `neoforge/1.21.11/build/libs/beginnersdelight-0.2.0-neoforge.jar` - NeoForge loader JAR
 
 **Output Files** (1.20.1):
-- `fabric-1.20.1/build/libs/beginnersdelight-0.2.0-fabric.jar` - Fabric loader JAR
-- `forge-1.20.1/build/libs/beginnersdelight-0.2.0-forge.jar` - Forge loader JAR
+- `fabric/1.20.1/build/libs/beginnersdelight-0.2.0-fabric.jar` - Fabric loader JAR
+- `forge/1.20.1/build/libs/beginnersdelight-0.2.0-forge.jar` - Forge loader JAR
 
 ## Development Setup
 
@@ -463,69 +463,26 @@ cd BeginnersDelight
 
 ```
 BeginnersDelight/
-├── common-shared/           # Shared version-agnostic sources (included via srcDir)
-├── common-1.21.11/          # Common module for MC 1.21.11
-├── common-1.21.10/          # Common module for MC 1.21.10
-├── common-1.21.9/           # Common module for MC 1.21.9
-├── common-1.21.8/           # Common module for MC 1.21.8
-├── common-1.21.7/           # Common module for MC 1.21.7
-│   └── src/main/
-│       ├── java/com/beginnersdelight/
-│       │   ├── BeginnersDelight.java    # Common entry point
-│       │   ├── worldgen/                # Structure generation logic
-│       │   └── registry/                # Registry management
-│       └── resources/
-│           └── data/beginnersdelight/   # Structures, loot tables
-├── common-1.21.6/           # Common module for MC 1.21.6
-├── common-1.21.5/           # Common module for MC 1.21.5
-│   └── src/main/
-│       ├── java/com/beginnersdelight/
-│       │   ├── BeginnersDelight.java    # Common entry point
-│       │   ├── worldgen/                # Structure generation logic
-│       │   └── registry/                # Registry management
-│       └── resources/
-│           └── data/beginnersdelight/   # Structures, loot tables
-├── common-1.21.4/           # Common module for MC 1.21.4
-├── common-1.21.3/           # Common module for MC 1.21.3
-├── common-1.21.1/           # Common module for MC 1.21.1
-├── common-1.20.1/           # Common module for MC 1.20.1
-├── common-1.19.2/           # Common module for MC 1.19.2
-├── common-1.18.2/           # Common module for MC 1.18.2
-├── common-1.17.1/           # Common module for MC 1.17.1
-├── common-1.16.5/           # Common module for MC 1.16.5
-├── fabric-base/             # Shared Fabric sources
-├── fabric-1.21.11/          # Fabric subproject for MC 1.21.11
-├── fabric-1.21.10/          # Fabric subproject for MC 1.21.10
-├── fabric-1.21.9/           # Fabric subproject for MC 1.21.9
-├── fabric-1.21.8/           # Fabric subproject for MC 1.21.8
-├── fabric-1.21.7/           # Fabric subproject for MC 1.21.7
-├── fabric-1.21.6/           # Fabric subproject for MC 1.21.6
-├── fabric-1.21.5/           # Fabric subproject for MC 1.21.5
-├── fabric-1.21.4/           # Fabric subproject for MC 1.21.4
-├── fabric-1.21.3/           # Fabric subproject for MC 1.21.3
-├── fabric-1.21.1/           # Fabric subproject for MC 1.21.1
-├── fabric-1.20.1/           # Fabric subproject for MC 1.20.1
-├── fabric-1.19.2/           # Fabric subproject for MC 1.19.2
-├── fabric-1.18.2/           # Fabric subproject for MC 1.18.2
-├── fabric-1.17.1/           # Fabric subproject for MC 1.17.1
-├── fabric-1.16.5/           # Fabric subproject for MC 1.16.5
-├── neoforge-base/           # Shared NeoForge sources
-├── neoforge-1.21.11/        # NeoForge subproject for MC 1.21.11
-├── neoforge-1.21.10/        # NeoForge subproject for MC 1.21.10
-├── neoforge-1.21.9/         # NeoForge subproject for MC 1.21.9
-├── neoforge-1.21.8/         # NeoForge subproject for MC 1.21.8
-├── neoforge-1.21.7/         # NeoForge subproject for MC 1.21.7
-├── neoforge-1.21.6/         # NeoForge subproject for MC 1.21.6
-├── neoforge-1.21.5/         # NeoForge subproject for MC 1.21.5
-├── neoforge-1.21.4/         # NeoForge subproject for MC 1.21.4
-├── neoforge-1.21.3/         # NeoForge subproject for MC 1.21.3
-├── neoforge-1.21.1/         # NeoForge subproject for MC 1.21.1
-├── forge-base/              # Shared Forge sources
-├── forge-1.20.1/            # Forge subproject for MC 1.20.1
-├── forge-1.19.2/            # Forge subproject for MC 1.19.2
-├── forge-1.18.2/            # Forge subproject for MC 1.18.2
-├── forge-1.17.1/            # Forge subproject for MC 1.17.1
-├── forge-1.16.5/            # Forge subproject for MC 1.16.5
+├── common/
+│   ├── shared/              # Shared version-agnostic sources (included via srcDir)
+│   ├── 1.21.11/             # Common module for MC 1.21.11
+│   │   └── src/main/
+│   │       ├── java/com/beginnersdelight/
+│   │       │   ├── BeginnersDelight.java    # Common entry point
+│   │       │   ├── worldgen/                # Structure generation logic
+│   │       │   └── registry/                # Registry management
+│   │       └── resources/
+│   │           └── data/beginnersdelight/   # Structures, loot tables
+│   ├── 1.21.10/ ... 1.16.5/ # Version-specific common modules
+├── fabric/
+│   ├── base/                # Shared Fabric sources
+│   ├── 1.21.11/ ... 1.16.5/ # Version-specific Fabric subprojects
+├── neoforge/
+│   ├── base/                # Shared NeoForge sources
+│   ├── 1.21.11/ ... 1.21.1/ # Version-specific NeoForge subprojects
+├── forge/
+│   ├── base/                # Shared Forge sources
+│   ├── 1.20.1/ ... 1.16.5/ # Version-specific Forge subprojects
 ├── props/                   # Version-specific properties
 ├── build.gradle             # Root build configuration (Groovy DSL)
 ├── settings.gradle          # Multi-module settings
@@ -537,7 +494,7 @@ BeginnersDelight/
 - **Build DSL**: Groovy DSL (for Architectury Loom compatibility)
 - **Mappings**: Mojang mappings (official Minecraft class names)
 - **Shadow Plugin**: Bundles common module into loader-specific JARs
-- **Structure Files**: NBT format, placed in `common-1.21.11/src/main/resources/data/beginnersdelight/structure/`
+- **Structure Files**: NBT format, placed in `common/1.21.11/src/main/resources/data/beginnersdelight/structure/`
 - **Persistence**: Uses `SavedData` to prevent structure regeneration across server restarts
 
 ## License

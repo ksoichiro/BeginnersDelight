@@ -31,12 +31,12 @@ Create directories and `build.gradle` for each:
 
 | Directory | Role | Gradle Subproject |
 |---|---|---|
-| `common-shared` | Loader/version-independent common code | No (included as srcDirs) |
-| `common-1.21.1` | Common code for MC 1.21.1 | Yes |
-| `fabric-base` | Fabric code without version dependency | Yes |
-| `fabric-1.21.1` | Fabric + MC 1.21.1 code | Yes (depends on fabric-base) |
-| `neoforge-base` | NeoForge code without version dependency | Yes |
-| `neoforge-1.21.1` | NeoForge + MC 1.21.1 code | Yes (depends on neoforge-base) |
+| `common/shared` | Loader/version-independent common code | No (included as srcDirs) |
+| `common/1.21.1` | Common code for MC 1.21.1 | Yes |
+| `fabric/base` | Fabric code without version dependency | Yes |
+| `fabric/1.21.1` | Fabric + MC 1.21.1 code | Yes (depends on fabric/base) |
+| `neoforge/base` | NeoForge code without version dependency | Yes |
+| `neoforge/1.21.1` | NeoForge + MC 1.21.1 code | Yes (depends on neoforge/base) |
 
 ### 1.3 Package Structure
 
@@ -52,8 +52,8 @@ com.beginnersdelight
 
 ### 1.4 Mod Configuration Files
 
-- `fabric-1.21.1/src/main/resources/fabric.mod.json`
-- `neoforge-1.21.1/src/main/resources/META-INF/neoforge.mods.toml`
+- `fabric/1.21.1/src/main/resources/fabric.mod.json`
+- `neoforge/1.21.1/src/main/resources/META-INF/neoforge.mods.toml`
 - Mixin configuration JSONs (added as needed)
 
 ### 1.5 License and Misc
@@ -71,7 +71,7 @@ com.beginnersdelight
 ### 2.1 NBT Structure Files
 
 - Create multiple base structure variants using Structure Blocks in-game, export as NBT files
-- Location: `common-1.21.1/src/main/resources/data/beginnersdelight/structure/`
+- Location: `common/1.21.1/src/main/resources/data/beginnersdelight/structure/`
 - Structure contents (draft):
   - Small wooden shelter (walls, roof, door)
   - 1 bed
@@ -83,7 +83,7 @@ com.beginnersdelight
 ### 2.2 Chest Loot Table
 
 - Define chest contents using loot tables
-- Location: `common-1.21.1/src/main/resources/data/beginnersdelight/loot_table/chests/`
+- Location: `common/1.21.1/src/main/resources/data/beginnersdelight/loot_table/chests/`
 - Candidate items:
   - Food (bread, apples)
   - Wooden tool set
@@ -111,8 +111,8 @@ com.beginnersdelight
 
 ### 3.3 Platform Abstraction
 
-- Implement common event handling in `common-shared`
-- Implement platform-specific event registration in `fabric-base` / `neoforge-base`
+- Implement common event handling in `common/shared`
+- Implement platform-specific event registration in `fabric/base` / `neoforge/base`
 - Use Architectury API event system for cross-platform compatibility
 
 ## Phase 4: Entry Points
