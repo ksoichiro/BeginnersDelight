@@ -28,5 +28,8 @@ logs/
 *.class
 hs_err_pid*
 
+# Installer logs
+*-installer.jar.log
+
 # Architectury
 .architectury-transformer/
