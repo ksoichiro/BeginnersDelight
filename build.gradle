@@ -110,6 +110,9 @@ subprojects {
                 expand 'pack_format': project.ext.pack_format
             }
         }
+
+        // Production run support (runProd)
+        apply from: "${rootDir}/gradle/prod-run.gradle"
     }
 }
 

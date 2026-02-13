@@ -1,0 +1,335 @@
+// Production run support for testing built Mod JARs in a near-production environment.
+// Phase 1: Fabric support only. NeoForge/Forge will be added in Phase 2.
+//
+// Usage:
+//   ./gradlew :fabric:runProd -Ptarget_mc_version=1.21.1
+//   ./gradlew :neoforge:runProd -Ptarget_mc_version=1.21.1  (Phase 2)
+//   ./gradlew :forge:runProd -Ptarget_mc_version=1.20.1     (Phase 2)
+
+import groovy.json.JsonSlurper
+
+// --- Configuration ---
+def prodBaseDir = "${rootDir}/run-prod"
+def prodCacheDir = "${prodBaseDir}/cache"
+def mcVersion = project.ext.minecraft_version
+
+// --- Helper: Download file with caching ---
+// Skips download if file already exists. Delete run-prod/cache/ to force re-download.
+ext.prodDownloadFile = { String url, File dest ->
+    if (dest.exists()) return
+    dest.parentFile.mkdirs()
+    logger.lifecycle("  Downloading: ${dest.name}")
+    ant.get(src: url, dest: dest, verbose: false)
+}
+
+// --- Helper: Get current OS name for Mojang manifest rules ---
+ext.prodGetMojangOs = {
+    def osName = System.getProperty('os.name').toLowerCase()
+    if (osName.contains('mac')) return 'osx'
+    if (osName.contains('win')) return 'windows'
+    return 'linux'
+}
+
+// --- Helper: Check if a library passes Mojang OS rules ---
+ext.prodIsLibraryAllowed = { lib ->
+    if (!lib.rules) return true
+    def allowed = false
+    def currentOs = prodGetMojangOs()
+    lib.rules.each { rule ->
+        def osMatch = true
+        if (rule.os) {
+            osMatch = (rule.os.name == currentOs)
+            if (osMatch && rule.os.arch) {
+                osMatch = (rule.os.arch == System.getProperty('os.arch'))
+            }
+        }
+        if (osMatch) {
+            allowed = (rule.action == 'allow')
+        }
+    }
+    return allowed
+}
+
+// --- Helper: Parse and cache Mojang version JSON ---
+ext.prodGetVersionJson = { String version ->
+    def manifestFile = file("${prodCacheDir}/manifest/version_manifest_v2.json")
+    prodDownloadFile('https://piston-meta.mojang.com/mc/game/version_manifest_v2.json', manifestFile)
+
+    def manifest = new JsonSlurper().parse(manifestFile)
+    def versionEntry = manifest.versions.find { it.id == version }
+    if (!versionEntry) {
+        throw new GradleException("Minecraft version ${version} not found in Mojang manifest. " +
+            "Delete ${manifestFile} to refresh.")
+    }
+
+    def versionFile = file("${prodCacheDir}/versions/${version}.json")
+    prodDownloadFile(versionEntry.url, versionFile)
+    return new JsonSlurper().parse(versionFile)
+}
+
+// --- Helper: Collect library files for the current platform ---
+ext.prodGetLibraryFiles = { versionJson ->
+    def librariesDir = file("${prodCacheDir}/libraries")
+    def files = []
+    versionJson.libraries.each { lib ->
+        if (!prodIsLibraryAllowed(lib)) return
+        if (lib.downloads?.artifact) {
+            def f = file("${librariesDir}/${lib.downloads.artifact.path}")
+            if (f.exists()) files.add(f)
+        }
+    }
+    return files
+}
+
+// --- Helper: Convert Maven coordinate to relative JAR path ---
+// e.g. "org.ow2.asm:asm:9.9" -> "org/ow2/asm/asm/9.9/asm-9.9.jar"
+ext.prodMavenCoordToPath = { String coord ->
+    def parts = coord.split(':')
+    def group = parts[0]
+    def artifact = parts[1]
+    def version = parts[2]
+    return "${group.replace('.', '/')}/${artifact}/${version}/${artifact}-${version}.jar"
+}
+
+// --- Helper: Fetch and cache Fabric Loader profile from Meta API ---
+ext.prodGetFabricProfile = { String gameVersion, String loaderVersion ->
+    def profileFile = file("${prodCacheDir}/fabric-profile/${gameVersion}-${loaderVersion}.json")
+    prodDownloadFile(
+        "https://meta.fabricmc.net/v2/versions/loader/${gameVersion}/${loaderVersion}/profile/json",
+        profileFile
+    )
+    return new JsonSlurper().parse(profileFile)
+}
+
+// ============================================================
+// Task: downloadMinecraft
+// Downloads vanilla client JAR, libraries, and assets.
+// All files are cached in run-prod/cache/.
+// ============================================================
+tasks.register('downloadMinecraft') {
+    group = 'beginners delight prod'
+    description = "Download vanilla Minecraft client, libraries, and assets for ${mcVersion}"
+
+    doLast {
+        def versionJson = prodGetVersionJson(mcVersion)
+
+        // 1. Client JAR
+        logger.lifecycle("=== Client JAR ===")
+        def clientJar = file("${prodCacheDir}/client/${mcVersion}.jar")
+        prodDownloadFile(versionJson.downloads.client.url, clientJar)
+        if (clientJar.exists()) {
+            logger.lifecycle("  OK: ${clientJar.name}")
+        }
+
+        // 2. Libraries (filtered by OS rules)
+        logger.lifecycle("=== Libraries ===")
+        def librariesDir = file("${prodCacheDir}/libraries")
+        def libCount = 0
+        versionJson.libraries.each { lib ->
+            if (!prodIsLibraryAllowed(lib)) return
+
+            if (lib.downloads?.artifact) {
+                def dest = file("${librariesDir}/${lib.downloads.artifact.path}")
+                prodDownloadFile(lib.downloads.artifact.url, dest)
+                libCount++
+            }
+
+            // Native classifier JARs (for MC 1.18.2 and earlier)
+            if (lib.natives) {
+                def currentOs = prodGetMojangOs()
+                def nativeClassifier = lib.natives[currentOs]
+                if (nativeClassifier) {
+                    // Replace ${arch} placeholder used in some Windows native classifiers
+                    nativeClassifier = nativeClassifier.replace('${arch}',
+                        System.getProperty('os.arch') == 'aarch64' ? 'arm64' : '64')
+                    def nativeArtifact = lib.downloads?.classifiers?.get(nativeClassifier)
+                    if (nativeArtifact) {
+                        def dest = file("${librariesDir}/${nativeArtifact.path}")
+                        prodDownloadFile(nativeArtifact.url, dest)
+                    }
+                }
+            }
+        }
+        logger.lifecycle("  ${libCount} libraries ready")
+
+        // 3. Assets (index + objects, shared across MC versions with same asset index)
+        logger.lifecycle("=== Assets ===")
+        def assetsDir = file("${prodCacheDir}/assets")
+        def assetIndex = versionJson.assetIndex
+        def indexFile = file("${assetsDir}/indexes/${assetIndex.id}.json")
+        prodDownloadFile(assetIndex.url, indexFile)
+
+        def objects = new JsonSlurper().parse(indexFile).objects
+        def total = objects.size()
+        def downloaded = 0
+        def skipped = 0
+        objects.each { name, obj ->
+            def hash = obj.hash
+            def prefix = hash.substring(0, 2)
+            def dest = file("${assetsDir}/objects/${prefix}/${hash}")
+            if (dest.exists()) {
+                skipped++
+            } else {
+                prodDownloadFile("https://resources.download.minecraft.net/${prefix}/${hash}", dest)
+                downloaded++
+            }
+            if ((downloaded + skipped) % 500 == 0) {
+                logger.lifecycle("  Assets: ${downloaded + skipped}/${total}")
+            }
+        }
+        logger.lifecycle("  Assets complete: ${total} total (${downloaded} downloaded, ${skipped} cached)")
+    }
+}
+
+// ============================================================
+// Fabric-specific tasks
+// ============================================================
+if (project.name == 'fabric') {
+    configurations {
+        prodMods {
+            canBeResolved = true
+            canBeConsumed = false
+            transitive = false
+        }
+    }
+
+    // Architectury API uses different Maven group for MC 1.16.5
+    def archApiGroup = mcVersion == '1.16.5' ? 'me.shedaniel' : 'dev.architectury'
+
+    dependencies {
+        prodMods "net.fabricmc.fabric-api:fabric-api:${project.ext.fabric_api_version}"
+        prodMods "${archApiGroup}:architectury-fabric:${project.ext.architectury_api_version}"
+    }
+
+    // --- Task: downloadFabricLoader ---
+    // Downloads Fabric Loader and its dependencies (ASM, Mixin, intermediary)
+    // using the Fabric Meta API profile.
+    tasks.register('downloadFabricLoader') {
+        group = 'beginners delight prod'
+        description = "Download Fabric Loader and dependencies for ${mcVersion}"
+
+        doLast {
+            logger.lifecycle("=== Fabric Loader ===")
+            def profile = prodGetFabricProfile(mcVersion, project.ext.fabric_loader_version)
+            def fabricLibsDir = file("${prodCacheDir}/fabric-loader-libs")
+
+            profile.libraries.each { lib ->
+                def path = prodMavenCoordToPath(lib.name)
+                def baseUrl = lib.url ?: 'https://libraries.minecraft.net/'
+                // Ensure base URL ends with /
+                if (!baseUrl.endsWith('/')) baseUrl += '/'
+                def dest = file("${fabricLibsDir}/${path}")
+                prodDownloadFile("${baseUrl}${path}", dest)
+            }
+            logger.lifecycle("  ${profile.libraries.size()} Fabric libraries ready")
+        }
+    }
+
+    // --- Task: setupProdMods ---
+    // Copies built mod JAR and dependency mods to the instance mods/ directory.
+    tasks.register('setupProdMods') {
+        group = 'beginners delight prod'
+        description = "Copy built mod JAR and dependencies to mods/ for Fabric ${mcVersion}"
+        dependsOn 'remapJar'
+
+        doLast {
+            def modsDir = file("${prodBaseDir}/instances/fabric-${mcVersion}/mods")
+            if (modsDir.exists()) modsDir.deleteDir()
+            modsDir.mkdirs()
+
+            // Built mod JAR
+            def modJar = tasks.named('remapJar').get().archiveFile.get().asFile
+            ant.copy(file: modJar, todir: modsDir)
+            logger.lifecycle("  Mod: ${modJar.name}")
+
+            // Dependency mods (Fabric API, Architectury API)
+            configurations.prodMods.files.each { f ->
+                ant.copy(file: f, todir: modsDir)
+                logger.lifecycle("  Dep: ${f.name}")
+            }
+        }
+    }
+
+    // --- Task: runProd ---
+    // Launches Minecraft with built mod in a production-like environment.
+    tasks.register('runProd', JavaExec) {
+        group = 'beginners delight prod'
+        description = "Launch Minecraft in production-like environment (Fabric ${mcVersion})"
+        dependsOn 'downloadMinecraft', 'downloadFabricLoader', 'setupProdMods'
+
+        doFirst {
+            def versionJson = prodGetVersionJson(mcVersion)
+            def profile = prodGetFabricProfile(mcVersion, project.ext.fabric_loader_version)
+            def instanceDir = file("${prodBaseDir}/instances/fabric-${mcVersion}")
+            instanceDir.mkdirs()
+
+            // Build classpath
+            def cp = []
+
+            // Fabric Loader and its dependencies (ASM, Mixin, intermediary)
+            def fabricLibsDir = file("${prodCacheDir}/fabric-loader-libs")
+            profile.libraries.each { lib ->
+                def path = prodMavenCoordToPath(lib.name)
+                def f = file("${fabricLibsDir}/${path}")
+                if (f.exists()) cp.add(f)
+            }
+
+            // Vanilla client JAR
+            cp.add(file("${prodCacheDir}/client/${mcVersion}.jar"))
+
+            // Vanilla MC libraries (filtered by OS rules)
+            cp.addAll(prodGetLibraryFiles(versionJson))
+
+            classpath = files(cp)
+            mainClass.set(profile.mainClass)
+
+            // Game arguments
+            args '--gameDir', instanceDir.absolutePath
+            args '--assetsDir', file("${prodCacheDir}/assets").absolutePath
+            args '--assetIndex', versionJson.assetIndex.id
+            args '--version', mcVersion
+            args '--username', 'Dev'
+            args '--accessToken', '0'
+
+            // JVM arguments
+            jvmArgs '-Xmx2G', '-Xms512M'
+
+            // macOS requires -XstartOnFirstThread for LWJGL/OpenGL
+            if (prodGetMojangOs() == 'osx') {
+                jvmArgs '-XstartOnFirstThread'
+            }
+
+            workingDir = instanceDir
+
+            logger.lifecycle("=== runProd (Fabric ${mcVersion}) ===")
+            logger.lifecycle("  Game dir: ${instanceDir}")
+            logger.lifecycle("  Classpath entries: ${cp.size()}")
+        }
+    }
+}
+
+// ============================================================
+// NeoForge placeholder (Phase 2)
+// ============================================================
+if (project.name == 'neoforge') {
+    tasks.register('runProd') {
+        group = 'beginners delight prod'
+        description = "Launch Minecraft in production-like environment (NeoForge ${mcVersion}) [NOT YET IMPLEMENTED]"
+        doLast {
+            throw new GradleException("NeoForge runProd is not yet implemented (Phase 2)")
+        }
+    }
+}
+
+// ============================================================
+// Forge placeholder (Phase 2)
+// ============================================================
+if (project.name == 'forge') {
+    tasks.register('runProd') {
+        group = 'beginners delight prod'
+        description = "Launch Minecraft in production-like environment (Forge ${mcVersion}) [NOT YET IMPLEMENTED]"
+        doLast {
+            throw new GradleException("Forge runProd is not yet implemented (Phase 2)")
+        }
+    }
+}

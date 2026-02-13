@@ -21,6 +21,7 @@ Thumbs.db
 # Minecraft run directories
 run/
 runs/
+run-prod/
 logs/
 
 # Java
