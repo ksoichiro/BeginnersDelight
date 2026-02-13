@@ -324,9 +324,6 @@ public class StarterHouseGenerator {
      * in the area that will be modified by structure placement and terrain blending.
      * Uses UPDATE_KNOWN_SHAPE (flag 16) to suppress shape update propagation so that
      * removing one soft block does not cascade-break adjacent soft blocks into items.
-     *
-     * Thin ground covers (snow, moss carpet, etc.) are only cleared within the
-     * structure footprint to preserve the natural terrain appearance around the structure.
      */
     private static void clearVegetation(ServerLevel level, BlockPos placePos,
                                          net.minecraft.core.Vec3i structureSize) {
@@ -341,26 +338,15 @@ public class StarterHouseGenerator {
         int minY = placePos.getY();
         int maxY = placePos.getY() + structureSize.getY() + 10;
 
-        // Structure footprint boundaries
-        int strMinX = placePos.getX();
-        int strMaxX = placePos.getX() + structureSize.getX();
-        int strMinZ = placePos.getZ();
-        int strMaxZ = placePos.getZ() + structureSize.getZ();
-
         for (int x = minX; x < maxX; x++) {
             for (int z = minZ; z < maxZ; z++) {
-                boolean inStructure = x >= strMinX && x < strMaxX && z >= strMinZ && z < strMaxZ;
                 for (int y = maxY; y >= minY; y--) {
                     BlockPos pos = new BlockPos(x, y, z);
                     BlockState state = level.getBlockState(pos);
                     if (state.isAir()) {
                         continue;
                     }
-                    // Only clear thin ground covers inside the structure
-                    boolean shouldClear = inStructure
-                            ? isVegetation(state)
-                            : isVegetationExcludingThinCover(state);
-                    if (shouldClear) {
+                    if (isVegetation(state)) {
                         level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2 | 16);
                     }
                 }
@@ -375,6 +361,7 @@ public class StarterHouseGenerator {
     private static boolean isVegetationExcludingThinCover(BlockState state) {
         return state.is(BlockTags.REPLACEABLE_BY_TREES)
                 || state.is(BlockTags.LEAVES)
+                || state.is(BlockTags.LOGS)
                 || state.is(BlockTags.SAPLINGS)
                 || state.is(BlockTags.FLOWERS);
     }
