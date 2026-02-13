@@ -176,6 +176,128 @@ ext.prodSubstitutePlaceholders = { String str, Map<String, String> placeholders 
     return result
 }
 
+// --- Helper: Extract native libraries from classifier JARs ---
+// For MC versions using the old natives system (pre-1.19), extracts platform-specific
+// native libraries (.dylib, .dll, .so) from classifier JARs to the specified directory.
+// On macOS ARM64, LWJGL < 3.3.1 doesn't ship ARM64 natives, so this helper
+// downloads LWJGL 3.3.1 ARM64 natives from Maven Central as a replacement.
+ext.prodExtractNatives = { versionJson, File nativesDir ->
+    def librariesDir = file("${prodCacheDir}/libraries")
+    def currentOs = prodGetMojangOs()
+    def isArm64Mac = (currentOs == 'osx' && System.getProperty('os.arch') == 'aarch64')
+    def lwjglArm64Modules = [] as Set
+
+    versionJson.libraries.each { lib ->
+        if (!prodIsLibraryAllowed(lib)) return
+        if (!lib.natives) return
+
+        def nativeClassifier = lib.natives[currentOs]
+        if (!nativeClassifier) return
+
+        nativeClassifier = nativeClassifier.replace('${arch}',
+            System.getProperty('os.arch') == 'aarch64' ? 'arm64' : '64')
+
+        def nativeArtifact = lib.downloads?.classifiers?.get(nativeClassifier)
+        if (!nativeArtifact) return
+
+        // On ARM64 Mac, collect old LWJGL modules for later ARM64 native patching
+        if (isArm64Mac && lib.name?.startsWith('org.lwjgl')) {
+            def parts = lib.name.split(':')
+            if (parts.length >= 3) {
+                def version = parts[2]
+                if (version.startsWith('3.2.') || version == '3.3.0') {
+                    lwjglArm64Modules.add(parts[1])
+                    return // Skip extracting x86_64 natives; ARM64 patch below will handle it
+                }
+            }
+        }
+
+        def nativeJar = new File(librariesDir, nativeArtifact.path)
+        if (!nativeJar.exists()) return
+
+        def excludePatterns = lib.extract?.exclude ?: []
+
+        ant.unzip(src: nativeJar, dest: nativesDir) {
+            patternset {
+                excludePatterns.each { p ->
+                    exclude(name: "${p}**")
+                }
+            }
+        }
+    }
+
+    // Download and extract LWJGL 3.3.1 ARM64 natives for old MC versions on Apple Silicon
+    if (!lwjglArm64Modules.isEmpty()) {
+        def lwjglArm64Version = '3.3.1'
+        def arm64CacheDir = file("${prodCacheDir}/lwjgl-arm64")
+
+        lwjglArm64Modules.each { module ->
+            def path = "org/lwjgl/${module}/${lwjglArm64Version}/${module}-${lwjglArm64Version}-natives-macos-arm64.jar"
+            def dest = new File(arm64CacheDir, path)
+            prodDownloadFile("https://repo1.maven.org/maven2/${path}", dest)
+
+            if (dest.exists()) {
+                // Extract to temp dir, then flatten .dylib files to natives root.
+                // LWJGL 3.3.1 JARs use nested paths (macos/arm64/org/lwjgl/...)
+                // but LWJGL 3.2.x expects flat .dylib files in java.library.path.
+                def tempDir = new File(nativesDir, '.arm64-extract-tmp')
+                ant.unzip(src: dest, dest: tempDir) {
+                    patternset {
+                        exclude(name: 'META-INF/**')
+                    }
+                }
+                tempDir.eachFileRecurse(groovy.io.FileType.FILES) { f ->
+                    if (f.name.endsWith('.dylib')) {
+                        ant.copy(file: f, todir: nativesDir, overwrite: true)
+                    }
+                }
+                ant.delete(dir: tempDir)
+            }
+        }
+        logger.lifecycle("  Patched ${lwjglArm64Modules.size()} LWJGL modules with ARM64 natives")
+    }
+}
+
+// --- Helper: Replace LWJGL < 3.3.1 JARs with 3.3.1 ARM64 versions on the classpath ---
+// On macOS ARM64, old LWJGL versions lack ARM64 support. This helper replaces both
+// the API JARs and adds native JARs on the classpath so versions match.
+ext.prodPatchLwjglForArm64 = { List<File> classpathFiles ->
+    if (prodGetMojangOs() != 'osx' || System.getProperty('os.arch') != 'aarch64') {
+        return classpathFiles
+    }
+
+    // Detect old LWJGL API JARs (e.g., lwjgl-3.2.1.jar, lwjgl-glfw-3.2.1.jar)
+    def oldLwjglPattern = ~/^(lwjgl(?:-[a-z]+)*)-3\.(?:2\.\d+|3\.0)\.jar$/
+    def modulesToReplace = [] as Set
+    classpathFiles.each { f ->
+        def m = oldLwjglPattern.matcher(f.name)
+        if (m.matches()) {
+            modulesToReplace.add(m.group(1))
+        }
+    }
+
+    if (modulesToReplace.isEmpty()) return classpathFiles
+
+    def lwjglVersion = '3.3.1'
+    def arm64CacheDir = file("${prodCacheDir}/lwjgl-arm64")
+
+    // Filter out all old LWJGL JARs (API + native classifier JARs)
+    def filtered = classpathFiles.findAll { f ->
+        !(f.name.startsWith('lwjgl') && (f.name.contains('-3.2.') || f.name.contains('-3.3.0')))
+    }
+
+    // Add LWJGL 3.3.1 API JARs as replacements
+    modulesToReplace.each { module ->
+        def apiPath = "org/lwjgl/${module}/${lwjglVersion}/${module}-${lwjglVersion}.jar"
+        def apiDest = new File(arm64CacheDir, apiPath)
+        prodDownloadFile("https://repo1.maven.org/maven2/${apiPath}", apiDest)
+        if (apiDest.exists()) filtered.add(apiDest)
+    }
+
+    logger.lifecycle("  Replaced ${modulesToReplace.size()} LWJGL modules with ${lwjglVersion} for ARM64: ${modulesToReplace}")
+    return filtered
+}
+
 // --- Helper: Process arguments list from version JSON ---
 // Evaluates rules, substitutes placeholders, skips -cp/${classpath} (handled by JavaExec).
 ext.prodProcessArguments = { List argsList, Map<String, String> placeholders ->
@@ -401,6 +523,7 @@ if (project.name == 'fabric') {
             // Vanilla MC libraries (filtered by OS rules)
             cp.addAll(prodGetLibraryFiles(versionJson))
 
+            cp = prodPatchLwjglForArm64(cp)
             classpath = files(cp)
             mainClass.set(profile.mainClass)
 
@@ -419,6 +542,12 @@ if (project.name == 'fabric') {
             if (prodGetMojangOs() == 'osx') {
                 jvmArgs '-XstartOnFirstThread'
             }
+
+            // Extract native libraries for old MC versions (pre-1.19)
+            def nativesDir = new File(instanceDir, "natives")
+            nativesDir.mkdirs()
+            prodExtractNatives(versionJson, nativesDir)
+            jvmArgs "-Djava.library.path=${nativesDir.absolutePath}"
 
             workingDir = instanceDir
 
@@ -559,12 +688,14 @@ if (project.name == 'neoforge') {
             instanceDir.mkdirs()
             def nativesDir = new File(instanceDir, "natives")
             nativesDir.mkdirs()
+            prodExtractNatives(vanillaJson, nativesDir)
             def librariesDir = new File(neoforgeInstallDir, "libraries")
 
             // Build classpath from installer libraries only.
             // Do NOT add vanilla client JAR — NeoForge uses its own processed client
             // module via the -p (module path) JVM arguments from the version JSON.
             def cp = prodGetInstallerLibraryFiles(mergedJson, neoforgeInstallDir)
+            cp = prodPatchLwjglForArm64(cp)
             classpath = files(cp)
 
             mainClass.set(mergedJson.mainClass)
@@ -740,12 +871,14 @@ if (project.name == 'forge') {
             instanceDir.mkdirs()
             def nativesDir = new File(instanceDir, "natives")
             nativesDir.mkdirs()
+            prodExtractNatives(vanillaJson, nativesDir)
             def librariesDir = new File(forgeInstallDir, "libraries")
 
             // Build classpath from installer libraries only.
             // Do NOT add vanilla client JAR — Forge uses its own processed client
             // module via the -p (module path) JVM arguments from the version JSON.
             def cp = prodGetInstallerLibraryFiles(mergedJson, forgeInstallDir)
+            cp = prodPatchLwjglForArm64(cp)
             classpath = files(cp)
 
             mainClass.set(mergedJson.mainClass)
