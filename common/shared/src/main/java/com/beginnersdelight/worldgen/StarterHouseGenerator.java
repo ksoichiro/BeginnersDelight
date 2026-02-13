@@ -20,6 +20,7 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
 
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity;
@@ -109,6 +110,10 @@ public class StarterHouseGenerator {
         }
 
         BeginnersDelight.LOGGER.info("Placing structure '{}' at {}", variant, placePos);
+
+        // Remove mobs from the area to prevent them from being trapped
+        // inside blocks during structure placement
+        removeMobs(level, placePos, template.getSize());
 
         // Pre-clear vegetation and ground-cover blocks to prevent them from dropping
         // items when their supporting blocks are removed during terrain modification.
@@ -533,6 +538,27 @@ public class StarterHouseGenerator {
                 || blockName.equals("pink_petals")
                 || blockName.equals("pale_moss_carpet")
                 || blockName.endsWith("_carpet");  // All carpet variants
+    }
+
+    /**
+     * Removes mobs (animals, monsters, etc.) from the structure area before
+     * placement to prevent them from being trapped inside blocks.
+     * Uses discard() to remove silently without drops or death effects.
+     */
+    private static void removeMobs(ServerLevel level, BlockPos placePos,
+                                    net.minecraft.core.Vec3i structureSize) {
+        int margin = 2;
+        int blendRadius = 3;
+        int extend = margin + blendRadius + 1;
+        AABB area = new AABB(
+                placePos.getX() - extend, placePos.getY() - 10, placePos.getZ() - extend,
+                placePos.getX() + structureSize.getX() + extend,
+                placePos.getY() + structureSize.getY() + 10,
+                placePos.getZ() + structureSize.getZ() + extend);
+        List<Mob> mobs = level.getEntitiesOfClass(Mob.class, area);
+        for (Mob mob : mobs) {
+            mob.discard();
+        }
     }
 
     /**
