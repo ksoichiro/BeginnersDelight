@@ -33,7 +33,6 @@ Modding ecosystem reference: [MineNest CurseForge analysis](https://www.minenest
 
 - **Loaders**: Fabric + Forge
 - **Java**: 17
-- **Architectury API**: 6.6.x
 - **Fabric API**: 0.76.x+1.19.2
 - **Forge**: 43.4.x
 - **Pack format**: 9
@@ -43,7 +42,7 @@ Key changes:
 - Structure path: `data/<namespace>/structures/` (plural, same as 1.20.1)
 - `SavedData` API compatible with 1.20.1
 - NBT DataVersion downgrade needed
-- Architectury event API signatures may differ
+- Platform event API signatures may differ
 
 Tasks:
 1. Create `props/1.19.2.properties`
@@ -57,7 +56,6 @@ Tasks:
 
 - **Loaders**: Fabric + Forge
 - **Java**: 17
-- **Architectury API**: 4.11.x
 - **Fabric API**: 0.76.x+1.18.2
 - **Forge**: 40.2.x
 - **Pack format**: 8
@@ -80,7 +78,6 @@ Tasks:
 
 - **Loaders**: Fabric + Forge
 - **Java**: 16
-- **Architectury API**: 2.8.x
 - **Fabric API**: 0.46.x+1.17
 - **Forge**: 37.1.x
 - **Pack format**: 7
@@ -88,7 +85,7 @@ Tasks:
 Key changes:
 - Java 16 (not 17) — minor syntax adjustments may be needed
 - World height still Y=0..256 (pre-1.18 expansion)
-- Architectury API v2 — event API may have different class names/signatures
+- Forge event API may have different class names/signatures
 - `SavedData` API exists but may have different method names
 
 Tasks:
@@ -104,7 +101,6 @@ Tasks:
 
 - **Loaders**: Fabric + Forge
 - **Java**: 8
-- **Architectury API**: 1.32.x (originally called "Architectury")
 - **Fabric API**: 0.42.x+1.16
 - **Forge**: 36.2.x
 - **Pack format**: 6
@@ -113,7 +109,7 @@ Key changes:
 - Java 8 — significant syntax restrictions (no records, no sealed classes, no text blocks, etc.)
 - `StructureTemplate` class may be named differently (older Mojang mappings)
 - `SavedData` API differences — method signatures likely differ
-- Architectury API v1 — oldest supported version, API surface may be limited
+- Forge event API v1 — oldest supported version, API surface may be limited
 - NBT format differences may be larger
 
 Tasks:
@@ -162,5 +158,5 @@ Each backport requires:
 |-------|------|------------|
 | 1 (1.19.2) | Low | APIs very similar to 1.20.1 |
 | 2 (1.18.2) | Low | Main concern is world height, but dynamic scan handles it |
-| 3 (1.17.1) | Medium | Architectury v2 API differences, Java 16 |
-| 4 (1.16.5) | Medium-High | Java 8, Architectury v1, potential mapping differences |
+| 3 (1.17.1) | Medium | Forge event API differences, Java 16 |
+| 4 (1.16.5) | Medium-High | Java 8, oldest Forge event API, potential mapping differences |

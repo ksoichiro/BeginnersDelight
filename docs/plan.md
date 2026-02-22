@@ -2,7 +2,7 @@
 
 ## Overview
 
-A Minecraft mod that generates a small base structure at the world spawn point to help beginners proceed safely through early-game adventures. Uses Architectury for Fabric/NeoForge cross-platform support. Initial target: Minecraft 1.21.1.
+A Minecraft mod that generates a small base structure at the world spawn point to help beginners proceed safely through early-game adventures. Uses Architectury Loom for Fabric/NeoForge cross-platform build support. Initial target: Minecraft 1.21.1.
 
 - Mod ID: `beginnersdelight`
 - Package: `com.beginnersdelight`
@@ -104,7 +104,7 @@ com.beginnersdelight
 ### 3.2 Multiplayer Support
 
 - Trigger generation check on server start (world load)
-  - Use Architectury `LifecycleEvent.SERVER_STARTING` or equivalent
+  - Use platform-specific events (Fabric API / NeoForge event bus)
 - Fix the spawn point
   - Set the world spawn point near the structure entrance
   - All subsequent players spawn at the same location
@@ -113,7 +113,7 @@ com.beginnersdelight
 
 - Implement common event handling in `common/shared`
 - Implement platform-specific event registration in `fabric/base` / `neoforge/base`
-- Use Architectury API event system for cross-platform compatibility
+- Use platform-native event systems (Fabric API, NeoForge/Forge event bus)
 
 ## Phase 4: Entry Points
 
@@ -162,7 +162,6 @@ com.beginnersdelight
 | Dependency | Version |
 |---|---|
 | Minecraft | 1.21.1 |
-| Architectury API | 13.0.8 |
 | Fabric Loader | 0.17.3 |
 | Fabric API | 0.116.7+1.21.1 |
 | NeoForge | 21.1.209 |

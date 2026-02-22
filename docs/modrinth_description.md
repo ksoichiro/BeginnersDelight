@@ -48,7 +48,7 @@ The chest in the starter house contains helpful items for early game:
 ## 🛠️ Technical Details
 
 ### Multi-Loader & Multi-Version Support
-This mod is built with **Architectury** and supports **multiple Minecraft versions and mod loaders**!
+This mod supports **multiple Minecraft versions and mod loaders**!
 - **1.21.11**: Fabric and NeoForge
 - **1.21.10**: Fabric and NeoForge
 - **1.21.9**: Fabric and NeoForge
@@ -73,106 +73,76 @@ This mod is built with **Architectury** and supports **multiple Minecraft versio
 - **Mod Loader**:
   - Fabric Loader 0.17.3+ with Fabric API 0.141.3+1.21.11, OR
   - NeoForge 21.11.37-beta+
-- **Dependencies**:
-  - Architectury API 19.0.1+
 
 #### Minecraft 1.21.10
 - **Mod Loader**:
   - Fabric Loader 0.17.3+ with Fabric API 0.138.4+1.21.10, OR
   - NeoForge 21.10.64+
-- **Dependencies**:
-  - Architectury API 18.0.8+
 
 #### Minecraft 1.21.9
 - **Mod Loader**:
   - Fabric Loader 0.17.3+ with Fabric API 0.134.1+1.21.9, OR
   - NeoForge 21.9.16-beta+
-- **Dependencies**:
-  - Architectury API 18.0.5+
 
 #### Minecraft 1.21.8
 - **Mod Loader**:
   - Fabric Loader 0.17.3+ with Fabric API 0.136.1+1.21.8, OR
   - NeoForge 21.8.52+
-- **Dependencies**:
-  - Architectury API 17.0.8+
 
 #### Minecraft 1.21.7
 - **Mod Loader**:
   - Fabric Loader 0.17.3+ with Fabric API 0.129.0+1.21.7, OR
   - NeoForge 21.7.2-beta+
-- **Dependencies**:
-  - Architectury API 17.0.8+
 
 #### Minecraft 1.21.6
 - **Mod Loader**:
   - Fabric Loader 0.17.3+ with Fabric API 0.128.1+1.21.6, OR
   - NeoForge 21.6.20-beta+
-- **Dependencies**:
-  - Architectury API 17.0.6+
 
 #### Minecraft 1.21.5
 - **Mod Loader**:
   - Fabric Loader 0.17.3+ with Fabric API 0.128.1+1.21.5, OR
   - NeoForge 21.5.96+
-- **Dependencies**:
-  - Architectury API 16.1.4+
 
 #### Minecraft 1.21.4
 - **Mod Loader**:
   - Fabric Loader 0.17.3+ with Fabric API 0.119.4+1.21.4, OR
   - NeoForge 21.4.156+
-- **Dependencies**:
-  - Architectury API 15.0.1+
 
 #### Minecraft 1.21.3
 - **Mod Loader**:
   - Fabric Loader 0.17.3+ with Fabric API 0.112.1+1.21.3, OR
   - NeoForge 21.3.95+
-- **Dependencies**:
-  - Architectury API 14.0.4+
 
 #### Minecraft 1.21.1
 - **Mod Loader**:
   - Fabric Loader 0.17.3+ with Fabric API 0.116.7+1.21.1, OR
   - NeoForge 21.1.209+
-- **Dependencies**:
-  - Architectury API 13.0.8+
 
 #### Minecraft 1.20.1
 - **Mod Loader**:
   - Fabric Loader 0.17.3+ with Fabric API 0.92.2+1.20.1, OR
   - Forge 47.4.0+
-- **Dependencies**:
-  - Architectury API 9.2.14+
 
 #### Minecraft 1.19.2
 - **Mod Loader**:
   - Fabric Loader 0.17.3+ with Fabric API 0.77.0+1.19.2, OR
   - Forge 43.4.0+
-- **Dependencies**:
-  - Architectury API 6.6.92+
 
 #### Minecraft 1.18.2
 - **Mod Loader**:
   - Fabric Loader 0.17.3+ with Fabric API 0.76.0+1.18.2, OR
   - Forge 40.2.0+
-- **Dependencies**:
-  - Architectury API 4.12.94+
 
 #### Minecraft 1.17.1
 - **Mod Loader**:
   - Fabric Loader 0.17.3+ with Fabric API 0.46.1+1.17, OR
   - Forge 37.1.1+
-- **Dependencies**:
-  - Architectury API 2.10.12+
 
 #### Minecraft 1.16.5
 - **Mod Loader**:
   - Fabric Loader 0.17.3+ with Fabric API 0.42.0+1.16, OR
   - Forge 36.2.34+
-- **Dependencies**:
-  - Architectury API 1.32.68+
 
 ### Compatibility
 - Works alongside other world generation mods
@@ -198,7 +168,7 @@ Check out the **Gallery** above for screenshots showcasing:
 
 ## 🤝 Credits
 
-- Built with [Architectury](https://github.com/architectury/architectury-api)
+- Built with [Architectury Loom](https://github.com/architectury/architectury-loom)
 
 ---
 

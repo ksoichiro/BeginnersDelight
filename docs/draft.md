@@ -14,7 +14,7 @@
     - Spawn point is fixed so that second and subsequent players spawn at the same location
 
 ## Architecture
-- Minecraft mod using Architectury
+- Minecraft mod using Architectury Loom for cross-platform builds
 - Compatible with both Fabric and NeoForge
 - Initially implemented for Minecraft version 1.21.1
 - Aims to continue working after mod removal

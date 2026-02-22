@@ -18,7 +18,6 @@ Ask the user for the following before starting:
 | Base version | 1.21.8 | Closest existing version to copy from |
 | NeoForge version | 21.9.16-beta | NeoForge version for the new MC version |
 | Fabric API version | 0.134.1+1.21.9 | Fabric API version |
-| Architectury API version | 18.0.5 | Architectury API version |
 | pack_format | 88 | Data pack format number |
 
 Fabric Loader version is typically kept at the existing value (currently 0.17.3).
@@ -31,7 +30,6 @@ Copy from `props/{base_version}.properties` and update:
 - `minecraft_version`
 - `pack_format`
 - `neoforge_version`
-- `architectury_api_version`
 - `fabric_api_version`
 
 ### 2. Create `common-{version}/`
@@ -47,13 +45,13 @@ Copy entire `common-{base_version}/` directory. Files included:
 
 - `build.gradle`: Copy from base, change `commonModule = ':common-{version}'`
 - `gradle.properties`: Empty file (just a newline)
-- `src/main/resources/fabric.mod.json`: Update `minecraft` version constraint (`~{version}`), `architectury` version constraint (`>={arch_version}`)
+- `src/main/resources/fabric.mod.json`: Update `minecraft` version constraint (`~{version}`)
 
 ### 4. Create `neoforge-{version}/`
 
 - `build.gradle`: Copy from base, change `commonModule = ':common-{version}'`
 - `gradle.properties`: Contains only `loom.platform=neoforge`
-- `src/main/resources/META-INF/neoforge.mods.toml`: Update `neoforge` versionRange (`[{neoforge_major}.0,)`), `minecraft` versionRange (`[{version}]`), `architectury` versionRange (`[{arch_version},)`)
+- `src/main/resources/META-INF/neoforge.mods.toml`: Update `neoforge` versionRange (`[{neoforge_major}.0,)`), `minecraft` versionRange (`[{version}]`)
 
 ### 5. Update `gradle.properties` (root)
 
