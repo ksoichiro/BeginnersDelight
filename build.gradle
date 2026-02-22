@@ -47,7 +47,6 @@ subprojects {
     // Propagate version-specific properties to subprojects
     ext.minecraft_version = rootProject.ext.minecraft_version
     ext.pack_format = rootProject.ext.pack_format
-    ext.architectury_api_version = rootProject.ext.architectury_api_version
     ext.fabric_loader_version = rootProject.ext.fabric_loader_version
     ext.fabric_api_version = rootProject.ext.fabric_api_version
     ext.enabled_platforms = rootProject.ext.enabled_platforms

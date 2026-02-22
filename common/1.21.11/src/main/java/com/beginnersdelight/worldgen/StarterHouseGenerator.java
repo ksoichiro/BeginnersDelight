@@ -20,7 +20,6 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlac
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
 
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -270,8 +269,7 @@ public class StarterHouseGenerator {
      * Teleports a player back into the starter house when they respawn after
      * death without a bed respawn point set.
      */
-    public static void onPlayerRespawn(ServerPlayer newPlayer, boolean conqueredEnd,
-                                        Entity.RemovalReason removalReason) {
+    public static void onPlayerRespawn(ServerPlayer newPlayer, boolean conqueredEnd) {
         // Only handle death respawns, not end portal returns
         if (conqueredEnd) {
             return;

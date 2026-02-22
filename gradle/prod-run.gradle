@@ -436,12 +436,8 @@ if (project.name == 'fabric') {
         }
     }
 
-    // Architectury API uses different Maven group for MC 1.16.5
-    def archApiGroup = mcVersion == '1.16.5' ? 'me.shedaniel' : 'dev.architectury'
-
     dependencies {
         prodMods "net.fabricmc.fabric-api:fabric-api:${project.ext.fabric_api_version}"
-        prodMods "${archApiGroup}:architectury-fabric:${project.ext.architectury_api_version}"
     }
 
     // --- Task: downloadFabricLoader ---
@@ -568,10 +564,6 @@ if (project.name == 'neoforge') {
             canBeConsumed = false
             transitive = false
         }
-    }
-
-    dependencies {
-        prodMods "dev.architectury:architectury-neoforge:${project.ext.architectury_api_version}"
     }
 
     def neoforgeVersion = project.ext.neoforge_version
@@ -748,13 +740,6 @@ if (project.name == 'forge') {
             canBeConsumed = false
             transitive = false
         }
-    }
-
-    // Architectury API uses different Maven group for MC 1.16.5
-    def forgeArchApiGroup = mcVersion == '1.16.5' ? 'me.shedaniel' : 'dev.architectury'
-
-    dependencies {
-        prodMods "${forgeArchApiGroup}:architectury-forge:${project.ext.architectury_api_version}"
     }
 
     def forgeVersion = project.ext.forge_version

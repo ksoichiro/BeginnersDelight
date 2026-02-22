@@ -12,21 +12,21 @@
 
 ## Active Technologies
 
-- Java 21 (Minecraft Java Edition 1.21.11) + NeoForge 21.11.x, Fabric Loader, Architectury API
-- Java 21 (Minecraft Java Edition 1.21.10) + NeoForge 21.10.x, Fabric Loader, Architectury API
-- Java 21 (Minecraft Java Edition 1.21.9) + NeoForge 21.9.x, Fabric Loader, Architectury API
-- Java 21 (Minecraft Java Edition 1.21.8) + NeoForge 21.8.x, Fabric Loader, Architectury API
-- Java 21 (Minecraft Java Edition 1.21.7) + NeoForge 21.7.x, Fabric Loader, Architectury API
-- Java 21 (Minecraft Java Edition 1.21.6) + NeoForge 21.6.x, Fabric Loader, Architectury API
-- Java 21 (Minecraft Java Edition 1.21.5) + NeoForge 21.5.x, Fabric Loader, Architectury API
-- Java 21 (Minecraft Java Edition 1.21.4) + NeoForge 21.4.x, Fabric Loader, Architectury API
-- Java 21 (Minecraft Java Edition 1.21.3) + NeoForge 21.3.x, Fabric Loader, Architectury API
-- Java 21 (Minecraft Java Edition 1.21.1) + NeoForge 21.1.x, Fabric Loader, Architectury API
-- Java 17 (Minecraft Java Edition 1.20.1) + Forge 47.4.x, Fabric Loader, Architectury API
-- Java 17 (Minecraft Java Edition 1.19.2) + Forge 43.4.x, Fabric Loader, Architectury API
-- Java 17 (Minecraft Java Edition 1.18.2) + Forge 40.2.x, Fabric Loader, Architectury API
-- Java 16 (Minecraft Java Edition 1.17.1) + Forge 37.1.x, Fabric Loader, Architectury API
-- Java 8 (Minecraft Java Edition 1.16.5) + Forge 36.2.x, Fabric Loader, Architectury API
+- Java 21 (Minecraft Java Edition 1.21.11) + NeoForge 21.11.x, Fabric Loader
+- Java 21 (Minecraft Java Edition 1.21.10) + NeoForge 21.10.x, Fabric Loader
+- Java 21 (Minecraft Java Edition 1.21.9) + NeoForge 21.9.x, Fabric Loader
+- Java 21 (Minecraft Java Edition 1.21.8) + NeoForge 21.8.x, Fabric Loader
+- Java 21 (Minecraft Java Edition 1.21.7) + NeoForge 21.7.x, Fabric Loader
+- Java 21 (Minecraft Java Edition 1.21.6) + NeoForge 21.6.x, Fabric Loader
+- Java 21 (Minecraft Java Edition 1.21.5) + NeoForge 21.5.x, Fabric Loader
+- Java 21 (Minecraft Java Edition 1.21.4) + NeoForge 21.4.x, Fabric Loader
+- Java 21 (Minecraft Java Edition 1.21.3) + NeoForge 21.3.x, Fabric Loader
+- Java 21 (Minecraft Java Edition 1.21.1) + NeoForge 21.1.x, Fabric Loader
+- Java 17 (Minecraft Java Edition 1.20.1) + Forge 47.4.x, Fabric Loader
+- Java 17 (Minecraft Java Edition 1.19.2) + Forge 43.4.x, Fabric Loader
+- Java 17 (Minecraft Java Edition 1.18.2) + Forge 40.2.x, Fabric Loader
+- Java 16 (Minecraft Java Edition 1.17.1) + Forge 37.1.x, Fabric Loader
+- Java 8 (Minecraft Java Edition 1.16.5) + Forge 36.2.x, Fabric Loader
 
 ## Project Structure
 
@@ -60,7 +60,6 @@ docs/                 (documentation)
 - **Mod ID**: `beginnersdelight`
 - **Package**: `com.beginnersdelight`
 - **Minecraft**: 1.21.11, 1.21.10, 1.21.9, 1.21.8, 1.21.7, 1.21.6, 1.21.5, 1.21.4, 1.21.3, 1.21.1, 1.20.1, 1.19.2, 1.18.2, 1.17.1, 1.16.5
-- **Architectury API**: 19.0.1 (1.21.11), 18.0.8 (1.21.10), 18.0.5 (1.21.9), 17.0.8 (1.21.8), 17.0.8 (1.21.7), 17.0.6 (1.21.6), 16.1.4 (1.21.5), 15.0.1 (1.21.4), 14.0.4 (1.21.3), 13.0.8 (1.21.1), 9.2.14 (1.20.1), 6.6.92 (1.19.2), 4.12.94 (1.18.2), 2.10.12 (1.17.1), 1.32.68 (1.16.5)
 - **Fabric Loader**: 0.17.3
 - **Fabric API**: 0.141.3+1.21.11 (1.21.11), 0.138.4+1.21.10 (1.21.10), 0.134.1+1.21.9 (1.21.9), 0.136.1+1.21.8 (1.21.8), 0.129.0+1.21.7 (1.21.7), 0.128.1+1.21.6 (1.21.6), 0.128.1+1.21.5 (1.21.5), 0.119.4+1.21.4 (1.21.4), 0.112.1+1.21.3 (1.21.3), 0.116.7+1.21.1 (1.21.1), 0.92.2+1.20.1 (1.20.1), 0.77.0+1.19.2 (1.19.2), 0.76.0+1.18.2 (1.18.2), 0.46.1+1.17 (1.17.1), 0.42.0+1.16 (1.16.5)
 - **NeoForge**: 21.11.37-beta (1.21.11), 21.10.64 (1.21.10), 21.9.16-beta (1.21.9), 21.8.52 (1.21.8), 21.7.2-beta (1.21.7), 21.6.20-beta (1.21.6), 21.5.96 (1.21.5), 21.4.156 (1.21.4), 21.3.95 (1.21.3), 21.1.209 (1.21.1)
@@ -159,10 +158,11 @@ docs/                 (documentation)
 - **Fabric 1.17.1 duplicate loader**: Fabric API 0.46.1+1.17 pulls in a remapped `fabric-loader` 0.13.2 via Loom, conflicting with the direct 0.17.3 dependency. Excluded via `runtimeClasspath { exclude group: 'remapped.net.fabricmc', module: 'fabric-loader-bf9e8a5d' }` in `fabric/1.17.1/build.gradle`
 - **MC 1.21.3 API differences from 1.21.1**: `LevelHeightAccessor.getMaxBuildHeight()`/`getMinBuildHeight()` removed — use `getHeight()`/`getMinY()` instead. `ServerPlayer.teleportTo(ServerLevel, double, double, double, float, float)` removed — use `teleportTo(ServerLevel, double, double, double, Set<Relative>, float, float, boolean)` with `Set.of()` for absolute coordinates.
 - **MC 1.21.5 API differences from 1.21.4**: `SavedData` now uses Codec-based serialization via `SavedDataType` record instead of `SavedData.Factory` and `save(CompoundTag)`. `CompoundTag` getters (`getBoolean()`, `getInt()`, `getLong()`, etc.) return `Optional<T>` — use `getBooleanOr()`, `getIntOr()` etc. for defaults, or `getCompoundOrEmpty()`/`getListOrEmpty()` for non-null access. `getList(String, int)` simplified to `getList(String)`. `ServerPlayer.getRespawnPosition()` replaced by `getRespawnConfig()`.
-- **NeoForge 1.21.7 `@OnlyIn` limitation**: NeoForge 21.7.3-beta removed the `@OnlyIn` annotation, causing Architectury API (which still uses it) to crash on startup. Pinned to NeoForge 21.7.2-beta with `versionRange="[21.7.0,21.7.3)"` until Architectury API is fixed ([architectury/architectury-api#649](https://github.com/architectury/architectury-api/issues/649)).
-- **NeoForge 1.21.8+ `@OnlyIn` warning**: NeoForge 21.8.x onwards shows `@OnlyIn` warnings from Architectury API in development environment only (`runClient`). Production JARs are unaffected — `OnlyInWarningsHandler` checks `!FMLEnvironment.isProduction()`. To suppress the warning screen in dev, add `-Dneoforge.warnings.onlyin.hide=true` as a JVM argument. ERROR-level logs cannot be suppressed but are harmless.
+- **NeoForge 1.21.7 version pin**: NeoForge 21.7.2-beta is pinned with `versionRange="[21.7.0,21.7.3)"` due to `@OnlyIn` removal in 21.7.3-beta causing issues with Architectury Loom's remapping.
 - **MC 1.21.9 API differences from 1.21.8**: `ServerLevel.setDefaultSpawnPos(BlockPos, float)` removed — use `setRespawnData(LevelData.RespawnData.of(dimension, pos, yaw, pitch))`. `ServerLevel.getSharedSpawnPos()` removed — use `getRespawnData().pos()`. `ServerPlayer.getServer()` removed — use `player.level().getServer()` instead. `pack.mcmeta` format changed — `pack_format` replaced by mandatory `min_format`/`max_format` fields for data packs with format ≥ 82.
-- **MC 1.16.5 API differences**: Architectury API v1 uses `me.shedaniel:architectury` maven coordinates and `me.shedaniel.architectury.event.events.*` package (not `dev.architectury`). SLF4J is unavailable (use Log4j2). `SavedData` constructor requires a String name argument, `load()` is an instance method (not static factory). `StructureManager.get()` returns `StructureTemplate` directly (not `Optional`). `Entity.getYRot()`/`getXRot()` don't exist (use `yRot`/`xRot` fields). `StructureTemplate.placeInWorld()` takes 4 params (no pivotPos/flags). `--release` javac flag is unavailable in Java 8.
+- **MC 1.16.5 API differences**: SLF4J is unavailable (use Log4j2). `SavedData` constructor requires a String name argument, `load()` is an instance method (not static factory). `StructureManager.get()` returns `StructureTemplate` directly (not `Optional`). `Entity.getYRot()`/`getXRot()` don't exist (use `yRot`/`xRot` fields). `StructureTemplate.placeInWorld()` takes 4 params (no pivotPos/flags). `--release` javac flag is unavailable in Java 8. Forge event: `net.minecraftforge.fml.event.server.FMLServerStartedEvent` (not `ServerStartedEvent`). Forge `PlayerEvent` uses `getEntity()` (not `getPlayer()`) with Mojang mappings.
+- **MC 1.17.1 Forge API differences from 1.16.5**: `FMLServerStartedEvent` moved to `net.minecraftforge.fmlserverevents` package. Forge `PlayerEvent` uses `getEntity()` (not `getPlayer()`) with Mojang mappings.
+- **MC 1.18.2+ Forge API differences from 1.17.1**: `FMLServerStartedEvent` replaced by `net.minecraftforge.event.server.ServerStartedEvent`.
 - **MC 1.21.11 API differences from 1.21.10**: `ResourceLocation` renamed to `Identifier` (same package `net.minecraft.resources`). `GameRules` moved from `net.minecraft.world.level.GameRules` to `net.minecraft.world.level.gamerules.GameRules`. `RULE_SPAWN_RADIUS` renamed to `RESPAWN_RADIUS`. GameRules API changed: `getGameRules().getRule(key).set(value, server)` → `getGameRules().set(key, value, server)`.
 
 ## Workflow Guidelines

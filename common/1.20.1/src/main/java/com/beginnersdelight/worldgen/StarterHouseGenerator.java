@@ -259,7 +259,6 @@ public class StarterHouseGenerator {
     /**
      * Teleports a player back into the starter house when they respawn after
      * death without a bed respawn point set.
-     * 1.20.1 Architectury callback signature: (ServerPlayer, boolean)
      */
     public static void onPlayerRespawn(ServerPlayer newPlayer, boolean conqueredEnd) {
         // Only handle death respawns, not end portal returns

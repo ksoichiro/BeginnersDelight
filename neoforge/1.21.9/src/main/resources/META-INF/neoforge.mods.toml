@@ -26,10 +26,3 @@ type="required"
 versionRange="[1.21.9]"
 ordering="NONE"
 side="BOTH"
-
-[[dependencies.beginnersdelight]]
-modId="architectury"
-type="required"
-versionRange="[18.0.5,)"
-ordering="AFTER"
-side="BOTH"
