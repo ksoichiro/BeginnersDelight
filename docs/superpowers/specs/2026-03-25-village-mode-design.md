@@ -229,19 +229,19 @@ Each new house connects to the **nearest existing house by grid distance (Manhat
 
 ### Common Module
 
+All village code is placed in the 1.21.11 version-specific module because it uses 1.21.11-specific APIs (`Identifier`, `SavedDataType`, `getRespawnConfig()`, etc.). The `common/shared` directory is for code that works across all MC versions; since Phase 1 targets only 1.21.11, all files go in `common/1.21.11`.
+
 ```
-common/shared/src/main/java/com/beginnersdelight/village/
+common/1.21.11/src/main/java/com/beginnersdelight/village/
   VillageManager.java
   VillageGrid.java
   VillageHouseGenerator.java
   VillagePathGenerator.java
-  VillageData.java
+  VillageData.java             — Codec-based (SavedDataType)
   VillageConfig.java
   VillageCommand.java
   GridPos.java
-
-common/1.21.11/src/main/java/com/beginnersdelight/village/
-  VillageData.java             — 1.21.11 Codec-based override
+  PlotState.java
 ```
 
 ### Platform Integration
