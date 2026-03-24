@@ -6,6 +6,7 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 
 /**
  * Registers /beginnersdelight village commands.
@@ -29,7 +30,9 @@ public class VillageCommand {
                                                         .executes(ctx -> set(
                                                                 ctx.getSource(),
                                                                 StringArgumentType.getString(ctx, "key"),
-                                                                StringArgumentType.getString(ctx, "value")))))))
+                                                                StringArgumentType.getString(ctx, "value"))))))
+                                .then(Commands.literal("test")
+                                        .executes(ctx -> test(ctx.getSource()))))
         );
     }
 
@@ -72,6 +75,31 @@ public class VillageCommand {
                 config.isRespawnAtHouse() ? "on" : "off"
         );
         source.sendSuccess(() -> Component.literal(statusText), false);
+        return 1;
+    }
+
+    private static int test(CommandSourceStack source) {
+        if (!(source.getEntity() instanceof ServerPlayer player)) {
+            source.sendFailure(Component.literal("This command must be run by a player"));
+            return 0;
+        }
+
+        ServerLevel overworld = source.getServer().overworld();
+        VillageData data = VillageData.get(overworld);
+        if (!data.isEnabled()) {
+            source.sendFailure(Component.literal("Village mode is not enabled"));
+            return 0;
+        }
+
+        int beforeCount = data.getHouseCount();
+        VillageManager.forceAssignHouse(player);
+        int afterCount = data.getHouseCount();
+
+        if (afterCount > beforeCount) {
+            source.sendSuccess(() -> Component.literal("Test house placed (total: " + afterCount + ")"), true);
+        } else {
+            source.sendFailure(Component.literal("Failed to place test house"));
+        }
         return 1;
     }
 

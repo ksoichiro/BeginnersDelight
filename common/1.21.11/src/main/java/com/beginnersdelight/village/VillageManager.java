@@ -100,6 +100,16 @@ public class VillageManager {
         BeginnersDelight.LOGGER.info("Village grid initialized at center: {}", spawnPos);
     }
 
+    /**
+     * Forces a new house assignment for the player, ignoring existing binding.
+     * Used by the test command to simulate multiple players joining.
+     */
+    public static void forceAssignHouse(ServerPlayer player) {
+        ServerLevel overworld = player.level().getServer().overworld();
+        VillageData data = VillageData.get(overworld);
+        assignHouse(overworld, player, data);
+    }
+
     private static void assignHouse(ServerLevel overworld, ServerPlayer player, VillageData data) {
         if (data.getCenterPos() == null) {
             initializeGrid(overworld, data);
