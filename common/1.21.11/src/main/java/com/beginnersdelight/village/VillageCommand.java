@@ -64,9 +64,13 @@ public class VillageCommand {
         VillageData data = VillageData.get(overworld);
         VillageConfig config = VillageManager.getConfig();
 
+        String centerInfo = data.getCenterPos() != null
+                ? String.format("(%d, %d, %d)", data.getCenterPos().getX(), data.getCenterPos().getY(), data.getCenterPos().getZ())
+                : "not set";
         String statusText = String.format(
-                "Village Mode: %s\nHouses: %d\nPlayers: %d\nPlot size: %d\nMax height diff: %d\nPaths: %s\nRespawn at house: %s",
+                "Village Mode: %s\nCenter: %s\nHouses: %d\nPlayers: %d\nPlot size: %d\nMax height diff: %d\nPaths: %s\nRespawn at house: %s",
                 data.isEnabled() ? "enabled" : "disabled",
+                centerInfo,
                 data.getHouseCount(),
                 data.getPlayerCount(),
                 config.getPlotSize(),
