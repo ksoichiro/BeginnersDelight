@@ -63,8 +63,10 @@ public class VillageData extends SavedData {
                     GRID_BLOCK_POS_ENTRY_CODEC.listOf().fieldOf("door_positions").forGetter(d ->
                             d.doorPositions.entrySet().stream()
                                     .map(e -> new GridBlockPosEntry(e.getKey(), e.getValue()))
-                                    .collect(Collectors.toList()))
-            ).apply(instance, (enabled, centerPos, plots, playerHouses, housePositions, doorPositions) -> {
+                                    .collect(Collectors.toList())),
+                    Codec.INT.fieldOf("house_count_since_last_decoration").forGetter(d -> d.houseCountSinceLastDecoration),
+                    Codec.INT.fieldOf("decoration_count").forGetter(d -> d.decorationCount)
+            ).apply(instance, (enabled, centerPos, plots, playerHouses, housePositions, doorPositions, houseCountSinceLastDecoration, decorationCount) -> {
                 VillageData data = new VillageData();
                 data.enabled = enabled;
                 data.centerPos = centerPos.orElse(null);
@@ -72,6 +74,8 @@ public class VillageData extends SavedData {
                 playerHouses.forEach(e -> data.playerHouses.put(e.uuid(), e.gridPos()));
                 housePositions.forEach(e -> data.housePositions.put(e.gridPos(), e.blockPos()));
                 doorPositions.forEach(e -> data.doorPositions.put(e.gridPos(), e.blockPos()));
+                data.houseCountSinceLastDecoration = houseCountSinceLastDecoration;
+                data.decorationCount = decorationCount;
                 return data;
             })
     );
@@ -89,10 +93,14 @@ public class VillageData extends SavedData {
     private final Map<UUID, GridPos> playerHouses = new HashMap<>();
     private final Map<GridPos, BlockPos> housePositions = new HashMap<>();
     private final Map<GridPos, BlockPos> doorPositions = new HashMap<>();
+    private int houseCountSinceLastDecoration;
+    private int decorationCount;
 
     public VillageData() {
         this.enabled = false;
         this.centerPos = null;
+        this.houseCountSinceLastDecoration = 0;
+        this.decorationCount = 0;
     }
 
     public boolean isEnabled() { return enabled; }
@@ -163,6 +171,25 @@ public class VillageData extends SavedData {
 
     public int getPlayerCount() {
         return playerHouses.size();
+    }
+
+    public int getHouseCountSinceLastDecoration() { return houseCountSinceLastDecoration; }
+
+    public void setHouseCountSinceLastDecoration(int count) {
+        this.houseCountSinceLastDecoration = count;
+        setDirty();
+    }
+
+    public void incrementHouseCountSinceLastDecoration() {
+        this.houseCountSinceLastDecoration++;
+        setDirty();
+    }
+
+    public int getDecorationCount() { return decorationCount; }
+
+    public void incrementDecorationCount() {
+        this.decorationCount++;
+        setDirty();
     }
 
     public static VillageData get(ServerLevel level) {
