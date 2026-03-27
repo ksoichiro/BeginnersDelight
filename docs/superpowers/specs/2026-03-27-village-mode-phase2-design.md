@@ -141,11 +141,11 @@ Decoration buildings are connected with dirt paths like player houses. Door-fron
 | `VillageData.java` | Add counter/flag fields, extend serialization |
 | `VillageHouseGenerator.java` | Accept structure name param, loot table selection |
 | `VillageManager.java` | Decoration placement logic after house placement |
+| `VillageGrid.java` | Update `findNearestOccupiedPlot` to search `doorPositions` (includes both houses and decorations) |
 
 ### No Changes Needed
 
 - `GridPos.java` — unchanged
-- `VillageGrid.java` — unchanged (uses existing `findNextAvailablePlot`)
 - `VillagePathGenerator.java` — unchanged
 - `VillageCommand.java` — unchanged; `status` shows house count via `getHouseCount()` which counts OCCUPIED plots. Decoration count is not shown (decorations are an implementation detail, not user-facing state)
 - `VillageConfig.java` — no new config items
