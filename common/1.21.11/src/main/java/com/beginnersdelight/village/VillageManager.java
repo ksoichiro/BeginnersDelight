@@ -189,5 +189,77 @@ public class VillageManager {
                 Set.of(), player.getYRot(), player.getXRot(), false);
         BeginnersDelight.LOGGER.info("Assigned village house to player {} at grid {}",
                 player.getName().getString(), gridPos);
+
+        // Check if decoration should be placed
+        data.incrementHouseCountSinceLastDecoration();
+        if (data.getHouseCountSinceLastDecoration() >= 2) {
+            tryPlaceDecoration(overworld, data);
+        }
+    }
+
+    private static void tryPlaceDecoration(ServerLevel overworld, VillageData data) {
+        if (data.getCenterPos() == null) return;
+
+        VillageGrid grid = new VillageGrid(data, config);
+
+        // Determine decoration type
+        String structureName;
+        if (data.getDecorationCount() == 0) {
+            structureName = "village_well";
+        } else {
+            structureName = VillageHouseGenerator.selectRandomDecoration(overworld.getRandom());
+        }
+
+        // Find suitable plot (up to 10 attempts)
+        int maxAttempts = 10;
+        for (int attempt = 0; attempt < maxAttempts; attempt++) {
+            Optional<GridPos> candidate = grid.findNextAvailablePlot();
+            if (candidate.isEmpty()) {
+                BeginnersDelight.LOGGER.warn("No available plots for decoration");
+                return;
+            }
+            GridPos candidatePos = candidate.get();
+            BlockPos worldPos = grid.gridToWorld(candidatePos);
+
+            if (!VillageHouseGenerator.isSuitable(overworld, worldPos, config.getMaxHeightDifference())) {
+                data.setPlotState(candidatePos, PlotState.UNSUITABLE);
+                continue;
+            }
+
+            Optional<VillageHouseGenerator.PlacementResult> result =
+                    VillageHouseGenerator.placeDecoration(overworld, worldPos, structureName);
+            if (result.isEmpty()) {
+                data.setPlotState(candidatePos, PlotState.UNSUITABLE);
+                continue;
+            }
+
+            VillageHouseGenerator.PlacementResult placement = result.get();
+
+            // Record in data
+            data.setPlotState(candidatePos, PlotState.DECORATION);
+            data.setDoorPosition(candidatePos, placement.doorFrontPos());
+            data.incrementDecorationCount();
+            data.setHouseCountSinceLastDecoration(0);
+
+            // Generate path to nearest building
+            if (config.isGeneratePaths()) {
+                Optional<GridPos> nearestOpt = grid.findNearestOccupiedPlot(candidatePos);
+                if (nearestOpt.isPresent()) {
+                    BlockPos nearestDoor = data.getDoorPosition(nearestOpt.get());
+                    if (nearestDoor != null) {
+                        VillagePathGenerator.generatePath(overworld, placement.doorFrontPos(), nearestDoor);
+                    }
+                } else {
+                    BlockPos center = data.getCenterPos();
+                    VillagePathGenerator.generatePath(overworld, placement.doorFrontPos(), center);
+                }
+            }
+
+            BeginnersDelight.LOGGER.info("Placed decoration '{}' at grid {}", structureName, candidatePos);
+            return;
+        }
+
+        // All attempts failed — skip this round, counter stays >= 2 for retry on next house
+        BeginnersDelight.LOGGER.warn("Failed to place decoration after {} attempts", maxAttempts);
     }
 }
