@@ -1,6 +1,7 @@
 package com.beginnersdelight.village;
 
 import com.beginnersdelight.BeginnersDelight;
+import com.beginnersdelight.worldgen.StarterHouseData;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -46,21 +47,12 @@ public class VillageManager {
 
         if (!data.isEnabled()) return;
 
-        if (data.hasHouse(player.getUUID())) {
-            // Returning player — teleport to existing house
-            GridPos gridPos = data.getPlayerHouse(player.getUUID());
-            BlockPos housePos = data.getHousePosition(gridPos);
-            if (housePos != null) {
-                player.teleportTo(overworld,
-                        housePos.getX() + 0.5, housePos.getY(), housePos.getZ() + 0.5,
-                        Set.of(), player.getYRot(), player.getXRot(), false);
-                BeginnersDelight.LOGGER.debug("Teleported returning player {} to village house",
-                        player.getName().getString());
-            }
+        if (data.hasHouse(player.getUUID())) return;
+        StarterHouseData starterData = StarterHouseData.get(overworld);
+        if (starterData.hasBeenTeleported(player.getUUID()) && starterData.getSpawnPos() != null) {
+            registerStarterHouseAsVillageHouse(overworld, player, data, starterData.getSpawnPos());
             return;
         }
-
-        // New player — assign a house
         assignHouse(overworld, player, data);
     }
 
@@ -91,6 +83,15 @@ public class VillageManager {
 
     public static VillageConfig getConfig() {
         return config;
+    }
+
+    private static void registerStarterHouseAsVillageHouse(ServerLevel overworld, ServerPlayer player, VillageData data, BlockPos starterHousePos) {
+        if (data.getCenterPos() == null) initializeGrid(overworld, data);
+        GridPos centerGrid = new GridPos(0, 0);
+        data.setPlotState(centerGrid, PlotState.OCCUPIED); data.setPlayerHouse(player.getUUID(), centerGrid);
+        data.setHousePosition(centerGrid, starterHousePos); data.setDoorPosition(centerGrid, starterHousePos);
+        data.incrementHouseCountSinceLastDecoration();
+        BeginnersDelight.LOGGER.info("Registered starter house as village house for player {}", player.getName().getString());
     }
 
     private static void initializeGrid(ServerLevel overworld, VillageData data) {
@@ -189,5 +190,31 @@ public class VillageManager {
                 Set.of(), player.getYRot(), player.getXRot(), false);
         BeginnersDelight.LOGGER.info("Assigned village house to player {} at grid {}",
                 player.getName().getString(), gridPos);
+        data.incrementHouseCountSinceLastDecoration();
+        if (data.getHouseCountSinceLastDecoration() >= 2) tryPlaceDecoration(overworld, data);
+    }
+
+    private static void tryPlaceDecoration(ServerLevel overworld, VillageData data) {
+        if (data.getCenterPos() == null) return;
+        VillageGrid grid = new VillageGrid(data, config);
+        String structureName = data.getDecorationCount() == 0 ? "village_well" : VillageHouseGenerator.selectRandomDecoration(overworld.getRandom());
+        for (int attempt = 0; attempt < 10; attempt++) {
+            Optional<GridPos> candidate = grid.findNextAvailablePlot();
+            if (candidate.isEmpty()) { BeginnersDelight.LOGGER.warn("No available plots for decoration"); return; }
+            GridPos candidatePos = candidate.get(); BlockPos worldPos = grid.gridToWorld(candidatePos);
+            if (!VillageHouseGenerator.isSuitable(overworld, worldPos, config.getMaxHeightDifference())) { data.setPlotState(candidatePos, PlotState.UNSUITABLE); continue; }
+            Optional<VillageHouseGenerator.PlacementResult> result = VillageHouseGenerator.placeDecoration(overworld, worldPos, structureName);
+            if (result.isEmpty()) { data.setPlotState(candidatePos, PlotState.UNSUITABLE); continue; }
+            VillageHouseGenerator.PlacementResult placement = result.get();
+            data.setPlotState(candidatePos, PlotState.DECORATION); data.setDoorPosition(candidatePos, placement.doorFrontPos());
+            data.incrementDecorationCount(); data.setHouseCountSinceLastDecoration(0);
+            if (config.isGeneratePaths()) {
+                Optional<GridPos> nearestOpt = grid.findNearestOccupiedPlot(candidatePos);
+                if (nearestOpt.isPresent()) { BlockPos nearestDoor = data.getDoorPosition(nearestOpt.get()); if (nearestDoor != null) VillagePathGenerator.generatePath(overworld, placement.doorFrontPos(), nearestDoor); }
+                else VillagePathGenerator.generatePath(overworld, placement.doorFrontPos(), data.getCenterPos());
+            }
+            BeginnersDelight.LOGGER.info("Placed decoration '{}' at grid {}", structureName, candidatePos); return;
+        }
+        BeginnersDelight.LOGGER.warn("Failed to place decoration after 10 attempts");
     }
 }

@@ -33,6 +33,13 @@ public class VillageHouseGenerator {
 
     private static final ResourceLocation STARTER_HOUSE_LOOT =
             new ResourceLocation(BeginnersDelight.MOD_ID, "chests/starter_house");
+    private static final ResourceLocation VILLAGE_STOREHOUSE_LOOT =
+            new ResourceLocation(BeginnersDelight.MOD_ID, "chests/village_storehouse");
+    private static final ResourceLocation VILLAGE_FARM_LOOT =
+            new ResourceLocation(BeginnersDelight.MOD_ID, "chests/village_farm");
+    private static final Map<String, ResourceLocation> DECORATION_LOOT_TABLES = Map.of(
+            "village_storehouse", VILLAGE_STOREHOUSE_LOOT, "village_farm", VILLAGE_FARM_LOOT);
+    private static final String[] DECORATION_VARIANTS = {"village_shed", "village_storehouse", "village_farm"};
 
     // starter_house6 is excluded because it uses cherry wood blocks added in 1.20
     private static final String[] STRUCTURE_VARIANTS = {
@@ -118,6 +125,31 @@ public class VillageHouseGenerator {
 
         return Optional.of(new PlacementResult(interiorPos, doorFrontPos));
     }
+
+    public static Optional<PlacementResult> placeDecoration(ServerLevel level, BlockPos plotCenter, String structureName) {
+        StructureManager templateManager = level.getStructureManager();
+        Random random = level.getRandom();
+        ResourceLocation structureId = new ResourceLocation(BeginnersDelight.MOD_ID, structureName);
+        Optional<StructureTemplate> templateOpt = templateManager.get(structureId);
+        if (templateOpt.isEmpty()) { BeginnersDelight.LOGGER.error("Structure template not found: {}", structureId); return Optional.empty(); }
+        StructureTemplate template = templateOpt.get();
+        StructurePlaceSettings settings = new StructurePlaceSettings().setMirror(Mirror.NONE).setRotation(Rotation.NONE).setIgnoreEntities(false);
+        BlockPos placePos = findSurfacePosition(level, plotCenter, template.getSize());
+        if (placePos == null) { BeginnersDelight.LOGGER.warn("Could not find suitable surface position for {}", structureName); return Optional.empty(); }
+        BlockPos surfacePos = placePos; placePos = placePos.below();
+        BeginnersDelight.LOGGER.info("Placing decoration '{}' at {}", structureName, placePos);
+        Vec3i size = template.getSize();
+        removeMobs(level, placePos, size); clearVegetation(level, placePos, size);
+        template.placeInWorld(level, placePos, placePos, settings, random, 2 | 16);
+        removeDroppedItems(level, placePos, size);
+        ResourceLocation lootTable = DECORATION_LOOT_TABLES.get(structureName);
+        if (lootTable != null) { assignLootTablesWithKey(level, placePos, size, random, lootTable); }
+        fillFoundation(level, surfacePos, size); blendSurroundingTerrain(level, surfacePos, size); removeDroppedItems(level, surfacePos, size);
+        BlockPos interiorPos = surfacePos.offset(size.getX() / 2, 1, size.getZ() / 2);
+        BlockPos doorFrontPos = new BlockPos(surfacePos.getX() + size.getX() / 2, surfacePos.getY(), surfacePos.getZ() + size.getZ());
+        return Optional.of(new PlacementResult(interiorPos, doorFrontPos));
+    }
+    public static String selectRandomDecoration(Random random) { return DECORATION_VARIANTS[random.nextInt(DECORATION_VARIANTS.length)]; }
 
     private static BlockPos findSurfacePosition(ServerLevel level, BlockPos center, Vec3i structureSize) {
         int halfX = structureSize.getX() / 2;
@@ -230,6 +262,15 @@ public class VillageHouseGenerator {
                 }
             }
         }
+    }
+    private static void assignLootTablesWithKey(ServerLevel level, BlockPos placePos, Vec3i structureSize,
+                                                 Random random, ResourceLocation lootKey) {
+        for (int x = placePos.getX(); x < placePos.getX() + structureSize.getX(); x++)
+            for (int y = placePos.getY(); y < placePos.getY() + structureSize.getY(); y++)
+                for (int z = placePos.getZ(); z < placePos.getZ() + structureSize.getZ(); z++) {
+                    BlockEntity be = level.getBlockEntity(new BlockPos(x, y, z));
+                    if (be instanceof RandomizableContainerBlockEntity container) container.setLootTable(lootKey, random.nextLong());
+                }
     }
 
     private static void fillFoundation(ServerLevel level, BlockPos placePos, Vec3i structureSize) {

@@ -26,10 +26,14 @@ public class VillageData extends SavedData {
     private final Map<UUID, GridPos> playerHouses = new HashMap<>();
     private final Map<GridPos, BlockPos> housePositions = new HashMap<>();
     private final Map<GridPos, BlockPos> doorPositions = new HashMap<>();
+    private int houseCountSinceLastDecoration;
+    private int decorationCount;
 
     public VillageData() {
         this.enabled = false;
         this.centerPos = null;
+        this.houseCountSinceLastDecoration = 0;
+        this.decorationCount = 0;
     }
 
     public static VillageData load(CompoundTag tag) {
@@ -83,6 +87,9 @@ public class VillageData extends SavedData {
                 data.doorPositions.put(gridPos, blockPos);
             }
         }
+
+        data.houseCountSinceLastDecoration = tag.getInt("house_count_since_last_decoration");
+        data.decorationCount = tag.getInt("decoration_count");
 
         return data;
     }
@@ -141,6 +148,9 @@ public class VillageData extends SavedData {
             doorPosListTag.add(posTag);
         }
         tag.put("door_positions", doorPosListTag);
+
+        tag.putInt("house_count_since_last_decoration", houseCountSinceLastDecoration);
+        tag.putInt("decoration_count", decorationCount);
 
         return tag;
     }
@@ -213,6 +223,25 @@ public class VillageData extends SavedData {
 
     public int getPlayerCount() {
         return playerHouses.size();
+    }
+
+    public int getHouseCountSinceLastDecoration() { return houseCountSinceLastDecoration; }
+
+    public void setHouseCountSinceLastDecoration(int count) {
+        this.houseCountSinceLastDecoration = count;
+        setDirty();
+    }
+
+    public void incrementHouseCountSinceLastDecoration() {
+        this.houseCountSinceLastDecoration++;
+        setDirty();
+    }
+
+    public int getDecorationCount() { return decorationCount; }
+
+    public void incrementDecorationCount() {
+        this.decorationCount++;
+        setDirty();
     }
 
     public static VillageData get(ServerLevel level) {

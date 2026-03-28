@@ -79,7 +79,8 @@ public class VillageGrid {
         GridPos nearest = null;
         int minDist = Integer.MAX_VALUE;
 
-        for (var entry : data.getAllHousePositions().entrySet()) {
+        // Search all plots with door positions (houses and decorations)
+        for (var entry : data.getAllDoorPositions().entrySet()) {
             GridPos candidate = entry.getKey();
             if (candidate.equals(from)) continue;
             int dist = from.manhattanDistanceTo(candidate);

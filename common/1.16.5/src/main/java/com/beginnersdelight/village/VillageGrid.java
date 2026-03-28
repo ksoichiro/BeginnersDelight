@@ -73,7 +73,7 @@ public class VillageGrid {
         GridPos nearest = null;
         int minDist = Integer.MAX_VALUE;
 
-        for (Map.Entry<GridPos, BlockPos> entry : data.getAllHousePositions().entrySet()) {
+        for (Map.Entry<GridPos, BlockPos> entry : data.getAllDoorPositions().entrySet()) {
             GridPos candidate = entry.getKey();
             if (candidate.equals(from)) continue;
             int dist = from.manhattanDistanceTo(candidate);
