@@ -1,6 +1,7 @@
 package com.beginnersdelight.village;
 
 import com.beginnersdelight.BeginnersDelight;
+import com.beginnersdelight.worldgen.StarterHouseData;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -38,7 +39,7 @@ public class VillageManager {
     /**
      * Handles a player joining the server.
      * If village mode is enabled and the player has no house, assigns one.
-     * If the player already has a house, teleports them to it.
+     * Players who already have a house are not teleported (they spawn at their last position).
      */
     public static void onPlayerJoin(ServerPlayer player) {
         ServerLevel overworld = player.level().getServer().overworld();
@@ -46,17 +47,14 @@ public class VillageManager {
 
         if (!data.isEnabled()) return;
 
-        if (data.hasHouse(player.getUUID())) {
-            // Returning player — teleport to existing house
-            GridPos gridPos = data.getPlayerHouse(player.getUUID());
-            BlockPos housePos = data.getHousePosition(gridPos);
-            if (housePos != null) {
-                player.teleportTo(overworld,
-                        housePos.getX() + 0.5, housePos.getY(), housePos.getZ() + 0.5,
-                        Set.of(), player.getYRot(), player.getXRot(), false);
-                BeginnersDelight.LOGGER.debug("Teleported returning player {} to village house",
-                        player.getName().getString());
-            }
+        // Player already has a village house — do nothing (spawn at last position)
+        if (data.hasHouse(player.getUUID())) return;
+
+        // Check if this player was already teleported to the starter house.
+        // If so, register the starter house as their village house instead of building a new one.
+        StarterHouseData starterData = StarterHouseData.get(overworld);
+        if (starterData.hasBeenTeleported(player.getUUID()) && starterData.getSpawnPos() != null) {
+            registerStarterHouseAsVillageHouse(overworld, player, data, starterData.getSpawnPos());
             return;
         }
 
@@ -91,6 +89,30 @@ public class VillageManager {
 
     public static VillageConfig getConfig() {
         return config;
+    }
+
+    /**
+     * Registers the existing starter house as the player's village house.
+     * This avoids generating a redundant house for players who already have the starter house.
+     */
+    private static void registerStarterHouseAsVillageHouse(ServerLevel overworld, ServerPlayer player,
+                                                            VillageData data, BlockPos starterHousePos) {
+        if (data.getCenterPos() == null) {
+            initializeGrid(overworld, data);
+        }
+
+        // Use the reserved center plot (0,0) as the starter house's grid position
+        GridPos centerGrid = new GridPos(0, 0);
+        data.setPlotState(centerGrid, PlotState.OCCUPIED);
+        data.setPlayerHouse(player.getUUID(), centerGrid);
+        data.setHousePosition(centerGrid, starterHousePos);
+        data.setDoorPosition(centerGrid, starterHousePos);
+
+        // Count as a house for decoration tracking
+        data.incrementHouseCountSinceLastDecoration();
+
+        BeginnersDelight.LOGGER.info("Registered starter house as village house for player {}",
+                player.getName().getString());
     }
 
     private static void initializeGrid(ServerLevel overworld, VillageData data) {
