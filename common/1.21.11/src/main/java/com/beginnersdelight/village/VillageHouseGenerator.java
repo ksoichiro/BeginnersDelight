@@ -184,6 +184,9 @@ public class VillageHouseGenerator {
             return Optional.empty();
         }
 
+        // Sink structure 1 block so the foundation row is embedded underground
+        placePos = placePos.below();
+
         BeginnersDelight.LOGGER.info("Placing decoration '{}' at {}", structureName, placePos);
 
         Vec3i size = template.getSize();
