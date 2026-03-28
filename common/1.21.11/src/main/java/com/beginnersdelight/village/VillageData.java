@@ -9,73 +9,57 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * Persists village mode state: enabled flag, plot states,
- * player-house bindings, and house/door positions.
+ * Persists village mode state: enabled flag, road segments,
+ * building plots, player-house bindings, and counters.
  */
 public class VillageData extends SavedData {
 
     private static final String DATA_NAME = BeginnersDelight.MOD_ID + "_village";
 
-    private static final Codec<PlotEntry> PLOT_ENTRY_CODEC = RecordCodecBuilder.create(instance ->
-            instance.group(
-                    GridPos.CODEC.fieldOf("pos").forGetter(PlotEntry::pos),
-                    Codec.STRING.fieldOf("state").forGetter(e -> e.state().name())
-            ).apply(instance, (pos, state) -> new PlotEntry(pos, PlotState.valueOf(state)))
-    );
+    private record PlayerHouseEntry(UUID uuid, int plotId) {}
 
     private static final Codec<PlayerHouseEntry> PLAYER_HOUSE_ENTRY_CODEC = RecordCodecBuilder.create(instance ->
             instance.group(
                     UUIDUtil.CODEC.fieldOf("uuid").forGetter(PlayerHouseEntry::uuid),
-                    GridPos.CODEC.fieldOf("grid_pos").forGetter(PlayerHouseEntry::gridPos)
+                    Codec.INT.fieldOf("plot_id").forGetter(PlayerHouseEntry::plotId)
             ).apply(instance, PlayerHouseEntry::new)
-    );
-
-    private static final Codec<GridBlockPosEntry> GRID_BLOCK_POS_ENTRY_CODEC = RecordCodecBuilder.create(instance ->
-            instance.group(
-                    GridPos.CODEC.fieldOf("grid_pos").forGetter(GridBlockPosEntry::gridPos),
-                    BlockPos.CODEC.fieldOf("block_pos").forGetter(GridBlockPosEntry::blockPos)
-            ).apply(instance, GridBlockPosEntry::new)
     );
 
     public static final Codec<VillageData> CODEC = RecordCodecBuilder.create(instance ->
             instance.group(
                     Codec.BOOL.fieldOf("enabled").forGetter(d -> d.enabled),
                     BlockPos.CODEC.optionalFieldOf("center_pos").forGetter(d -> Optional.ofNullable(d.centerPos)),
-                    PLOT_ENTRY_CODEC.listOf().fieldOf("plots").forGetter(d ->
-                            d.plots.entrySet().stream()
-                                    .map(e -> new PlotEntry(e.getKey(), e.getValue()))
-                                    .collect(Collectors.toList())),
+                    RoadSegment.CODEC.listOf().fieldOf("roads").forGetter(d -> d.roads),
+                    VillagePlot.CODEC.listOf().fieldOf("plots").forGetter(d -> d.plots),
                     PLAYER_HOUSE_ENTRY_CODEC.listOf().fieldOf("player_houses").forGetter(d ->
                             d.playerHouses.entrySet().stream()
                                     .map(e -> new PlayerHouseEntry(e.getKey(), e.getValue()))
                                     .collect(Collectors.toList())),
-                    GRID_BLOCK_POS_ENTRY_CODEC.listOf().fieldOf("house_positions").forGetter(d ->
-                            d.housePositions.entrySet().stream()
-                                    .map(e -> new GridBlockPosEntry(e.getKey(), e.getValue()))
-                                    .collect(Collectors.toList())),
-                    GRID_BLOCK_POS_ENTRY_CODEC.listOf().fieldOf("door_positions").forGetter(d ->
-                            d.doorPositions.entrySet().stream()
-                                    .map(e -> new GridBlockPosEntry(e.getKey(), e.getValue()))
-                                    .collect(Collectors.toList())),
                     Codec.INT.fieldOf("house_count_since_last_decoration").forGetter(d -> d.houseCountSinceLastDecoration),
-                    Codec.INT.fieldOf("decoration_count").forGetter(d -> d.decorationCount)
-            ).apply(instance, (enabled, centerPos, plots, playerHouses, housePositions, doorPositions, houseCountSinceLastDecoration, decorationCount) -> {
+                    Codec.INT.fieldOf("decoration_count").forGetter(d -> d.decorationCount),
+                    Codec.INT.fieldOf("next_segment_id").forGetter(d -> d.nextSegmentId),
+                    Codec.INT.fieldOf("next_plot_id").forGetter(d -> d.nextPlotId)
+            ).apply(instance, (enabled, centerPos, roads, plots, playerHouses,
+                               houseCountSinceLastDecoration, decorationCount, nextSegmentId, nextPlotId) -> {
                 VillageData data = new VillageData();
                 data.enabled = enabled;
                 data.centerPos = centerPos.orElse(null);
-                plots.forEach(e -> data.plots.put(e.pos(), e.state()));
-                playerHouses.forEach(e -> data.playerHouses.put(e.uuid(), e.gridPos()));
-                housePositions.forEach(e -> data.housePositions.put(e.gridPos(), e.blockPos()));
-                doorPositions.forEach(e -> data.doorPositions.put(e.gridPos(), e.blockPos()));
+                data.roads.addAll(roads);
+                data.plots.addAll(plots);
+                playerHouses.forEach(e -> data.playerHouses.put(e.uuid(), e.plotId()));
                 data.houseCountSinceLastDecoration = houseCountSinceLastDecoration;
                 data.decorationCount = decorationCount;
+                data.nextSegmentId = nextSegmentId;
+                data.nextPlotId = nextPlotId;
                 return data;
             })
     );
@@ -89,19 +73,24 @@ public class VillageData extends SavedData {
 
     private boolean enabled;
     private BlockPos centerPos;
-    private final Map<GridPos, PlotState> plots = new HashMap<>();
-    private final Map<UUID, GridPos> playerHouses = new HashMap<>();
-    private final Map<GridPos, BlockPos> housePositions = new HashMap<>();
-    private final Map<GridPos, BlockPos> doorPositions = new HashMap<>();
+    private final List<RoadSegment> roads = new ArrayList<>();
+    private final List<VillagePlot> plots = new ArrayList<>();
+    private final Map<UUID, Integer> playerHouses = new HashMap<>();
     private int houseCountSinceLastDecoration;
     private int decorationCount;
+    private int nextSegmentId;
+    private int nextPlotId;
 
     public VillageData() {
         this.enabled = false;
         this.centerPos = null;
         this.houseCountSinceLastDecoration = 0;
         this.decorationCount = 0;
+        this.nextSegmentId = 0;
+        this.nextPlotId = 0;
     }
+
+    // --- Enabled ---
 
     public boolean isEnabled() { return enabled; }
 
@@ -110,6 +99,8 @@ public class VillageData extends SavedData {
         setDirty();
     }
 
+    // --- Center position ---
+
     public BlockPos getCenterPos() { return centerPos; }
 
     public void setCenterPos(BlockPos centerPos) {
@@ -117,61 +108,60 @@ public class VillageData extends SavedData {
         setDirty();
     }
 
-    public PlotState getPlotState(GridPos pos) {
-        return plots.getOrDefault(pos, PlotState.AVAILABLE);
-    }
+    // --- Roads ---
 
-    public void setPlotState(GridPos pos, PlotState state) {
-        plots.put(pos, state);
+    public void addRoad(RoadSegment segment) {
+        roads.add(segment);
         setDirty();
     }
 
-    public boolean hasHouse(UUID playerUuid) {
-        return playerHouses.containsKey(playerUuid);
+    public RoadSegment getRoad(int id) {
+        for (RoadSegment segment : roads) {
+            if (segment.getId() == id) {
+                return segment;
+            }
+        }
+        return null;
     }
 
-    public GridPos getPlayerHouse(UUID playerUuid) {
-        return playerHouses.get(playerUuid);
+    public List<RoadSegment> getAllRoads() {
+        return List.copyOf(roads);
     }
 
-    public void setPlayerHouse(UUID playerUuid, GridPos gridPos) {
-        playerHouses.put(playerUuid, gridPos);
+    /**
+     * Returns segments with no children (tips of the road tree).
+     */
+    public List<RoadSegment> getTipSegments() {
+        return roads.stream().filter(RoadSegment::isTip).collect(Collectors.toList());
+    }
+
+    // --- Plots ---
+
+    public void addPlot(VillagePlot plot) {
+        plots.add(plot);
         setDirty();
     }
 
-    public BlockPos getHousePosition(GridPos gridPos) {
-        return housePositions.get(gridPos);
+    public VillagePlot getPlot(int id) {
+        for (VillagePlot plot : plots) {
+            if (plot.getId() == id) {
+                return plot;
+            }
+        }
+        return null;
     }
 
-    public void setHousePosition(GridPos gridPos, BlockPos worldPos) {
-        housePositions.put(gridPos, worldPos);
-        setDirty();
+    public List<VillagePlot> getAllPlots() {
+        return List.copyOf(plots);
     }
 
-    public BlockPos getDoorPosition(GridPos gridPos) {
-        return doorPositions.get(gridPos);
-    }
-
-    public void setDoorPosition(GridPos gridPos, BlockPos doorPos) {
-        doorPositions.put(gridPos, doorPos);
-        setDirty();
-    }
-
-    public Map<GridPos, BlockPos> getAllHousePositions() {
-        return Map.copyOf(housePositions);
-    }
-
-    public Map<GridPos, BlockPos> getAllDoorPositions() {
-        return Map.copyOf(doorPositions);
-    }
+    // --- House / decoration counts ---
 
     public int getHouseCount() {
-        return (int) plots.values().stream().filter(s -> s == PlotState.OCCUPIED).count();
+        return (int) plots.stream().filter(p -> p.getType() == PlotType.HOUSE).count();
     }
 
-    public int getPlayerCount() {
-        return playerHouses.size();
-    }
+    public int getDecorationCount() { return decorationCount; }
 
     public int getHouseCountSinceLastDecoration() { return houseCountSinceLastDecoration; }
 
@@ -185,18 +175,47 @@ public class VillageData extends SavedData {
         setDirty();
     }
 
-    public int getDecorationCount() { return decorationCount; }
-
     public void incrementDecorationCount() {
         this.decorationCount++;
         setDirty();
     }
 
+    // --- Player houses ---
+
+    public boolean hasHouse(UUID playerUuid) {
+        return playerHouses.containsKey(playerUuid);
+    }
+
+    public int getPlayerPlotId(UUID playerUuid) {
+        return playerHouses.getOrDefault(playerUuid, -1);
+    }
+
+    public void setPlayerHouse(UUID playerUuid, int plotId) {
+        playerHouses.put(playerUuid, plotId);
+        setDirty();
+    }
+
+    public int getPlayerCount() {
+        return playerHouses.size();
+    }
+
+    // --- ID allocation ---
+
+    public int allocateSegmentId() {
+        int id = nextSegmentId++;
+        setDirty();
+        return id;
+    }
+
+    public int allocatePlotId() {
+        int id = nextPlotId++;
+        setDirty();
+        return id;
+    }
+
+    // --- Persistence ---
+
     public static VillageData get(ServerLevel level) {
         return level.getDataStorage().computeIfAbsent(TYPE);
     }
-
-    private record PlotEntry(GridPos pos, PlotState state) {}
-    private record PlayerHouseEntry(UUID uuid, GridPos gridPos) {}
-    private record GridBlockPosEntry(GridPos gridPos, BlockPos blockPos) {}
 }
