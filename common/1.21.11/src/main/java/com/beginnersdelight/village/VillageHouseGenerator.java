@@ -184,7 +184,10 @@ public class VillageHouseGenerator {
             return Optional.empty();
         }
 
-        // Sink structure 1 block so the foundation row is embedded underground
+        // Sink structure 1 block so the foundation row is embedded underground.
+        // Keep surfacePos for terrain handling (fillFoundation, blendSurroundingTerrain)
+        // so they operate at the visible ground level, not the lowered placement level.
+        BlockPos surfacePos = placePos;
         placePos = placePos.below();
 
         BeginnersDelight.LOGGER.info("Placing decoration '{}' at {}", structureName, placePos);
@@ -200,15 +203,16 @@ public class VillageHouseGenerator {
             assignLootTablesWithKey(level, placePos, size, random, lootTable);
         }
 
-        fillFoundation(level, placePos, size);
-        blendSurroundingTerrain(level, placePos, size);
-        removeDroppedItems(level, placePos, size);
+        fillFoundation(level, surfacePos, size);
+        blendSurroundingTerrain(level, surfacePos, size);
+        removeDroppedItems(level, surfacePos, size);
 
-        BlockPos interiorPos = placePos.offset(size.getX() / 2, 1, size.getZ() / 2);
+        // Use surfacePos (visible floor level) for positions
+        BlockPos interiorPos = surfacePos.offset(size.getX() / 2, 1, size.getZ() / 2);
         BlockPos doorFrontPos = new BlockPos(
-                placePos.getX() + size.getX() / 2,
-                placePos.getY(),
-                placePos.getZ() + size.getZ());
+                surfacePos.getX() + size.getX() / 2,
+                surfacePos.getY(),
+                surfacePos.getZ() + size.getZ());
 
         return Optional.of(new PlacementResult(interiorPos, doorFrontPos));
     }
