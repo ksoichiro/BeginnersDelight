@@ -20,7 +20,11 @@
   },
   "depends": {
     "fabricloader": ">=0.15.11",
-    "fabric": "*",
+    "fabric-api-base": "*",
+    "fabric-command-api-v1": "*",
+    "fabric-entity-events-v1": "*",
+    "fabric-lifecycle-events-v1": "*",
+    "fabric-networking-api-v1": "*",
     "minecraft": "~1.16.5",
     "java": ">=8"
   }

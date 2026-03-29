@@ -147,8 +147,17 @@ public class VillageHouseGenerator {
         template.placeInWorld(level, placePos, placePos, settings, random, 2 | 16);
         removeDroppedItems(level, placePos, size);
         assignLootTables(level, placePos, size, random);
-        fillFoundation(level, placePos, size);
+
+        // Blend surrounding terrain first so the terrain around the foundation
+        // is flat before filling. This prevents corner pillars from being too high.
         blendSurroundingTerrain(level, placePos, size);
+
+        // Fill gaps below the structure floor to prevent floating on slopes
+        fillFoundation(level, placePos, size);
+
+        // Blend corner pillars that were skipped by isOutsideChamfer in fillFoundation
+        blendCornerPillars(level, placePos, size);
+
         removeDroppedItems(level, placePos, size);
 
         // Interior position: center of structure, one block above floor
@@ -210,8 +219,16 @@ public class VillageHouseGenerator {
             assignLootTablesWithKey(level, placePos, size, random, lootTable);
         }
 
-        fillFoundation(level, surfacePos, size);
+        // Blend surrounding terrain first so the terrain around the foundation
+        // is flat before filling. This prevents corner pillars from being too high.
         blendSurroundingTerrain(level, surfacePos, size);
+
+        // Fill gaps below the structure floor to prevent floating on slopes
+        fillFoundation(level, surfacePos, size);
+
+        // Blend corner pillars that were skipped by isOutsideChamfer in fillFoundation
+        blendCornerPillars(level, surfacePos, size);
+
         removeDroppedItems(level, surfacePos, size);
 
         // Use surfacePos (visible floor level) for positions
@@ -492,6 +509,81 @@ public class VillageHouseGenerator {
                     || isThinGroundCover(state)) continue;
             counts.merge(state.getBlock(), 1, Integer::sum);
             return;
+        }
+    }
+
+    /**
+     * Blends corner pillars that were skipped by isOutsideChamfer in fillFoundation.
+     * After fillFoundation, the corners may be tall pillars. This method carves them
+     * down to match the surrounding terrain height.
+     */
+    private static void blendCornerPillars(ServerLevel level, BlockPos placePos, Vec3i structureSize) {
+        int floorY = placePos.getY();
+        int margin = 2;
+
+        int strMinX = placePos.getX();
+        int strMaxX = placePos.getX() + structureSize.getX();
+        int strMinZ = placePos.getZ();
+        int strMaxZ = placePos.getZ() + structureSize.getZ();
+
+        BlockState dominantBlock = detectDominantSurfaceBlock(level, placePos, structureSize, margin);
+        BlockState surfaceBlock = mapToSurfaceBlock(dominantBlock);
+
+        // Only process corner points that were skipped by isOutsideChamfer
+        for (int x = strMinX - margin; x < strMaxX + margin; x++) {
+            for (int z = strMinZ - margin; z < strMaxZ + margin; z++) {
+                if (isOutsideChamfer(x, z, strMinX, strMaxX, strMinZ, strMaxZ, margin)) {
+                    // Find the top of the pillar (scan upward from floorY)
+                    int pillarTop = floorY;
+                    for (int y = floorY; y < floorY + 50; y++) {
+                        if (!level.getBlockState(new BlockPos(x, y, z)).isAir()) {
+                            pillarTop = y + 1;
+                        } else {
+                            break;
+                        }
+                    }
+
+                    // Find target Y by sampling adjacent non-corner points
+                    // that were already processed by blendSurroundingTerrain
+                    int targetY = floorY;
+                    int sampleCount = 0;
+                    int totalY = 0;
+
+                    // Sample adjacent points in cardinal directions
+                    int[][] offsets = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+                    for (int[] offset : offsets) {
+                        int sx = x + offset[0];
+                        int sz = z + offset[1];
+                        // Skip if this adjacent point is also a corner
+                        if (isOutsideChamfer(sx, sz, strMinX, strMaxX, strMinZ, strMaxZ, margin)) {
+                            continue;
+                        }
+                        // Sample the ground level at this adjacent point
+                        int sampledY = findGroundY(level, sx, sz);
+                        if (sampledY != -1) {
+                            totalY += sampledY;
+                            sampleCount++;
+                        }
+                    }
+
+                    if (sampleCount > 0) {
+                        targetY = totalY / sampleCount;
+                    } else {
+                        // Fallback: use floorY if no samples available
+                        targetY = floorY;
+                    }
+
+                    // Carve down to target level
+                    for (int y = targetY; y < pillarTop; y++) {
+                        level.setBlock(new BlockPos(x, y, z), Blocks.AIR.defaultBlockState(), 2);
+                    }
+
+                    // Place surface block at target level
+                    if (targetY > level.getMinY()) {
+                        level.setBlock(new BlockPos(x, targetY - 1, z), surfaceBlock, 2);
+                    }
+                }
+            }
         }
     }
 
