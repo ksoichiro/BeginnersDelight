@@ -1,5 +1,6 @@
 package com.beginnersdelight.village;
 
+import com.beginnersdelight.BeginnersDelight;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BlockTags;
@@ -14,10 +15,40 @@ import net.minecraft.world.level.block.state.BlockState;
 public class VillagePathGenerator {
 
     /**
+     * Generates a dirt path between two positions.
+     * Traces X-axis first, then Z-axis (L-shaped path).
+     */
+    public static void generatePath(ServerLevel level, BlockPos from, BlockPos to) {
+        BeginnersDelight.LOGGER.debug("Generating path from {} to {}", from, to);
+
+        int x = from.getX();
+        int z = from.getZ();
+        int targetX = to.getX();
+        int targetZ = to.getZ();
+
+        // Trace along X-axis
+        int stepX = x < targetX ? 1 : -1;
+        while (x != targetX) {
+            placePathBlock(level, x, z);
+            x += stepX;
+        }
+
+        // Trace along Z-axis
+        int stepZ = z < targetZ ? 1 : -1;
+        while (z != targetZ) {
+            placePathBlock(level, x, z);
+            z += stepZ;
+        }
+
+        // Place at final position
+        placePathBlock(level, x, z);
+    }
+
+    /**
      * Finds the ground surface at the given XZ and replaces it with Dirt Path
      * if it is a suitable block (grass or dirt).
      */
-    static void placePathBlock(ServerLevel level, int x, int z) {
+    private static void placePathBlock(ServerLevel level, int x, int z) {
         int y = findPathSurface(level, x, z);
         if (y == -1) return;
 
@@ -38,30 +69,10 @@ public class VillagePathGenerator {
     }
 
     /**
-     * Places a 2-block-wide dirt path perpendicular to the given direction.
-     * @param dx direction X component (0 or ±1)
-     * @param dz direction Z component (0 or ±1)
-     */
-    static void placePathBlockWide(ServerLevel level, int x, int z, int dx, int dz) {
-        placePathBlock(level, x, z);
-        // Place the adjacent block perpendicular to the direction
-        if (dx != 0) {
-            // Road goes east/west — widen north/south
-            placePathBlock(level, x, z + 1);
-        } else if (dz != 0) {
-            // Road goes north/south — widen east/west
-            placePathBlock(level, x + 1, z);
-        } else {
-            // Diagonal — widen in both directions
-            placePathBlock(level, x + 1, z);
-        }
-    }
-
-    /**
      * Scans downward to find the surface block suitable for path placement.
      * Returns the Y of the surface block, or -1 if not found.
      */
-    static int findPathSurface(ServerLevel level, int x, int z) {
+    private static int findPathSurface(ServerLevel level, int x, int z) {
         int maxY = level.getHeight() - 1;
         int minY = level.getMinY();
         for (int y = maxY; y >= minY; y--) {
@@ -75,7 +86,7 @@ public class VillagePathGenerator {
         return -1;
     }
 
-    static boolean isRemovableVegetation(BlockState state) {
+    private static boolean isRemovableVegetation(BlockState state) {
         return state.is(BlockTags.REPLACEABLE_BY_TREES)
                 || state.is(BlockTags.FLOWERS)
                 || state.is(BlockTags.SAPLINGS)

@@ -6,7 +6,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.util.RandomSource;
 
 import java.nio.file.Path;
 import java.util.Optional;
@@ -22,11 +21,19 @@ public class VillageManager {
 
     /**
      * Initializes the village system on server start.
-     * Loads config. Road bootstrap is deferred until the first house is needed.
+     * Loads config and initializes the grid center if village mode is enabled
+     * but no center has been set yet.
      */
     public static void onServerStarted(MinecraftServer server) {
         Path configDir = server.getServerDirectory().resolve("config");
         config.load(configDir);
+
+        ServerLevel overworld = server.overworld();
+        VillageData data = VillageData.get(overworld);
+
+        if (data.isEnabled() && data.getCenterPos() == null) {
+            initializeGrid(overworld, data);
+        }
     }
 
     /**
@@ -69,12 +76,11 @@ public class VillageManager {
         if (!data.isEnabled()) return;
         if (!data.hasHouse(player.getUUID())) return;
 
-        int plotId = data.getPlayerPlotId(player.getUUID());
-        VillagePlot plot = data.getPlot(plotId);
-        if (plot != null) {
-            BlockPos pos = plot.getPosition();
+        GridPos gridPos = data.getPlayerHouse(player.getUUID());
+        BlockPos housePos = data.getHousePosition(gridPos);
+        if (housePos != null) {
             player.teleportTo(overworld,
-                    pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5,
+                    housePos.getX() + 0.5, housePos.getY(), housePos.getZ() + 0.5,
                     Set.of(), player.getYRot(), player.getXRot(), false);
             BeginnersDelight.LOGGER.debug("Respawned player {} at village house",
                     player.getName().getString());
@@ -83,6 +89,37 @@ public class VillageManager {
 
     public static VillageConfig getConfig() {
         return config;
+    }
+
+    /**
+     * Registers the existing starter house as the player's village house.
+     * This avoids generating a redundant house for players who already have the starter house.
+     */
+    private static void registerStarterHouseAsVillageHouse(ServerLevel overworld, ServerPlayer player,
+                                                            VillageData data, BlockPos starterHousePos) {
+        if (data.getCenterPos() == null) {
+            initializeGrid(overworld, data);
+        }
+
+        // Use the reserved center plot (0,0) as the starter house's grid position
+        GridPos centerGrid = new GridPos(0, 0);
+        data.setPlotState(centerGrid, PlotState.OCCUPIED);
+        data.setPlayerHouse(player.getUUID(), centerGrid);
+        data.setHousePosition(centerGrid, starterHousePos);
+        data.setDoorPosition(centerGrid, starterHousePos);
+
+        // Count as a house for decoration tracking
+        data.incrementHouseCountSinceLastDecoration();
+
+        BeginnersDelight.LOGGER.info("Registered starter house as village house for player {}",
+                player.getName().getString());
+    }
+
+    private static void initializeGrid(ServerLevel overworld, VillageData data) {
+        BlockPos spawnPos = overworld.getRespawnData().pos();
+        VillageGrid grid = new VillageGrid(data, config);
+        grid.initialize(spawnPos);
+        BeginnersDelight.LOGGER.info("Village grid initialized at center: {}", spawnPos);
     }
 
     /**
@@ -95,120 +132,97 @@ public class VillageManager {
         assignHouse(overworld, player, data);
     }
 
-    /**
-     * Registers the existing starter house as the player's village house.
-     * This avoids generating a redundant house for players who already have the starter house.
-     */
-    private static void registerStarterHouseAsVillageHouse(ServerLevel overworld, ServerPlayer player,
-                                                            VillageData data, BlockPos starterHousePos) {
-        // Bootstrap roads if none exist yet
-        if (data.getAllRoads().isEmpty()) {
-            BlockPos center = overworld.getRespawnData().pos();
-            data.setCenterPos(center);
-            VillageRoadGenerator.bootstrap(overworld, data, center);
-        }
-
-        // Create a VillagePlot for the starter house, associated with the first road segment
-        RoadSegment firstSegment = data.getAllRoads().getFirst();
-        int plotId = data.allocatePlotId();
-        VillagePlot plot = new VillagePlot(plotId, starterHousePos, starterHousePos,
-                PlotType.HOUSE, firstSegment.getId());
-        data.addPlot(plot);
-        data.setPlayerHouse(player.getUUID(), plotId);
-
-        // Count as a house for decoration tracking
-        data.incrementHouseCountSinceLastDecoration();
-
-        BeginnersDelight.LOGGER.info("Registered starter house as village house for player {}",
-                player.getName().getString());
-    }
-
     private static void assignHouse(ServerLevel overworld, ServerPlayer player, VillageData data) {
-        // Bootstrap roads if none exist yet
-        if (data.getAllRoads().isEmpty()) {
-            BlockPos center = overworld.getRespawnData().pos();
-            data.setCenterPos(center);
-            VillageRoadGenerator.bootstrap(overworld, data, center);
+        if (data.getCenterPos() == null) {
+            initializeGrid(overworld, data);
         }
 
-        // Ensure the starter house is registered as a plot for collision detection,
-        // even when called via forceAssignHouse (test command)
-        ensureStarterHouseRegistered(overworld, data);
+        VillageGrid grid = new VillageGrid(data, config);
 
-        // First, try placing along existing road segments before growing new ones
-        Optional<BlockPos> placementOpt = Optional.empty();
-        RoadSegment placementSegment = null;
-
-        for (RoadSegment existing : data.getAllRoads()) {
-            placementOpt = findPlacementAlongSegment(overworld, existing, data);
-            if (placementOpt.isPresent()) {
-                placementSegment = existing;
-                break;
-            }
-        }
-
-        // If no existing segment works, grow new segments and try (max 5 attempts)
-        if (placementOpt.isEmpty()) {
-            for (int attempt = 0; attempt < 5; attempt++) {
-                Optional<RoadSegment> segmentOpt = VillageRoadGenerator.grow(overworld, data);
-                if (segmentOpt.isEmpty()) {
-                    BeginnersDelight.LOGGER.warn("Failed to grow road segment (attempt {}/{})",
-                            attempt + 1, 5);
-                    continue;
-                }
-                RoadSegment segment = segmentOpt.get();
-                placementOpt = findPlacementAlongSegment(overworld, segment, data);
-                if (placementOpt.isPresent()) {
-                    placementSegment = segment;
-                    break;
-                }
-            }
-        }
-
-        if (placementOpt.isPresent() && placementSegment != null) {
-            BlockPos plotCenter = placementOpt.get();
-
-            // Place the house
-            Optional<VillageHouseGenerator.PlacementResult> result =
-                    VillageHouseGenerator.place(overworld, plotCenter);
-            if (result.isEmpty()) {
-                BeginnersDelight.LOGGER.warn("Failed to place village house at {} for player {}",
-                        plotCenter, player.getName().getString());
+        // Find next available plot, checking suitability
+        Optional<GridPos> plotOpt = Optional.empty();
+        int attempts = 0;
+        int maxAttempts = 200;
+        while (attempts < maxAttempts) {
+            Optional<GridPos> candidate = grid.findNextAvailablePlot();
+            if (candidate.isEmpty()) {
+                BeginnersDelight.LOGGER.warn("No available plots for village house");
                 return;
             }
+            GridPos candidatePos = candidate.get();
+            BlockPos worldPos = grid.gridToWorld(candidatePos);
 
-            VillageHouseGenerator.PlacementResult placement = result.get();
-
-            // Record in data
-            int plotId = data.allocatePlotId();
-            VillagePlot plot = new VillagePlot(plotId, placement.interiorPos(), placement.doorFrontPos(),
-                    PlotType.HOUSE, placementSegment.getId());
-            data.addPlot(plot);
-            data.setPlayerHouse(player.getUUID(), plotId);
-
-            // Teleport player to their new house
-            player.teleportTo(overworld,
-                    placement.interiorPos().getX() + 0.5,
-                    placement.interiorPos().getY(),
-                    placement.interiorPos().getZ() + 0.5,
-                    Set.of(), player.getYRot(), player.getXRot(), false);
-            BeginnersDelight.LOGGER.info("Assigned village house to player {} at {}",
-                    player.getName().getString(), plotCenter);
-
-            // Check if decoration should be placed
-            data.incrementHouseCountSinceLastDecoration();
-            if (data.getHouseCountSinceLastDecoration() >= 2) {
-                tryPlaceDecoration(overworld, data);
+            if (VillageHouseGenerator.isSuitable(overworld, worldPos, config.getMaxHeightDifference())) {
+                plotOpt = candidate;
+                break;
+            } else {
+                data.setPlotState(candidatePos, PlotState.UNSUITABLE);
+                attempts++;
             }
+        }
+
+        if (plotOpt.isEmpty()) {
+            BeginnersDelight.LOGGER.warn("No suitable plots found after {} attempts for player {}",
+                    maxAttempts, player.getName().getString());
             return;
         }
 
-        BeginnersDelight.LOGGER.warn("No suitable house placement found for player {}",
-                player.getName().getString());
+        GridPos gridPos = plotOpt.get();
+        BlockPos plotWorldPos = grid.gridToWorld(gridPos);
+
+        // Place the house
+        Optional<VillageHouseGenerator.PlacementResult> result =
+                VillageHouseGenerator.place(overworld, plotWorldPos);
+        if (result.isEmpty()) {
+            data.setPlotState(gridPos, PlotState.UNSUITABLE);
+            BeginnersDelight.LOGGER.warn("Failed to place village house for player {}",
+                    player.getName().getString());
+            return;
+        }
+
+        VillageHouseGenerator.PlacementResult placement = result.get();
+
+        // Record in data
+        data.setPlotState(gridPos, PlotState.OCCUPIED);
+        data.setPlayerHouse(player.getUUID(), gridPos);
+        data.setHousePosition(gridPos, placement.interiorPos());
+        data.setDoorPosition(gridPos, placement.doorFrontPos());
+
+        // Generate path to nearest existing house
+        if (config.isGeneratePaths()) {
+            Optional<GridPos> nearestOpt = grid.findNearestOccupiedPlot(gridPos);
+            if (nearestOpt.isPresent()) {
+                BlockPos nearestDoor = data.getDoorPosition(nearestOpt.get());
+                if (nearestDoor != null) {
+                    VillagePathGenerator.generatePath(overworld, placement.doorFrontPos(), nearestDoor);
+                }
+            } else {
+                // First house — connect to village center
+                BlockPos center = data.getCenterPos();
+                VillagePathGenerator.generatePath(overworld, placement.doorFrontPos(), center);
+            }
+        }
+
+        // Teleport player to their new house
+        player.teleportTo(overworld,
+                placement.interiorPos().getX() + 0.5,
+                placement.interiorPos().getY(),
+                placement.interiorPos().getZ() + 0.5,
+                Set.of(), player.getYRot(), player.getXRot(), false);
+        BeginnersDelight.LOGGER.info("Assigned village house to player {} at grid {}",
+                player.getName().getString(), gridPos);
+
+        // Check if decoration should be placed
+        data.incrementHouseCountSinceLastDecoration();
+        if (data.getHouseCountSinceLastDecoration() >= 2) {
+            tryPlaceDecoration(overworld, data);
+        }
     }
 
     private static void tryPlaceDecoration(ServerLevel overworld, VillageData data) {
         if (data.getCenterPos() == null) return;
+
+        VillageGrid grid = new VillageGrid(data, config);
 
         // Determine decoration type
         String structureName;
@@ -218,109 +232,56 @@ public class VillageManager {
             structureName = VillageHouseGenerator.selectRandomDecoration(overworld.getRandom());
         }
 
-        // Try to grow road and find placement (up to 5 attempts)
-        int maxAttempts = 5;
+        // Find suitable plot (up to 10 attempts)
+        int maxAttempts = 10;
         for (int attempt = 0; attempt < maxAttempts; attempt++) {
-            Optional<RoadSegment> segmentOpt = VillageRoadGenerator.grow(overworld, data);
-            if (segmentOpt.isEmpty()) continue;
+            Optional<GridPos> candidate = grid.findNextAvailablePlot();
+            if (candidate.isEmpty()) {
+                BeginnersDelight.LOGGER.warn("No available plots for decoration");
+                return;
+            }
+            GridPos candidatePos = candidate.get();
+            BlockPos worldPos = grid.gridToWorld(candidatePos);
 
-            RoadSegment segment = segmentOpt.get();
-            Optional<BlockPos> placementOpt = findPlacementAlongSegment(overworld, segment, data);
-            if (placementOpt.isEmpty()) continue;
-
-            BlockPos plotCenter = placementOpt.get();
+            if (!VillageHouseGenerator.isSuitable(overworld, worldPos, config.getMaxHeightDifference())) {
+                data.setPlotState(candidatePos, PlotState.UNSUITABLE);
+                continue;
+            }
 
             Optional<VillageHouseGenerator.PlacementResult> result =
-                    VillageHouseGenerator.placeDecoration(overworld, plotCenter, structureName);
-            if (result.isEmpty()) continue;
+                    VillageHouseGenerator.placeDecoration(overworld, worldPos, structureName);
+            if (result.isEmpty()) {
+                data.setPlotState(candidatePos, PlotState.UNSUITABLE);
+                continue;
+            }
 
             VillageHouseGenerator.PlacementResult placement = result.get();
 
             // Record in data
-            int plotId = data.allocatePlotId();
-            VillagePlot plot = new VillagePlot(plotId, placement.interiorPos(), placement.doorFrontPos(),
-                    PlotType.DECORATION, segment.getId());
-            data.addPlot(plot);
+            data.setPlotState(candidatePos, PlotState.DECORATION);
+            data.setDoorPosition(candidatePos, placement.doorFrontPos());
             data.incrementDecorationCount();
             data.setHouseCountSinceLastDecoration(0);
 
-            BeginnersDelight.LOGGER.info("Placed decoration '{}' at {}", structureName, plotCenter);
+            // Generate path to nearest building
+            if (config.isGeneratePaths()) {
+                Optional<GridPos> nearestOpt = grid.findNearestOccupiedPlot(candidatePos);
+                if (nearestOpt.isPresent()) {
+                    BlockPos nearestDoor = data.getDoorPosition(nearestOpt.get());
+                    if (nearestDoor != null) {
+                        VillagePathGenerator.generatePath(overworld, placement.doorFrontPos(), nearestDoor);
+                    }
+                } else {
+                    BlockPos center = data.getCenterPos();
+                    VillagePathGenerator.generatePath(overworld, placement.doorFrontPos(), center);
+                }
+            }
+
+            BeginnersDelight.LOGGER.info("Placed decoration '{}' at grid {}", structureName, candidatePos);
             return;
         }
 
         // All attempts failed — skip this round, counter stays >= 2 for retry on next house
         BeginnersDelight.LOGGER.warn("Failed to place decoration after {} attempts", maxAttempts);
-    }
-
-    /**
-     * Ensures the starter house is registered as a VillagePlot for collision detection.
-     * This is needed even for the test command (forceAssignHouse) to prevent new houses
-     * from overlapping with the starter house.
-     */
-    private static void ensureStarterHouseRegistered(ServerLevel overworld, VillageData data) {
-        StarterHouseData starterData = StarterHouseData.get(overworld);
-        BlockPos starterPos = starterData.getSpawnPos();
-        if (starterPos == null || !starterData.isGenerated()) return;
-
-        // Check if any existing plot is already at the starter house position
-        for (VillagePlot plot : data.getAllPlots()) {
-            if (plot.getPosition().equals(starterPos)) return; // Already registered
-        }
-
-        // Register the starter house as a plot (no player binding)
-        RoadSegment firstSegment = data.getAllRoads().isEmpty() ? null : data.getAllRoads().getFirst();
-        int segmentId = firstSegment != null ? firstSegment.getId() : 0;
-        int plotId = data.allocatePlotId();
-        VillagePlot plot = new VillagePlot(plotId, starterPos, starterPos, PlotType.HOUSE, segmentId);
-        data.addPlot(plot);
-        BeginnersDelight.LOGGER.debug("Registered starter house as collision plot at {}", starterPos);
-    }
-
-    /**
-     * Finds a suitable house placement position along a road segment.
-     * Tries multiple positions along the segment at different offsets.
-     */
-    private static Optional<BlockPos> findPlacementAlongSegment(ServerLevel level, RoadSegment segment,
-                                                                  VillageData data) {
-        RandomSource random = level.getRandom();
-
-        BlockPos start = segment.getStart();
-        BlockPos end = segment.getEnd();
-        int totalDx = end.getX() - start.getX();
-        int totalDz = end.getZ() - start.getZ();
-
-        int dx = Integer.signum(totalDx);
-        int dz = Integer.signum(totalDz);
-        if (dx == 0 && dz == 0) return Optional.empty();
-
-        // Perpendicular direction
-        int perpDx = -dz;
-        int perpDz = dx;
-
-        // Try multiple positions along the segment (at 25%, 50%, 75%)
-        double[] positions = {0.25, 0.5, 0.75};
-        for (double t : positions) {
-            int alongX = start.getX() + (int) (totalDx * t);
-            int alongZ = start.getZ() + (int) (totalDz * t);
-
-            // Try multiple setback distances on both sides
-            for (int setback = 3; setback <= 6; setback++) {
-                // Try positive side
-                BlockPos candidate = new BlockPos(
-                        alongX + perpDx * setback, start.getY(), alongZ + perpDz * setback);
-                if (VillageHouseGenerator.isSuitable(level, candidate, config.getMaxHeightDifference(), data)) {
-                    return Optional.of(candidate);
-                }
-
-                // Try negative side
-                candidate = new BlockPos(
-                        alongX - perpDx * setback, start.getY(), alongZ - perpDz * setback);
-                if (VillageHouseGenerator.isSuitable(level, candidate, config.getMaxHeightDifference(), data)) {
-                    return Optional.of(candidate);
-                }
-            }
-        }
-
-        return Optional.empty();
     }
 }

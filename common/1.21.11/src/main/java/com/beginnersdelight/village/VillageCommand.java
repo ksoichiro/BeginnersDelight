@@ -40,9 +40,13 @@ public class VillageCommand {
         ServerLevel overworld = source.getServer().overworld();
         VillageData data = VillageData.get(overworld);
         data.setEnabled(true);
+
+        // Initialize grid if not yet done
         if (data.getCenterPos() == null) {
-            data.setCenterPos(overworld.getRespawnData().pos());
+            VillageGrid grid = new VillageGrid(data, VillageManager.getConfig());
+            grid.initialize(overworld.getRespawnData().pos());
         }
+
         source.sendSuccess(() -> Component.literal("Village mode enabled"), true);
         return 1;
     }
@@ -64,12 +68,10 @@ public class VillageCommand {
                 ? String.format("(%d, %d, %d)", data.getCenterPos().getX(), data.getCenterPos().getY(), data.getCenterPos().getZ())
                 : "not set";
         String statusText = String.format(
-                "Village Mode: %s\nCenter: %s\nRoads: %d segments\nHouses: %d\nDecorations: %d\nPlayers: %d\nPlot size: %d\nMax height diff: %d\nPaths: %s\nRespawn at house: %s",
+                "Village Mode: %s\nCenter: %s\nHouses: %d\nPlayers: %d\nPlot size: %d\nMax height diff: %d\nPaths: %s\nRespawn at house: %s",
                 data.isEnabled() ? "enabled" : "disabled",
                 centerInfo,
-                data.getAllRoads().size(),
                 data.getHouseCount(),
-                data.getDecorationCount(),
                 data.getPlayerCount(),
                 config.getPlotSize(),
                 config.getMaxHeightDifference(),
@@ -93,26 +95,12 @@ public class VillageCommand {
             return 0;
         }
 
-        int beforePlots = data.getAllPlots().size();
+        int beforeCount = data.getHouseCount();
         VillageManager.forceAssignHouse(player);
-        int afterPlots = data.getAllPlots().size();
+        int afterCount = data.getHouseCount();
 
-        // Check if a NEW plot was added (not just starter house registration)
-        int newPlots = afterPlots - beforePlots;
-        if (newPlots > 0) {
-            // Subtract 1 if starter house was registered (it's not a "new" house)
-            int newHouses = (int) data.getAllPlots().stream()
-                    .skip(beforePlots)
-                    .filter(p -> p.getType() == PlotType.HOUSE)
-                    .count();
-            boolean starterWasRegistered = newPlots > 1 || (newPlots == 1 && newHouses == 0);
-            int actualNew = starterWasRegistered ? newPlots - 1 : newPlots;
-            if (actualNew > 0) {
-                int houseCount = data.getHouseCount();
-                source.sendSuccess(() -> Component.literal("Test house placed (total houses: " + houseCount + ")"), true);
-            } else {
-                source.sendFailure(Component.literal("Failed to place test house (starter house was registered)"));
-            }
+        if (afterCount > beforeCount) {
+            source.sendSuccess(() -> Component.literal("Test house placed (total: " + afterCount + ")"), true);
         } else {
             source.sendFailure(Component.literal("Failed to place test house"));
         }

@@ -27,7 +27,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * Places village house structures with terrain handling.
@@ -86,17 +85,8 @@ public class VillageHouseGenerator {
             }
         }
 
-        // Check if center is on ice
-        BlockState groundState = level.getBlockState(new BlockPos(centerX, centerY - 1, centerZ));
-        if (groundState.is(Blocks.ICE) || groundState.is(Blocks.PACKED_ICE)
-                || groundState.is(Blocks.BLUE_ICE) || groundState.is(Blocks.FROSTED_ICE)) {
-            return false;
-        }
-
-        // Sample corners to check height difference.
-        // Use a smaller check area (10x10) than the full structure footprint
-        // to allow placement on moderately hilly terrain.
-        int halfSize = 5;
+        // Sample corners to check height difference
+        int halfSize = 7; // approximate half of structure footprint
         int[][] corners = {
                 {centerX - halfSize, centerZ - halfSize},
                 {centerX + halfSize, centerZ - halfSize},
@@ -111,64 +101,6 @@ public class VillageHouseGenerator {
             maxY = Math.max(maxY, y);
         }
         return (maxY - minY) <= maxHeightDiff;
-    }
-
-    /**
-     * Checks suitability including collision with existing village structures.
-     */
-    public static boolean isSuitable(ServerLevel level, BlockPos plotCenter, int maxHeightDiff, VillageData data) {
-        if (!isSuitable(level, plotCenter, maxHeightDiff)) return false;
-        // Use halfSize=12 to account for structure footprint + terrain modification zone
-        return !checkCollision(plotCenter, 12, data);
-    }
-
-    /**
-     * Checks if placing a building at the given position would collide with
-     * existing buildings or roads.
-     * @param pos center of the proposed building
-     * @param halfSize half the collision rectangle size (footprint/2 + margin)
-     * @param data village data containing existing plots and roads
-     * @return true if collision detected (position is NOT suitable)
-     */
-    public static boolean checkCollision(BlockPos pos, int halfSize, VillageData data) {
-        int minX = pos.getX() - halfSize;
-        int maxX = pos.getX() + halfSize;
-        int minZ = pos.getZ() - halfSize;
-        int maxZ = pos.getZ() + halfSize;
-
-        // Check against existing buildings only.
-        // Road segments are NOT checked because houses are designed to be
-        // placed along roads — their collision rectangles will naturally
-        // overlap with the road corridor.
-        for (VillagePlot plot : data.getAllPlots()) {
-            BlockPos plotPos = plot.getPosition();
-            // Structure footprint (~6 half) + terrain modification zone (6 blocks)
-            // to prevent fillFoundation/blendSurroundingTerrain from destroying neighbors
-            int plotHalf = 12;
-            if (plotPos.getX() - plotHalf < maxX && plotPos.getX() + plotHalf > minX
-                    && plotPos.getZ() - plotHalf < maxZ && plotPos.getZ() + plotHalf > minZ) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * Checks if a road segment's corridor (4 blocks wide) intersects a rectangle.
-     */
-    private static boolean segmentIntersectsRect(RoadSegment segment, int minX, int maxX, int minZ, int maxZ) {
-        BlockPos start = segment.getStart();
-        BlockPos end = segment.getEnd();
-        int corridorHalf = 2; // 4-block wide corridor = ±2 from center line
-
-        // Simple AABB check of segment's bounding box + corridor width
-        int segMinX = Math.min(start.getX(), end.getX()) - corridorHalf;
-        int segMaxX = Math.max(start.getX(), end.getX()) + corridorHalf;
-        int segMinZ = Math.min(start.getZ(), end.getZ()) - corridorHalf;
-        int segMaxZ = Math.max(start.getZ(), end.getZ()) + corridorHalf;
-
-        return segMinX < maxX && segMaxX > minX && segMinZ < maxZ && segMaxZ > minZ;
     }
 
     /**
