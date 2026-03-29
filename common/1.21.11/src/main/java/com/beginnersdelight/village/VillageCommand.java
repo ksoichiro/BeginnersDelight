@@ -40,13 +40,9 @@ public class VillageCommand {
         ServerLevel overworld = source.getServer().overworld();
         VillageData data = VillageData.get(overworld);
         data.setEnabled(true);
-
-        // Initialize grid if not yet done
         if (data.getCenterPos() == null) {
-            VillageGrid grid = new VillageGrid(data, VillageManager.getConfig());
-            grid.initialize(overworld.getRespawnData().pos());
+            data.setCenterPos(overworld.getRespawnData().pos());
         }
-
         source.sendSuccess(() -> Component.literal("Village mode enabled"), true);
         return 1;
     }
@@ -68,10 +64,12 @@ public class VillageCommand {
                 ? String.format("(%d, %d, %d)", data.getCenterPos().getX(), data.getCenterPos().getY(), data.getCenterPos().getZ())
                 : "not set";
         String statusText = String.format(
-                "Village Mode: %s\nCenter: %s\nHouses: %d\nPlayers: %d\nPlot size: %d\nMax height diff: %d\nPaths: %s\nRespawn at house: %s",
+                "Village Mode: %s\nCenter: %s\nRoads: %d segments\nHouses: %d\nDecorations: %d\nPlayers: %d\nPlot size: %d\nMax height diff: %d\nPaths: %s\nRespawn at house: %s",
                 data.isEnabled() ? "enabled" : "disabled",
                 centerInfo,
+                data.getAllRoads().size(),
                 data.getHouseCount(),
+                data.getDecorationCount(),
                 data.getPlayerCount(),
                 config.getPlotSize(),
                 config.getMaxHeightDifference(),
