@@ -86,6 +86,13 @@ public class VillageHouseGenerator {
             }
         }
 
+        // Check if center is on ice
+        BlockState groundState = level.getBlockState(new BlockPos(centerX, centerY - 1, centerZ));
+        if (groundState.is(Blocks.ICE) || groundState.is(Blocks.PACKED_ICE)
+                || groundState.is(Blocks.BLUE_ICE) || groundState.is(Blocks.FROSTED_ICE)) {
+            return false;
+        }
+
         // Sample corners to check height difference.
         // Use a smaller check area (10x10) than the full structure footprint
         // to allow placement on moderately hilly terrain.

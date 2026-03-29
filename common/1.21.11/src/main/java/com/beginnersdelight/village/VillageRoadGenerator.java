@@ -181,40 +181,78 @@ public class VillageRoadGenerator {
             return Optional.empty();
         }
 
-        // Weighted random selection from directions with positive scores
-        int selectedIdx = selectDirectionWeighted(scores, random);
-        if (selectedIdx == -1) {
-            return Optional.empty();
+        // Try directions in order of score (best first) until we find one
+        // where a house can actually be placed along the segment
+        Integer[] sortedIndices = new Integer[DIRECTIONS.length];
+        for (int i = 0; i < sortedIndices.length; i++) sortedIndices[i] = i;
+        java.util.Arrays.sort(sortedIndices, (a, b) -> scores[b] - scores[a]);
+
+        for (int idx : sortedIndices) {
+            if (scores[idx] < MIN_SCORE_THRESHOLD) break;
+
+            int dx = DIRECTIONS[idx][0];
+            int dz = DIRECTIONS[idx][1];
+            int length = MIN_SEGMENT_LENGTH + random.nextInt(MAX_SEGMENT_LENGTH - MIN_SEGMENT_LENGTH + 1);
+
+            int endX = from.getX() + dx * length;
+            int endZ = from.getZ() + dz * length;
+            int endY = findGroundY(level, endX, endZ);
+            if (endY == -1) endY = from.getY();
+            BlockPos endPos = new BlockPos(endX, endY, endZ);
+
+            // Pre-check: can at least one house be placed along this segment?
+            RoadSegment candidate = new RoadSegment(-1, from, endPos, List.of());
+            if (!hasViablePlacement(level, candidate, data)) {
+                continue; // Skip this direction, try the next
+            }
+
+            int segmentId = data.allocateSegmentId();
+            RoadSegment newSegment = new RoadSegment(segmentId, from, endPos, List.of());
+            data.addRoad(newSegment);
+            parent.addChild(segmentId);
+            data.setDirty();
+
+            placeRoadBlocks(level, newSegment);
+
+            BeginnersDelight.LOGGER.info("Grew road segment {} from {} to {}", segmentId, from, endPos);
+
+            // Check for branch opportunity
+            tryBranch(level, newSegment, data, scores, idx, from, random);
+
+            return Optional.of(newSegment);
         }
 
-        // Generate the new segment
-        int dx = DIRECTIONS[selectedIdx][0];
-        int dz = DIRECTIONS[selectedIdx][1];
-        int length = MIN_SEGMENT_LENGTH + random.nextInt(MAX_SEGMENT_LENGTH - MIN_SEGMENT_LENGTH + 1);
+        return Optional.empty();
+    }
 
-        int endX = from.getX() + dx * length;
-        int endZ = from.getZ() + dz * length;
-        int endY = findGroundY(level, endX, endZ);
-        if (endY == -1) {
-            endY = from.getY();
+    /**
+     * Checks whether at least one house position is viable along a candidate segment.
+     * Tests positions at 25%, 50%, 75% of the segment on both sides with setbacks 3-6.
+     */
+    private static boolean hasViablePlacement(ServerLevel level, RoadSegment segment, VillageData data) {
+        BlockPos start = segment.getStart();
+        BlockPos end = segment.getEnd();
+        int totalDx = end.getX() - start.getX();
+        int totalDz = end.getZ() - start.getZ();
+        int dx = Integer.signum(totalDx);
+        int dz = Integer.signum(totalDz);
+        if (dx == 0 && dz == 0) return false;
+
+        int perpDx = -dz;
+        int perpDz = dx;
+
+        double[] positions = {0.25, 0.5, 0.75};
+        for (double t : positions) {
+            int alongX = start.getX() + (int) (totalDx * t);
+            int alongZ = start.getZ() + (int) (totalDz * t);
+            for (int setback = 3; setback <= 6; setback += 2) { // Check 3 and 5 only for speed
+                BlockPos pos = new BlockPos(alongX + perpDx * setback, start.getY(), alongZ + perpDz * setback);
+                if (VillageHouseGenerator.isSuitable(level, pos, 10, data)) return true;
+                pos = new BlockPos(alongX - perpDx * setback, start.getY(), alongZ - perpDz * setback);
+                if (VillageHouseGenerator.isSuitable(level, pos, 10, data)) return true;
+            }
         }
-        BlockPos endPos = new BlockPos(endX, endY, endZ);
-
-        int segmentId = data.allocateSegmentId();
-        RoadSegment newSegment = new RoadSegment(segmentId, from, endPos, List.of());
-        data.addRoad(newSegment);
-        parent.addChild(segmentId);
-        data.setDirty();
-
-        placeRoadBlocks(level, newSegment);
-
-        BeginnersDelight.LOGGER.info("Grew road segment {} from {} to {}", segmentId, from, endPos);
-
-        // Check for branch opportunity: if 2+ directions score similarly high,
-        // add a branch with some probability
-        tryBranch(level, newSegment, data, scores, selectedIdx, from, random);
-
-        return Optional.of(newSegment);
+        return false;
     }
 
     /**
