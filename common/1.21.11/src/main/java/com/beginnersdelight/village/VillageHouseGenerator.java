@@ -109,7 +109,8 @@ public class VillageHouseGenerator {
      */
     public static boolean isSuitable(ServerLevel level, BlockPos plotCenter, int maxHeightDiff, VillageData data) {
         if (!isSuitable(level, plotCenter, maxHeightDiff)) return false;
-        return !checkCollision(plotCenter, 7, data);
+        // Use halfSize=12 to account for structure footprint + terrain modification zone
+        return !checkCollision(plotCenter, 12, data);
     }
 
     /**
@@ -132,7 +133,9 @@ public class VillageHouseGenerator {
         // overlap with the road corridor.
         for (VillagePlot plot : data.getAllPlots()) {
             BlockPos plotPos = plot.getPosition();
-            int plotHalf = 7; // default collision half-size for buildings
+            // Structure footprint (~6 half) + terrain modification zone (6 blocks)
+            // to prevent fillFoundation/blendSurroundingTerrain from destroying neighbors
+            int plotHalf = 12;
             if (plotPos.getX() - plotHalf < maxX && plotPos.getX() + plotHalf > minX
                     && plotPos.getZ() - plotHalf < maxZ && plotPos.getZ() + plotHalf > minZ) {
                 return true;
