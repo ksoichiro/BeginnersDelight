@@ -147,13 +147,13 @@ public class VillageManager {
             }
         }
 
-        // If no existing segment works, grow new segments and try (max 3 attempts)
+        // If no existing segment works, grow new segments and try (max 5 attempts)
         if (placementOpt.isEmpty()) {
-            for (int attempt = 0; attempt < 3; attempt++) {
+            for (int attempt = 0; attempt < 5; attempt++) {
                 Optional<RoadSegment> segmentOpt = VillageRoadGenerator.grow(overworld, data);
                 if (segmentOpt.isEmpty()) {
                     BeginnersDelight.LOGGER.warn("Failed to grow road segment (attempt {}/{})",
-                            attempt + 1, 3);
+                            attempt + 1, 5);
                     continue;
                 }
                 RoadSegment segment = segmentOpt.get();

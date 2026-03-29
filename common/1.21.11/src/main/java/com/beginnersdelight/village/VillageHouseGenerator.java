@@ -86,8 +86,10 @@ public class VillageHouseGenerator {
             }
         }
 
-        // Sample corners to check height difference
-        int halfSize = 7; // approximate half of structure footprint
+        // Sample corners to check height difference.
+        // Use a smaller check area (10x10) than the full structure footprint
+        // to allow placement on moderately hilly terrain.
+        int halfSize = 5;
         int[][] corners = {
                 {centerX - halfSize, centerZ - halfSize},
                 {centerX + halfSize, centerZ - halfSize},
