@@ -176,6 +176,8 @@ public class VillageRoadGenerator {
 
         // Filter directions with score above threshold
         if (maxScore < MIN_SCORE_THRESHOLD) {
+            BeginnersDelight.LOGGER.debug("All directions scored below threshold ({}) from {}, max score: {}",
+                    MIN_SCORE_THRESHOLD, from, maxScore);
             return Optional.empty();
         }
 
@@ -366,17 +368,11 @@ public class VillageRoadGenerator {
      * Checks whether a position overlaps with existing road segments or building plots.
      */
     private static boolean overlapsExisting(VillageData data, int x, int z) {
-        // Check road segments
-        for (RoadSegment road : data.getAllRoads()) {
-            if (isNearSegment(road, x, z, 3)) {
-                return true;
-            }
-        }
-        // Check building plots
+        // Check building plots (not roads — roads are expected to be near other roads at junctions)
         for (VillagePlot plot : data.getAllPlots()) {
             BlockPos pos = plot.getPosition();
-            // Approximate building footprint check (15x15 collision rectangle for houses)
-            int margin = 8;
+            // Check if within building footprint (structure ~11x11, so halfSize ~6)
+            int margin = 6;
             if (Math.abs(x - pos.getX()) <= margin && Math.abs(z - pos.getZ()) <= margin) {
                 return true;
             }

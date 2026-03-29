@@ -93,12 +93,26 @@ public class VillageCommand {
             return 0;
         }
 
-        int beforeCount = data.getHouseCount();
+        int beforePlots = data.getAllPlots().size();
         VillageManager.forceAssignHouse(player);
-        int afterCount = data.getHouseCount();
+        int afterPlots = data.getAllPlots().size();
 
-        if (afterCount > beforeCount) {
-            source.sendSuccess(() -> Component.literal("Test house placed (total: " + afterCount + ")"), true);
+        // Check if a NEW plot was added (not just starter house registration)
+        int newPlots = afterPlots - beforePlots;
+        if (newPlots > 0) {
+            // Subtract 1 if starter house was registered (it's not a "new" house)
+            int newHouses = (int) data.getAllPlots().stream()
+                    .skip(beforePlots)
+                    .filter(p -> p.getType() == PlotType.HOUSE)
+                    .count();
+            boolean starterWasRegistered = newPlots > 1 || (newPlots == 1 && newHouses == 0);
+            int actualNew = starterWasRegistered ? newPlots - 1 : newPlots;
+            if (actualNew > 0) {
+                int houseCount = data.getHouseCount();
+                source.sendSuccess(() -> Component.literal("Test house placed (total houses: " + houseCount + ")"), true);
+            } else {
+                source.sendFailure(Component.literal("Failed to place test house (starter house was registered)"));
+            }
         } else {
             source.sendFailure(Component.literal("Failed to place test house"));
         }
