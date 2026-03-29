@@ -126,19 +126,15 @@ public class VillageHouseGenerator {
         int minZ = pos.getZ() - halfSize;
         int maxZ = pos.getZ() + halfSize;
 
-        // Check against existing buildings
+        // Check against existing buildings only.
+        // Road segments are NOT checked because houses are designed to be
+        // placed along roads — their collision rectangles will naturally
+        // overlap with the road corridor.
         for (VillagePlot plot : data.getAllPlots()) {
             BlockPos plotPos = plot.getPosition();
             int plotHalf = 7; // default collision half-size for buildings
             if (plotPos.getX() - plotHalf < maxX && plotPos.getX() + plotHalf > minX
                     && plotPos.getZ() - plotHalf < maxZ && plotPos.getZ() + plotHalf > minZ) {
-                return true;
-            }
-        }
-
-        // Check against road segments (4-block wide corridor)
-        for (RoadSegment road : data.getAllRoads()) {
-            if (segmentIntersectsRect(road, minX, maxX, minZ, maxZ)) {
                 return true;
             }
         }
