@@ -26,22 +26,27 @@ public class VillagePathGenerator {
         int targetX = to.getX();
         int targetZ = to.getZ();
 
-        // Trace along X-axis
+        // Determine primary axis (X first, then Z)
         int stepX = x < targetX ? 1 : -1;
+        int stepZ = z < targetZ ? 1 : -1;
+
+        // Trace along X-axis (2-block wide: ±1 on Z)
         while (x != targetX) {
             placePathBlock(level, x, z);
+            placePathBlock(level, x, z + 1);
             x += stepX;
         }
 
-        // Trace along Z-axis
-        int stepZ = z < targetZ ? 1 : -1;
+        // Trace along Z-axis (2-block wide: ±1 on X)
         while (z != targetZ) {
             placePathBlock(level, x, z);
+            placePathBlock(level, x + 1, z);
             z += stepZ;
         }
 
         // Place at final position
         placePathBlock(level, x, z);
+        placePathBlock(level, x + 1, z);
     }
 
     private static void placePathBlock(ServerLevel level, int x, int z) {

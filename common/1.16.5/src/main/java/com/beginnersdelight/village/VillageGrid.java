@@ -59,13 +59,28 @@ public class VillageGrid {
         return Optional.empty();
     }
 
+    /**
+     * Converts a grid position to world coordinates with a random offset
+     * applied within the plot for a more natural village appearance.
+     * The offset is deterministic per grid position (seeded by grid coords).
+     */
     public BlockPos gridToWorld(GridPos gridPos) {
         BlockPos center = data.getCenterPos();
         int plotSize = config.getPlotSize();
+        int baseX = center.getX() + (gridPos.x() * plotSize);
+        int baseZ = center.getZ() + (gridPos.z() * plotSize);
+
+        // Deterministic random offset based on grid position (±3 blocks)
+        // Using a simple hash to avoid needing to store offsets
+        int maxOffset = 3;
+        long seed = ((long) gridPos.x() * 73856093L) ^ ((long) gridPos.z() * 19349663L);
+        int offsetX = (int) ((seed & 0xFF) % (maxOffset * 2 + 1)) - maxOffset;
+        int offsetZ = (int) (((seed >> 8) & 0xFF) % (maxOffset * 2 + 1)) - maxOffset;
+
         return new BlockPos(
-                center.getX() + (gridPos.x() * plotSize),
+                baseX + offsetX,
                 center.getY(),
-                center.getZ() + (gridPos.z() * plotSize)
+                baseZ + offsetZ
         );
     }
 
