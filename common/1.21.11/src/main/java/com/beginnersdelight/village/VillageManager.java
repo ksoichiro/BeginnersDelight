@@ -131,6 +131,10 @@ public class VillageManager {
             VillageRoadGenerator.bootstrap(overworld, data, center);
         }
 
+        // Ensure the starter house is registered as a plot for collision detection,
+        // even when called via forceAssignHouse (test command)
+        ensureStarterHouseRegistered(overworld, data);
+
         // Try to grow road and find placement along segments (max 5 attempts)
         int maxAttempts = 5;
         for (int attempt = 0; attempt < maxAttempts; attempt++) {
@@ -237,6 +241,30 @@ public class VillageManager {
     }
 
     /**
+     * Ensures the starter house is registered as a VillagePlot for collision detection.
+     * This is needed even for the test command (forceAssignHouse) to prevent new houses
+     * from overlapping with the starter house.
+     */
+    private static void ensureStarterHouseRegistered(ServerLevel overworld, VillageData data) {
+        StarterHouseData starterData = StarterHouseData.get(overworld);
+        BlockPos starterPos = starterData.getSpawnPos();
+        if (starterPos == null || !starterData.isGenerated()) return;
+
+        // Check if any existing plot is already at the starter house position
+        for (VillagePlot plot : data.getAllPlots()) {
+            if (plot.getPosition().equals(starterPos)) return; // Already registered
+        }
+
+        // Register the starter house as a plot (no player binding)
+        RoadSegment firstSegment = data.getAllRoads().isEmpty() ? null : data.getAllRoads().getFirst();
+        int segmentId = firstSegment != null ? firstSegment.getId() : 0;
+        int plotId = data.allocatePlotId();
+        VillagePlot plot = new VillagePlot(plotId, starterPos, starterPos, PlotType.HOUSE, segmentId);
+        data.addPlot(plot);
+        BeginnersDelight.LOGGER.debug("Registered starter house as collision plot at {}", starterPos);
+    }
+
+    /**
      * Finds a suitable house placement position along a road segment.
      * Tries a random position on one side of the road, then the opposite side.
      */
@@ -273,7 +301,7 @@ public class VillageManager {
         int candidateZ = alongZ + perpDz * setback;
         BlockPos candidate = new BlockPos(candidateX, start.getY(), candidateZ);
 
-        if (VillageHouseGenerator.isSuitable(level, candidate, config.getMaxHeightDifference())) {
+        if (VillageHouseGenerator.isSuitable(level, candidate, config.getMaxHeightDifference(), data)) {
             return Optional.of(candidate);
         }
 
@@ -282,7 +310,7 @@ public class VillageManager {
         candidateZ = alongZ - perpDz * setback;
         candidate = new BlockPos(candidateX, start.getY(), candidateZ);
 
-        if (VillageHouseGenerator.isSuitable(level, candidate, config.getMaxHeightDifference())) {
+        if (VillageHouseGenerator.isSuitable(level, candidate, config.getMaxHeightDifference(), data)) {
             return Optional.of(candidate);
         }
 
