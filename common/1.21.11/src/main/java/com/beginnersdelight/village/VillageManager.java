@@ -135,25 +135,37 @@ public class VillageManager {
         // even when called via forceAssignHouse (test command)
         ensureStarterHouseRegistered(overworld, data);
 
-        // Try to grow road and find placement along segments (max 5 attempts)
-        int maxAttempts = 5;
-        for (int attempt = 0; attempt < maxAttempts; attempt++) {
-            // Grow a new road segment
-            Optional<RoadSegment> segmentOpt = VillageRoadGenerator.grow(overworld, data);
-            if (segmentOpt.isEmpty()) {
-                BeginnersDelight.LOGGER.warn("Failed to grow road segment (attempt {}/{})",
-                        attempt + 1, maxAttempts);
-                continue;
-            }
+        // First, try placing along existing road segments before growing new ones
+        Optional<BlockPos> placementOpt = Optional.empty();
+        RoadSegment placementSegment = null;
 
-            RoadSegment segment = segmentOpt.get();
-            Optional<BlockPos> placementOpt = findPlacementAlongSegment(overworld, segment, data);
-            if (placementOpt.isEmpty()) {
-                BeginnersDelight.LOGGER.debug("No suitable placement along segment {} (attempt {}/{})",
-                        segment.getId(), attempt + 1, maxAttempts);
-                continue;
+        for (RoadSegment existing : data.getAllRoads()) {
+            placementOpt = findPlacementAlongSegment(overworld, existing, data);
+            if (placementOpt.isPresent()) {
+                placementSegment = existing;
+                break;
             }
+        }
 
+        // If no existing segment works, grow new segments and try (max 3 attempts)
+        if (placementOpt.isEmpty()) {
+            for (int attempt = 0; attempt < 3; attempt++) {
+                Optional<RoadSegment> segmentOpt = VillageRoadGenerator.grow(overworld, data);
+                if (segmentOpt.isEmpty()) {
+                    BeginnersDelight.LOGGER.warn("Failed to grow road segment (attempt {}/{})",
+                            attempt + 1, 3);
+                    continue;
+                }
+                RoadSegment segment = segmentOpt.get();
+                placementOpt = findPlacementAlongSegment(overworld, segment, data);
+                if (placementOpt.isPresent()) {
+                    placementSegment = segment;
+                    break;
+                }
+            }
+        }
+
+        if (placementOpt.isPresent() && placementSegment != null) {
             BlockPos plotCenter = placementOpt.get();
 
             // Place the house
@@ -162,7 +174,7 @@ public class VillageManager {
             if (result.isEmpty()) {
                 BeginnersDelight.LOGGER.warn("Failed to place village house at {} for player {}",
                         plotCenter, player.getName().getString());
-                continue;
+                return;
             }
 
             VillageHouseGenerator.PlacementResult placement = result.get();
@@ -170,7 +182,7 @@ public class VillageManager {
             // Record in data
             int plotId = data.allocatePlotId();
             VillagePlot plot = new VillagePlot(plotId, placement.interiorPos(), placement.doorFrontPos(),
-                    PlotType.HOUSE, segment.getId());
+                    PlotType.HOUSE, placementSegment.getId());
             data.addPlot(plot);
             data.setPlayerHouse(player.getUUID(), plotId);
 
@@ -191,8 +203,8 @@ public class VillageManager {
             return;
         }
 
-        BeginnersDelight.LOGGER.warn("No suitable house placement found after {} attempts for player {}",
-                maxAttempts, player.getName().getString());
+        BeginnersDelight.LOGGER.warn("No suitable house placement found for player {}",
+                player.getName().getString());
     }
 
     private static void tryPlaceDecoration(ServerLevel overworld, VillageData data) {
@@ -266,7 +278,7 @@ public class VillageManager {
 
     /**
      * Finds a suitable house placement position along a road segment.
-     * Tries a random position on one side of the road, then the opposite side.
+     * Tries multiple positions along the segment at different offsets.
      */
     private static Optional<BlockPos> findPlacementAlongSegment(ServerLevel level, RoadSegment segment,
                                                                   VillageData data) {
@@ -277,41 +289,36 @@ public class VillageManager {
         int totalDx = end.getX() - start.getX();
         int totalDz = end.getZ() - start.getZ();
 
-        // Direction along the segment
         int dx = Integer.signum(totalDx);
         int dz = Integer.signum(totalDz);
-
-        // Perpendicular direction (rotate 90 degrees: (dx,dz) -> (-dz,dx))
-        int perpDx = -dz;
-        int perpDz = dx;
-        // If segment is purely diagonal, perpendicular is still valid
-        // If segment is zero-length, skip
         if (dx == 0 && dz == 0) return Optional.empty();
 
-        // Pick a random position along the segment (0.0 to 1.0)
-        double t = 0.2 + random.nextDouble() * 0.6; // avoid very start/end
-        int alongX = start.getX() + (int) (totalDx * t);
-        int alongZ = start.getZ() + (int) (totalDz * t);
+        // Perpendicular direction
+        int perpDx = -dz;
+        int perpDz = dx;
 
-        // Random setback distance (2-5 blocks)
-        int setback = 2 + random.nextInt(4);
+        // Try multiple positions along the segment (at 25%, 50%, 75%)
+        double[] positions = {0.25, 0.5, 0.75};
+        for (double t : positions) {
+            int alongX = start.getX() + (int) (totalDx * t);
+            int alongZ = start.getZ() + (int) (totalDz * t);
 
-        // Try one side
-        int candidateX = alongX + perpDx * setback;
-        int candidateZ = alongZ + perpDz * setback;
-        BlockPos candidate = new BlockPos(candidateX, start.getY(), candidateZ);
+            // Try multiple setback distances on both sides
+            for (int setback = 3; setback <= 6; setback++) {
+                // Try positive side
+                BlockPos candidate = new BlockPos(
+                        alongX + perpDx * setback, start.getY(), alongZ + perpDz * setback);
+                if (VillageHouseGenerator.isSuitable(level, candidate, config.getMaxHeightDifference(), data)) {
+                    return Optional.of(candidate);
+                }
 
-        if (VillageHouseGenerator.isSuitable(level, candidate, config.getMaxHeightDifference(), data)) {
-            return Optional.of(candidate);
-        }
-
-        // Try opposite side
-        candidateX = alongX - perpDx * setback;
-        candidateZ = alongZ - perpDz * setback;
-        candidate = new BlockPos(candidateX, start.getY(), candidateZ);
-
-        if (VillageHouseGenerator.isSuitable(level, candidate, config.getMaxHeightDifference(), data)) {
-            return Optional.of(candidate);
+                // Try negative side
+                candidate = new BlockPos(
+                        alongX - perpDx * setback, start.getY(), alongZ - perpDz * setback);
+                if (VillageHouseGenerator.isSuitable(level, candidate, config.getMaxHeightDifference(), data)) {
+                    return Optional.of(candidate);
+                }
+            }
         }
 
         return Optional.empty();
