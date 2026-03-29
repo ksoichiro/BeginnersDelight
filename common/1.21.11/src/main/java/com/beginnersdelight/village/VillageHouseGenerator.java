@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Places village house structures with terrain handling.
@@ -101,6 +102,65 @@ public class VillageHouseGenerator {
             maxY = Math.max(maxY, y);
         }
         return (maxY - minY) <= maxHeightDiff;
+    }
+
+    /**
+     * Checks suitability including collision with existing village structures.
+     */
+    public static boolean isSuitable(ServerLevel level, BlockPos plotCenter, int maxHeightDiff, VillageData data) {
+        if (!isSuitable(level, plotCenter, maxHeightDiff)) return false;
+        return !checkCollision(plotCenter, 7, data);
+    }
+
+    /**
+     * Checks if placing a building at the given position would collide with
+     * existing buildings or roads.
+     * @param pos center of the proposed building
+     * @param halfSize half the collision rectangle size (footprint/2 + margin)
+     * @param data village data containing existing plots and roads
+     * @return true if collision detected (position is NOT suitable)
+     */
+    public static boolean checkCollision(BlockPos pos, int halfSize, VillageData data) {
+        int minX = pos.getX() - halfSize;
+        int maxX = pos.getX() + halfSize;
+        int minZ = pos.getZ() - halfSize;
+        int maxZ = pos.getZ() + halfSize;
+
+        // Check against existing buildings
+        for (VillagePlot plot : data.getAllPlots()) {
+            BlockPos plotPos = plot.getPosition();
+            int plotHalf = 7; // default collision half-size for buildings
+            if (plotPos.getX() - plotHalf < maxX && plotPos.getX() + plotHalf > minX
+                    && plotPos.getZ() - plotHalf < maxZ && plotPos.getZ() + plotHalf > minZ) {
+                return true;
+            }
+        }
+
+        // Check against road segments (4-block wide corridor)
+        for (RoadSegment road : data.getAllRoads()) {
+            if (segmentIntersectsRect(road, minX, maxX, minZ, maxZ)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Checks if a road segment's corridor (4 blocks wide) intersects a rectangle.
+     */
+    private static boolean segmentIntersectsRect(RoadSegment segment, int minX, int maxX, int minZ, int maxZ) {
+        BlockPos start = segment.getStart();
+        BlockPos end = segment.getEnd();
+        int corridorHalf = 2; // 4-block wide corridor = ±2 from center line
+
+        // Simple AABB check of segment's bounding box + corridor width
+        int segMinX = Math.min(start.getX(), end.getX()) - corridorHalf;
+        int segMaxX = Math.max(start.getX(), end.getX()) + corridorHalf;
+        int segMinZ = Math.min(start.getZ(), end.getZ()) - corridorHalf;
+        int segMaxZ = Math.max(start.getZ(), end.getZ()) + corridorHalf;
+
+        return segMinX < maxX && segMaxX > minX && segMinZ < maxZ && segMaxZ > minZ;
     }
 
     /**
