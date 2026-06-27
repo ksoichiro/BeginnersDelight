@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Village Mode — an opt-in feature that grows a village around the world spawn as players join. Enable it with `/beginnersdelight village enable`; each new player gets their own house connected by dirt paths, with decoration buildings (well, shed, storehouse, farm) placed periodically. Includes per-player house binding with respawn-at-house support, a `status`/`test` command, and a `config/beginnersdelight-village.properties` config file (plot size, height tolerance, path generation, respawn behavior). Available on all supported versions (Fabric, NeoForge, and Forge)
+
+### Fixed
+
+- Improve starter house terrain blending: flatten the surrounding terrain before filling the foundation and carve down corner pillars to match the surrounding ground, preventing tall corner pillars on uneven terrain
+
 ## [0.4.0] - 2026-02-22
 
 ### Changed

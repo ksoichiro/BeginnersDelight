@@ -14,6 +14,7 @@ A multi-loader Minecraft mod that generates a small starter house at the world s
 - **Multiplayer Support**: All players spawn at the same location with the starter house
 - **Safe Removal**: Uses only vanilla blocks, so the structure remains intact even after removing the mod
 - **No Regeneration**: The house is generated only once and never duplicated
+- **Village Mode** (optional): Grow a village around the world spawn as players join — each new player gets their own house connected by dirt paths, with decoration buildings (well, shed, storehouse, farm) appearing as the village grows. Enable it in-game with `/beginnersdelight village enable`; players can respawn at their own house. Configurable via command and config file
 
 ## Supported Versions
 

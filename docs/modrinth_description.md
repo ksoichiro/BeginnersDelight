@@ -29,6 +29,13 @@ The chest in the starter house contains helpful items for early game:
 - All players spawn at the same location near the starter house
 - The house is generated only once — no duplicates
 
+### 🏘️ Village Mode (Optional)
+- **Grows as players join**: Enable with `/beginnersdelight village enable` and a village forms around the world spawn
+- **A house per player**: Each new player gets their own house, connected to the village by dirt paths
+- **Decoration buildings**: Wells, sheds, storehouses, and farms appear as the village grows
+- **Respawn at home**: Players can respawn at their own house
+- **Configurable**: Adjust plot size, path generation, and respawn behavior via command or config file
+
 ### 🔧 Safe to Remove
 - Built entirely with vanilla blocks (oak wood, cobblestone, etc.)
 - The structure remains intact even after removing the mod
