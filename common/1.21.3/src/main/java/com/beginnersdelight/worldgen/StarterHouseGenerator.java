@@ -144,6 +144,10 @@ public class StarterHouseGenerator {
         // Blend corner pillars that were skipped by isOutsideChamfer in fillFoundation
         blendCornerPillars(level, placePos, template.getSize());
 
+        // Replace surface dirt next to grass with grass so the leveled/blended
+        // ring blends naturally with the surrounding grassland.
+        naturalizeDirtSurface(level, placePos, template.getSize());
+
         // Remove item entities (seeds, sticks, etc.) dropped by destroyed vegetation
         removeDroppedItems(level, placePos, template.getSize());
 
@@ -843,6 +847,88 @@ public class StarterHouseGenerator {
                             level.setBlock(new BlockPos(x, targetY - 1, z), surfaceBlock, 2);
                         }
                     }
+                }
+            }
+        }
+    }
+
+    /**
+     * Replaces dirt blocks on the leveled/blended top surface with grass when a
+     * grass block is present among their 8 horizontal neighbours. Natural terrain
+     * has grass on top with dirt beneath, so isolated dirt left by foundation
+     * filling or terrain blending looks unnatural next to grass.
+     *
+     * Runs as a post-process after all surface placement. Grass membership is read
+     * from a snapshot taken before any conversion, so a flipped block never causes
+     * its neighbour to flip too (keeps the check local/per-block, no cascade).
+     */
+    private static void naturalizeDirtSurface(ServerLevel level, BlockPos placePos,
+                                               net.minecraft.core.Vec3i structureSize) {
+        int margin = 2;
+        int blendRadius = 3;
+        int extend = margin + blendRadius;
+
+        int minX = placePos.getX() - extend;
+        int maxX = placePos.getX() + structureSize.getX() + extend;
+        int minZ = placePos.getZ() - extend;
+        int maxZ = placePos.getZ() + structureSize.getZ() + extend;
+
+        int width = maxX - minX + 1;
+        int depth = maxZ - minZ + 1;
+        boolean[][] grass = new boolean[width][depth];
+        // Integer.MIN_VALUE marks "no dirt top here"; otherwise the Y of the dirt surface block.
+        int[][] dirtTopY = new int[width][depth];
+        for (int i = 0; i < width; i++) {
+            for (int j = 0; j < depth; j++) {
+                dirtTopY[i][j] = Integer.MIN_VALUE;
+            }
+        }
+
+        // Snapshot pass: record grass tops and dirt tops from the current surface.
+        for (int x = minX; x <= maxX; x++) {
+            for (int z = minZ; z <= maxZ; z++) {
+                int groundY = findGroundY(level, x, z);
+                if (groundY == -1) {
+                    continue;
+                }
+                int topY = groundY - 1;
+                BlockState top = level.getBlockState(new BlockPos(x, topY, z));
+                int i = x - minX;
+                int j = z - minZ;
+                if (top.is(Blocks.GRASS_BLOCK)) {
+                    grass[i][j] = true;
+                } else if (top.is(Blocks.DIRT)) {
+                    dirtTopY[i][j] = topY;
+                }
+            }
+        }
+
+        // Convert pass: a dirt top adjacent (8-dir) to a snapshot grass top becomes grass.
+        for (int i = 0; i < width; i++) {
+            for (int j = 0; j < depth; j++) {
+                if (dirtTopY[i][j] == Integer.MIN_VALUE) {
+                    continue;
+                }
+                boolean adjacentGrass = false;
+                for (int di = -1; di <= 1 && !adjacentGrass; di++) {
+                    for (int dj = -1; dj <= 1; dj++) {
+                        if (di == 0 && dj == 0) {
+                            continue;
+                        }
+                        int ni = i + di;
+                        int nj = j + dj;
+                        if (ni < 0 || ni >= width || nj < 0 || nj >= depth) {
+                            continue;
+                        }
+                        if (grass[ni][nj]) {
+                            adjacentGrass = true;
+                            break;
+                        }
+                    }
+                }
+                if (adjacentGrass) {
+                    level.setBlock(new BlockPos(minX + i, dirtTopY[i][j], minZ + j),
+                            Blocks.GRASS_BLOCK.defaultBlockState(), 2);
                 }
             }
         }
