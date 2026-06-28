@@ -35,6 +35,10 @@ dependencies {
     modImplementation "net.fabricmc.fabric-api:fabric-lifecycle-events-v1:1.2.2+3cc0f0907d"
     modImplementation "net.fabricmc.fabric-api:fabric-networking-api-v1:1.0.5+3cc0f0907d"
 
+    // Bundle the TOML config library into the Fabric jar (NeoForge/Forge ship night-config).
+    modImplementation include("com.electronwill.night-config:core:3.8.3")
+    modImplementation include("com.electronwill.night-config:toml:3.8.3")
+
     common(project(path: commonModule, configuration: 'namedElements')) { transitive false }
     shadowBundle project(path: commonModule, configuration: 'transformProductionFabric')
 }

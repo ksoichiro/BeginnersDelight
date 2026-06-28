@@ -1,7 +1,6 @@
 package com.beginnersdelight.village;
 
 import com.mojang.brigadier.CommandDispatcher;
-import com.mojang.brigadier.arguments.StringArgumentType;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
@@ -24,15 +23,12 @@ public class VillageCommand {
                                         .executes(ctx -> disable(ctx.getSource())))
                                 .then(Commands.literal("status")
                                         .executes(ctx -> status(ctx.getSource())))
-                                .then(Commands.literal("set")
-                                        .then(Commands.argument("key", StringArgumentType.word())
-                                                .then(Commands.argument("value", StringArgumentType.word())
-                                                        .executes(ctx -> set(
-                                                                ctx.getSource(),
-                                                                StringArgumentType.getString(ctx, "key"),
-                                                                StringArgumentType.getString(ctx, "value"))))))
                                 .then(Commands.literal("test")
                                         .executes(ctx -> test(ctx.getSource()))))
+                        .then(Commands.literal("config")
+                                .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                                .then(Commands.literal("reload")
+                                        .executes(ctx -> reload(ctx.getSource()))))
         );
     }
 
@@ -107,20 +103,9 @@ public class VillageCommand {
         return 1;
     }
 
-    private static int set(CommandSourceStack source, String key, String value) {
-        VillageConfig config = VillageManager.getConfig();
-        try {
-            if (config.set(key, value)) {
-                source.sendSuccess(() -> Component.literal("Set " + key + " = " + value), true);
-                return 1;
-            } else {
-                source.sendFailure(Component.literal("Unknown config key: " + key
-                        + ". Valid keys: plotSize, maxHeightDifference, generatePaths, respawnAtHouse"));
-                return 0;
-            }
-        } catch (NumberFormatException e) {
-            source.sendFailure(Component.literal("Invalid value for " + key + ": " + value));
-            return 0;
-        }
+    private static int reload(CommandSourceStack source) {
+        VillageManager.reloadConfig(source.getServer());
+        source.sendSuccess(() -> Component.literal("Reloaded Beginner's Delight config"), true);
+        return 1;
     }
 }

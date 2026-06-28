@@ -17,7 +17,7 @@ import java.util.Set;
  */
 public class VillageManager {
 
-    private static final VillageConfig config = new VillageConfig();
+    private static VillageConfig config = VillageConfigDefaults.defaults();
 
     /**
      * Initializes the village system on server start.
@@ -25,8 +25,7 @@ public class VillageManager {
      * but no center has been set yet.
      */
     public static void onServerStarted(MinecraftServer server) {
-        Path configDir = server.getServerDirectory().resolve("config");
-        config.load(configDir);
+        config = VillageConfigLoader.load(resolveConfigDir(server));
 
         ServerLevel overworld = server.overworld();
         VillageData data = VillageData.get(overworld);
@@ -89,6 +88,23 @@ public class VillageManager {
 
     public static VillageConfig getConfig() {
         return config;
+    }
+
+    /**
+     * Re-reads the config from disk. Invoked by the
+     * {@code /beginnersdelight config reload} command.
+     */
+    public static void reloadConfig(MinecraftServer server) {
+        config = VillageConfigLoader.load(resolveConfigDir(server));
+        BeginnersDelight.LOGGER.info("Reloaded config");
+    }
+
+    /**
+     * Resolves the loader-provided config directory. Kept in one place because the
+     * {@code getServerDirectory()} return type differs across versions (Path vs File).
+     */
+    private static Path resolveConfigDir(MinecraftServer server) {
+        return server.getServerDirectory().resolve("config");
     }
 
     /**

@@ -58,6 +58,11 @@ loom {
 dependencies {
     forge "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
 
+    // Common sources reference the TOML config library; Forge ships night-config at
+    // runtime, so it is only needed on the compile classpath here.
+    compileOnly "com.electronwill.night-config:core:3.8.3"
+    compileOnly "com.electronwill.night-config:toml:3.8.3"
+
     common(project(path: commonModule, configuration: "namedElements")) { transitive false }
     shadowCommon(project(path: commonModule, configuration: "transformProductionForge")) { transitive false }
 }

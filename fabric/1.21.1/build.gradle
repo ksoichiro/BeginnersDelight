@@ -31,6 +31,10 @@ dependencies {
 
     common(project(path: commonModule, configuration: 'namedElements')) { transitive false }
     shadowBundle project(path: commonModule, configuration: 'transformProductionFabric')
+
+    // Bundle the TOML config library into the Fabric jar (NeoForge/Forge ship night-config).
+    modImplementation include("com.electronwill.night-config:core:3.8.3")
+    modImplementation include("com.electronwill.night-config:toml:3.8.3")
 }
 
 sourceSets {
