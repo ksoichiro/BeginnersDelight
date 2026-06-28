@@ -105,7 +105,8 @@ public class StarterHouseGenerator {
                 .setIgnoreEntities(false);
 
         // Find appropriate placement position on the surface
-        BlockPos placePos = findSurfacePosition(level, spawnPos, template.getSize());
+        BlockPos center = findSuitableCenter(level, spawnPos, template.getSize());
+        BlockPos placePos = findSurfacePosition(level, center, template.getSize());
         if (placePos == null) {
             BeginnersDelight.LOGGER.warn("Could not find suitable surface position for starter house");
             return false;
@@ -209,8 +210,13 @@ public class StarterHouseGenerator {
             return null;
         }
 
-        // Ensure placement is at or above sea level to prevent flooding
-        resultY = Math.max(resultY, level.getSeaLevel());
+        // Only raise to sea level when the ground is actually submerged (ocean/lake),
+        // to avoid building underwater. Dry ground below sea level (deep valleys, cave
+        // areas) keeps its real height so the house sits on the ground, not floating.
+        int seaLevel = level.getSeaLevel();
+        if (resultY < seaLevel && isSubmerged(level, centerX, centerZ, resultY, seaLevel)) {
+            resultY = seaLevel;
+        }
 
         return new BlockPos(startX, resultY, startZ);
     }
@@ -240,6 +246,106 @@ public class StarterHouseGenerator {
             return y + 1;
         }
         return -1;
+    }
+
+    /**
+     * Searches outward from the spawn point for a build center that is not sitting
+     * over a large void (e.g. a dripstone cave), where terrain blending would
+     * produce a broken, spike-covered foundation. Returns the spawn point itself
+     * when it is already suitable, or falls back to it when no better spot is found.
+     * The starter house defines the world spawn afterward, so relocating it stays
+     * transparent to the player.
+     */
+    private static BlockPos findSuitableCenter(ServerLevel level, BlockPos spawnPos,
+                                                net.minecraft.core.Vec3i size) {
+        if (isCenterSuitable(level, spawnPos, size)) {
+            return spawnPos;
+        }
+        int step = 8;
+        int maxRadius = 96;
+        for (int r = step; r <= maxRadius; r += step) {
+            int[][] offsets = {
+                    {r, 0}, {-r, 0}, {0, r}, {0, -r},
+                    {r, r}, {r, -r}, {-r, r}, {-r, -r}
+            };
+            for (int[] o : offsets) {
+                BlockPos candidate = spawnPos.offset(o[0], 0, o[1]);
+                if (isCenterSuitable(level, candidate, size)) {
+                    BeginnersDelight.LOGGER.info(
+                            "Relocated starter house from {} to {} to avoid a void/cave below spawn",
+                            spawnPos, candidate);
+                    return candidate;
+                }
+            }
+        }
+        BeginnersDelight.LOGGER.warn(
+                "No void-free location found near spawn {}; building starter house there anyway",
+                spawnPos);
+        return spawnPos;
+    }
+
+    /**
+     * Checks whether a build center has solid ground (no large void below) at its
+     * center and four footprint corners.
+     */
+    private static boolean isCenterSuitable(ServerLevel level, BlockPos center,
+                                             net.minecraft.core.Vec3i size) {
+        int halfX = size.getX() / 2;
+        int halfZ = size.getZ() / 2;
+        int startX = center.getX() - halfX;
+        int startZ = center.getZ() - halfZ;
+        int endX = startX + size.getX() - 1;
+        int endZ = startZ + size.getZ() - 1;
+        int[][] points = {
+                {center.getX(), center.getZ()},
+                {startX, startZ}, {endX, startZ},
+                {startX, endZ}, {endX, endZ}
+        };
+        int minY = Integer.MAX_VALUE;
+        int maxY = Integer.MIN_VALUE;
+        for (int[] p : points) {
+            int y = findGroundY(level, p[0], p[1]);
+            if (y == -1) return false;
+            if (hasVoidBelow(level, p[0], p[1], y)) return false;
+            minY = Math.min(minY, y);
+            maxY = Math.max(maxY, y);
+        }
+        // Reject uneven spots (pit/ravine/cave edges) so the house lands on flat
+        // ground near the surface instead of floating over a hole.
+        if (maxY - minY > 10) return false;
+        return true;
+    }
+
+    /**
+     * Detects whether there is a substantial void (cave/cavern) directly below the
+     * detected ground surface. Scans a fixed window beneath the surface block and
+     * returns true when most of it is empty, indicating the "ground" is only a thin
+     * ceiling or dripstone spike over a cave rather than solid terrain.
+     */
+    private static boolean hasVoidBelow(ServerLevel level, int x, int z, int groundY) {
+        int depth = 12;
+        int airCount = 0;
+        for (int y = groundY - 2; y >= groundY - 1 - depth; y--) {
+            if (level.getBlockState(new BlockPos(x, y, z)).isAir()) {
+                airCount++;
+            }
+        }
+        return airCount >= 6;
+    }
+
+    /**
+     * Returns true if the column at the given XZ is submerged: any fluid exists
+     * between the ground and sea level. Used to decide whether placement should be
+     * raised to sea level (to avoid building underwater) versus kept on dry ground
+     * that merely sits below sea level (deep valleys/caves), which must not float up.
+     */
+    private static boolean isSubmerged(ServerLevel level, int x, int z, int groundY, int seaLevel) {
+        for (int y = groundY; y <= seaLevel; y++) {
+            if (!level.getBlockState(new BlockPos(x, y, z)).getFluidState().isEmpty()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -487,6 +593,14 @@ public class StarterHouseGenerator {
                 if (isOutsideChamfer(x, z, strMinX, strMaxX, strMinZ, strMaxZ, margin)) {
                     continue;
                 }
+                // Skip columns over a void (no solid ground within reach): filling here would
+                // leave floating dirt above a cave.
+                boolean solidWithinReach = false;
+                for (int sy = floorY - 1; sy >= floorY - 10; sy--) {
+                    BlockState below = level.getBlockState(new BlockPos(x, sy, z));
+                    if (!below.isAir() && below.getFluidState().isEmpty()) { solidWithinReach = true; break; }
+                }
+                if (!solidWithinReach) continue;
                 for (int y = floorY - 1; y >= floorY - 10; y--) {
                     BlockPos pos = new BlockPos(x, y, z);
                     BlockState existing = level.getBlockState(pos);
@@ -635,9 +749,18 @@ public class StarterHouseGenerator {
                     }
                     // Place surface block at new ground level
                     if (targetY > level.getMinY()) {
-                        level.setBlock(new BlockPos(x, targetY - 1, z), surfaceBlock, 2);
+                        // Don't leave a lone surface block floating over a void: only cap
+                        // when there is solid support directly beneath it.
+                        BlockState capSupport = level.getBlockState(new BlockPos(x, targetY - 2, z));
+                        if (!capSupport.isAir() && capSupport.getFluidState().isEmpty()) {
+                            level.setBlock(new BlockPos(x, targetY - 1, z), surfaceBlock, 2);
+                        }
                     }
                 } else if (naturalY < targetY) {
+                    // Don't bridge cliffs/voids (e.g. cave edges): a large drop means the natural
+                    // ground plunges away, so filling would build an unnatural dirt pillar into the
+                    // void. Leave the natural cliff intact.
+                    if (floorY - naturalY > 6) continue;
                     // Terrain lower than target: fill up to create a slope
                     for (int y = naturalY; y < targetY; y++) {
                         BlockState fill = (y == targetY - 1) ? surfaceBlock : subsurfaceBlock;
@@ -717,7 +840,12 @@ public class StarterHouseGenerator {
 
                     // Place surface block at target level
                     if (targetY > level.getMinY()) {
-                        level.setBlock(new BlockPos(x, targetY - 1, z), surfaceBlock, 2);
+                        // Don't leave a lone surface block floating over a void: only cap
+                        // when there is solid support directly beneath it.
+                        BlockState capSupport = level.getBlockState(new BlockPos(x, targetY - 2, z));
+                        if (!capSupport.isAir() && capSupport.getFluidState().isEmpty()) {
+                            level.setBlock(new BlockPos(x, targetY - 1, z), surfaceBlock, 2);
+                        }
                     }
                 }
             }

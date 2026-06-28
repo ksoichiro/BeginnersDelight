@@ -95,6 +95,11 @@ public class VillageHouseGenerator {
             return false;
         }
 
+        // Reject locations sitting over a large void (e.g. dripstone caves or other
+        // caverns), where the detected ground is only a thin ceiling/spike above empty
+        // space. Terrain blending cannot produce sane results there.
+        if (hasVoidBelow(level, centerX, centerZ, centerY)) return false;
+
         int halfSize = 7;
         int[][] corners = {
                 {centerX - halfSize, centerZ - halfSize},
@@ -106,10 +111,43 @@ public class VillageHouseGenerator {
         for (int[] corner : corners) {
             int y = findGroundY(level, corner[0], corner[1]);
             if (y == -1) return false;
+            if (hasVoidBelow(level, corner[0], corner[1], y)) return false;
             minY = Math.min(minY, y);
             maxY = Math.max(maxY, y);
         }
         return (maxY - minY) <= maxHeightDiff;
+    }
+
+    /**
+     * Detects whether there is a substantial void (cave/cavern) directly below the
+     * detected ground surface. Scans a fixed window beneath the surface block and
+     * returns true when most of it is empty, indicating the "ground" is only a thin
+     * ceiling or dripstone spike over a cave rather than solid terrain.
+     */
+    private static boolean hasVoidBelow(ServerLevel level, int x, int z, int groundY) {
+        int depth = 12;
+        int airCount = 0;
+        for (int y = groundY - 2; y >= groundY - 1 - depth; y--) {
+            if (level.getBlockState(new BlockPos(x, y, z)).isAir()) {
+                airCount++;
+            }
+        }
+        return airCount >= 6;
+    }
+
+    /**
+     * Returns true if the column at the given XZ is submerged: any fluid exists
+     * between the ground and sea level. Used to decide whether placement should be
+     * raised to sea level (to avoid building underwater) versus kept on dry ground
+     * that merely sits below sea level (deep valleys/caves), which must not float up.
+     */
+    private static boolean isSubmerged(ServerLevel level, int x, int z, int groundY, int seaLevel) {
+        for (int y = groundY; y <= seaLevel; y++) {
+            if (!level.getBlockState(new BlockPos(x, y, z)).getFluidState().isEmpty()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static Optional<PlacementResult> place(ServerLevel level, BlockPos plotCenter) {
@@ -220,7 +258,13 @@ public class VillageHouseGenerator {
             if (y < resultY) resultY = y;
         }
         if (resultY == Integer.MAX_VALUE) return null;
-        resultY = Math.max(resultY, level.getSeaLevel());
+        // Only raise to sea level when the ground is actually submerged (ocean/lake),
+        // to avoid building underwater. Dry ground below sea level (deep valleys, cave
+        // areas) keeps its real height so the house sits on the ground, not floating.
+        int seaLevel = level.getSeaLevel();
+        if (resultY < seaLevel && isSubmerged(level, center.getX(), center.getZ(), resultY, seaLevel)) {
+            resultY = seaLevel;
+        }
         return new BlockPos(startX, resultY, startZ);
     }
 
@@ -364,6 +408,14 @@ public class VillageHouseGenerator {
         for (int x = strMinX - margin; x < strMaxX + margin; x++) {
             for (int z = strMinZ - margin; z < strMaxZ + margin; z++) {
                 if (isOutsideChamfer(x, z, strMinX, strMaxX, strMinZ, strMaxZ, margin)) continue;
+                // Skip columns over a void (no solid ground within reach): filling here would
+                // leave floating dirt above a cave.
+                boolean solidWithinReach = false;
+                for (int sy = floorY - 1; sy >= floorY - 10; sy--) {
+                    BlockState below = level.getBlockState(new BlockPos(x, sy, z));
+                    if (!below.isAir() && below.getFluidState().isEmpty()) { solidWithinReach = true; break; }
+                }
+                if (!solidWithinReach) continue;
                 for (int y = floorY - 1; y >= floorY - 10; y--) {
                     BlockPos pos = new BlockPos(x, y, z);
                     BlockState existing = level.getBlockState(pos);
@@ -409,9 +461,18 @@ public class VillageHouseGenerator {
                     }
                     // 1.16.5: no getMinBuildHeight(), use 0
                     if (targetY > 0) {
-                        level.setBlock(new BlockPos(x, targetY - 1, z), surfaceBlock, 2);
+                        // Don't leave a lone surface block floating over a void: only cap
+                        // when there is solid support directly beneath it.
+                        BlockState capSupport = level.getBlockState(new BlockPos(x, targetY - 2, z));
+                        if (!capSupport.isAir() && capSupport.getFluidState().isEmpty()) {
+                            level.setBlock(new BlockPos(x, targetY - 1, z), surfaceBlock, 2);
+                        }
                     }
                 } else if (naturalY < targetY) {
+                    // Don't bridge cliffs/voids (e.g. cave edges): a large drop means the natural
+                    // ground plunges away, so filling would build an unnatural dirt pillar into the
+                    // void. Leave the natural cliff intact.
+                    if (floorY - naturalY > 6) continue;
                     for (int y = naturalY; y < targetY; y++) {
                         level.setBlock(new BlockPos(x, y, z), (y == targetY - 1) ? surfaceBlock : subsurfaceBlock, 2);
                     }
@@ -488,7 +549,12 @@ public class VillageHouseGenerator {
 
                     // Place surface block at target level (1.16.5: use 0 instead of getMinY())
                     if (targetY > 0) {
-                        level.setBlock(new BlockPos(x, targetY - 1, z), surfaceBlock, 2);
+                        // Don't leave a lone surface block floating over a void: only cap
+                        // when there is solid support directly beneath it.
+                        BlockState capSupport = level.getBlockState(new BlockPos(x, targetY - 2, z));
+                        if (!capSupport.isAir() && capSupport.getFluidState().isEmpty()) {
+                            level.setBlock(new BlockPos(x, targetY - 1, z), surfaceBlock, 2);
+                        }
                     }
                 }
             }
