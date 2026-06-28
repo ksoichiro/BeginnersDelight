@@ -1,5 +1,18 @@
 # Village Mode Design Spec
 
+> **ℹ️ Implementation note — current code differs from this spec in a few places.**
+> This document is the original Phase 1 design. The shipped implementation intentionally diverges:
+> - **Config format:** `.properties` → **TOML** (`config/beginnersdelight.toml`, via the night-config
+>   library). The `[village]` table holds `plot_size` / `max_height_difference` / `generate_paths` /
+>   `respawn_at_house`. (See the Phase 3 grid-improvements changes.)
+> - **Config command:** `/beginnersdelight village set <key> <value>` was **removed**. Edit the TOML
+>   file and apply it at runtime with **`/beginnersdelight config reload`**. A `/beginnersdelight village test`
+>   command was also added.
+> - **Returning players:** are **not** teleported on join — they spawn at their last position
+>   (the "teleport to existing house" behavior below was dropped).
+> - **Starter House coexistence:** the Starter House is **reused as the player's village house**
+>   rather than building a separate village house, so players do not get two houses.
+
 ## Overview
 
 A new "Village Mode" feature that coexists with the existing Starter House feature. When enabled via command, each new player who joins the server gets a house placed near the world spawn, gradually forming a village with paths connecting the houses.

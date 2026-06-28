@@ -1,5 +1,15 @@
 # Village Mode Phase 3 Implementation Plan — Road-Based Layout
 
+> **⚠️ Status: SUPERSEDED / REVERTED — not shipped.**
+> This road-based plan was carried out and then deliberately reverted
+> (`git 0ad1ef2 — revert(village): restore grid-based layout (revert road-based Phase 3)`).
+> The grid-based layout from Phase 1/2 was kept. What actually shipped as "Phase 3" is a set of
+> grid-based *improvements* instead: deterministic per-plot random offset (±3), 2-block-wide dirt
+> paths, ice-terrain rejection, corner-pillar terrain blending, center coordinates in
+> `/beginnersdelight village status`, and a TOML config (`config/beginnersdelight.toml`) reloadable
+> via `/beginnersdelight config reload`. The task checklist below is retained as a historical record
+> only and does NOT reflect the current code.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Replace the grid-based village layout with a road-based system where roads grow organically following terrain, and houses are placed along the roads with natural spacing.
