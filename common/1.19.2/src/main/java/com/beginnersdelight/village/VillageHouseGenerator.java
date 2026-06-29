@@ -454,14 +454,15 @@ public class VillageHouseGenerator {
     }
 
     /**
-     * Replaces dirt blocks on the leveled/blended top surface with grass when a
-     * grass block is present among their 8 horizontal neighbours. Natural terrain
-     * has grass on top with dirt beneath, so isolated dirt left by foundation
-     * filling or terrain blending looks unnatural next to grass.
+     * Replaces dirt blocks on the leveled/blended top surface with grass so the
+     * result blends with naturally generated grass (which only ever shows grass on
+     * top). Runs as a post-process after all surface placement.
      *
-     * Runs as a post-process after all surface placement. Grass membership is read
-     * from a snapshot taken before any conversion, so a flipped block never causes
-     * its neighbour to flip too (keeps the check local/per-block, no cascade).
+     * Takes a snapshot of the surface, then flood-fills grass through 8-connected
+     * dirt tops: every dirt top reachable from a grass top -- directly or through
+     * other dirt tops -- becomes grass, so a whole dirt patch that touches grass is
+     * naturalized, not just its outer ring. Dirt with no grass anywhere in the
+     * scanned region (e.g. a dirt/sand biome) is left untouched.
      */
     private static void naturalizeDirtSurface(ServerLevel level, BlockPos placePos,
                                                Vec3i structureSize) {
@@ -504,30 +505,43 @@ public class VillageHouseGenerator {
             }
         }
 
-        // Convert pass: a dirt top adjacent (8-dir) to a snapshot grass top becomes grass.
+        // Convert pass: flood-fill grass through 8-connected dirt tops. Seed the
+        // queue with every grass top, then spread into adjacent dirt tops so an
+        // entire dirt patch that touches grass is naturalized, not just its outer
+        // ring. Dirt not connected to any grass in the region is left untouched.
+        boolean[][] convert = new boolean[width][depth];
+        java.util.ArrayDeque<int[]> queue = new java.util.ArrayDeque<>();
         for (int i = 0; i < width; i++) {
             for (int j = 0; j < depth; j++) {
-                if (dirtTopY[i][j] == Integer.MIN_VALUE) {
-                    continue;
+                if (grass[i][j]) {
+                    queue.add(new int[]{i, j});
                 }
-                boolean adjacentGrass = false;
-                for (int di = -1; di <= 1 && !adjacentGrass; di++) {
-                    for (int dj = -1; dj <= 1; dj++) {
-                        if (di == 0 && dj == 0) {
-                            continue;
-                        }
-                        int ni = i + di;
-                        int nj = j + dj;
-                        if (ni < 0 || ni >= width || nj < 0 || nj >= depth) {
-                            continue;
-                        }
-                        if (grass[ni][nj]) {
-                            adjacentGrass = true;
-                            break;
-                        }
+            }
+        }
+        while (!queue.isEmpty()) {
+            int[] cell = queue.poll();
+            int ci = cell[0];
+            int cj = cell[1];
+            for (int di = -1; di <= 1; di++) {
+                for (int dj = -1; dj <= 1; dj++) {
+                    if (di == 0 && dj == 0) {
+                        continue;
+                    }
+                    int ni = ci + di;
+                    int nj = cj + dj;
+                    if (ni < 0 || ni >= width || nj < 0 || nj >= depth) {
+                        continue;
+                    }
+                    if (dirtTopY[ni][nj] != Integer.MIN_VALUE && !convert[ni][nj]) {
+                        convert[ni][nj] = true;
+                        queue.add(new int[]{ni, nj});
                     }
                 }
-                if (adjacentGrass) {
+            }
+        }
+        for (int i = 0; i < width; i++) {
+            for (int j = 0; j < depth; j++) {
+                if (convert[i][j]) {
                     level.setBlock(new BlockPos(minX + i, dirtTopY[i][j], minZ + j),
                             Blocks.GRASS_BLOCK.defaultBlockState(), 2);
                 }
