@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Stop houses from floating: only raise placement to sea level when the ground is actually submerged (ocean/lake). Dry ground that merely sits below sea level (deep valleys, cave areas) now keeps its real height instead of being lifted to sea level over an open void
 - Avoid placing village houses over large voids such as dripstone caves, where the detected ground is only a thin ceiling or spike above empty space and terrain blending produced broken, spike-covered foundations
 - Stop terrain blending and foundation filling from extending dirt into adjacent voids (cave edges next to a house), which produced unnatural dirt pillars, floating slabs, and lone floating surface blocks hanging into the cave; such columns are now left as a natural cliff and surface caps are only placed where there is solid support beneath them
+- Replace bare dirt left on the surface when leveling and blending terrain around starter houses and village buildings with grass: any surface dirt connected to surrounding grass now becomes grass, so the generated ground blends naturally instead of showing patches of dirt next to grass
 
 ## [0.4.0] - 2026-02-22
 
