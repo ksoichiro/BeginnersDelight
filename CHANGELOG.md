@@ -7,14 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-07-17
+
 ### Added
 
+- Village Mode — an opt-in feature that grows a village around the world spawn as players join. Enable it with `/beginnersdelight village enable`; each new player gets their own house connected by dirt paths, with decoration buildings (well, shed, storehouse, farm) placed periodically. Includes per-player house binding with respawn-at-house support, `status`/`test` commands, and a `config/beginnersdelight.toml` config file (plot size, height tolerance, path generation, respawn behavior) that can be re-read at runtime with `/beginnersdelight config reload`. Available on all supported versions (Fabric, NeoForge, and Forge)
 - Minecraft 26.2 support (Fabric + NeoForge)
 - Minecraft 26.1.2 support (Fabric + NeoForge)
 - Minecraft 26.1.1 support (Fabric + NeoForge)
 - Minecraft 26.1 support (Fabric + NeoForge)
 - Migrate saved generation state to the new `data/<namespace>/<path>.dat` layout used by MC 26.1+, copying the legacy flat file so worlds upgraded from older versions do not regenerate the starter house or village
-- Village Mode — an opt-in feature that grows a village around the world spawn as players join. Enable it with `/beginnersdelight village enable`; each new player gets their own house connected by dirt paths, with decoration buildings (well, shed, storehouse, farm) placed periodically. Includes per-player house binding with respawn-at-house support, `status`/`test` commands, and a `config/beginnersdelight.toml` config file (plot size, height tolerance, path generation, respawn behavior) that can be re-read at runtime with `/beginnersdelight config reload`. Available on all supported versions (Fabric, NeoForge, and Forge)
 
 ### Fixed
 
@@ -88,7 +90,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Structure generation state persistence using SavedData to prevent regeneration
 - One-time generation per world with per-player tracking
 
-[Unreleased]: https://github.com/ksoichiro/BeginnersDelight/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/ksoichiro/BeginnersDelight/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/ksoichiro/BeginnersDelight/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/ksoichiro/BeginnersDelight/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/ksoichiro/BeginnersDelight/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/ksoichiro/BeginnersDelight/compare/v0.1.0...v0.2.0
