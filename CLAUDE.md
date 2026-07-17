@@ -12,6 +12,10 @@
 
 ## Active Technologies
 
+- Java 25 (Minecraft Java Edition 26.2) + NeoForge 26.2.0.x, Fabric Loader
+- Java 25 (Minecraft Java Edition 26.1.2) + NeoForge 26.1.2.x, Fabric Loader
+- Java 25 (Minecraft Java Edition 26.1.1) + NeoForge 26.1.1.x, Fabric Loader
+- Java 25 (Minecraft Java Edition 26.1) + NeoForge 26.1.0.x, Fabric Loader
 - Java 21 (Minecraft Java Edition 1.21.11) + NeoForge 21.11.x, Fabric Loader
 - Java 21 (Minecraft Java Edition 1.21.10) + NeoForge 21.10.x, Fabric Loader
 - Java 21 (Minecraft Java Edition 1.21.9) + NeoForge 21.9.x, Fabric Loader
@@ -33,19 +37,19 @@
 ```
 common/
   shared/             (shared version-agnostic sources, NOT a Gradle subproject)
-  1.21.11/            (version-specific common module)
-  1.21.10/            (version-specific common module)
-  ...                 (1.21.9, 1.21.8, ..., 1.16.5)
+  26.2/               (version-specific common module)
+  26.1.2/             (version-specific common module)
+  ...                 (26.1.1, 26.1, 1.21.11, ..., 1.16.5)
 fabric/
   base/               (shared Fabric sources, NOT a Gradle subproject)
-  1.21.11/            (version-specific Fabric subproject)
-  1.21.10/            (version-specific Fabric subproject)
-  ...                 (1.21.9, 1.21.8, ..., 1.16.5)
+  26.2/               (version-specific Fabric subproject)
+  26.1.2/             (version-specific Fabric subproject)
+  ...                 (26.1.1, 26.1, 1.21.11, ..., 1.16.5)
 neoforge/
   base/               (shared NeoForge sources, NOT a Gradle subproject)
-  1.21.11/            (version-specific NeoForge subproject)
-  1.21.10/            (version-specific NeoForge subproject)
-  ...                 (1.21.9, 1.21.8, ..., 1.21.1)
+  26.2/               (version-specific NeoForge subproject)
+  26.1.2/             (version-specific NeoForge subproject)
+  ...                 (26.1.1, 26.1, 1.21.11, ..., 1.21.1)
 forge/
   base/               (shared Forge sources, NOT a Gradle subproject)
   1.20.1/             (version-specific Forge subproject)
@@ -59,31 +63,49 @@ docs/                 (documentation)
 
 - **Mod ID**: `beginnersdelight`
 - **Package**: `com.beginnersdelight`
-- **Minecraft**: 1.21.11, 1.21.10, 1.21.9, 1.21.8, 1.21.7, 1.21.6, 1.21.5, 1.21.4, 1.21.3, 1.21.1, 1.20.1, 1.19.2, 1.18.2, 1.17.1, 1.16.5
-- **Fabric Loader**: 0.17.3
-- **Fabric API**: 0.141.3+1.21.11 (1.21.11), 0.138.4+1.21.10 (1.21.10), 0.134.1+1.21.9 (1.21.9), 0.136.1+1.21.8 (1.21.8), 0.129.0+1.21.7 (1.21.7), 0.128.1+1.21.6 (1.21.6), 0.128.1+1.21.5 (1.21.5), 0.119.4+1.21.4 (1.21.4), 0.112.1+1.21.3 (1.21.3), 0.116.7+1.21.1 (1.21.1), 0.92.2+1.20.1 (1.20.1), 0.77.0+1.19.2 (1.19.2), 0.76.0+1.18.2 (1.18.2), 0.46.1+1.17 (1.17.1), 0.42.0+1.16 (1.16.5)
-- **NeoForge**: 21.11.37-beta (1.21.11), 21.10.64 (1.21.10), 21.9.16-beta (1.21.9), 21.8.52 (1.21.8), 21.7.2-beta (1.21.7), 21.6.20-beta (1.21.6), 21.5.96 (1.21.5), 21.4.156 (1.21.4), 21.3.95 (1.21.3), 21.1.209 (1.21.1)
+- **Minecraft**: 26.2, 26.1.2, 26.1.1, 26.1, 1.21.11, 1.21.10, 1.21.9, 1.21.8, 1.21.7, 1.21.6, 1.21.5, 1.21.4, 1.21.3, 1.21.1, 1.20.1, 1.19.2, 1.18.2, 1.17.1, 1.16.5
+- **Fabric Loader**: 0.19.3 (26.x), 0.17.3 (1.16.5–1.21.11)
+- **Fabric API**: 0.154.2+26.2 (26.2), 0.154.2+26.1.2 (26.1.2), 0.145.4+26.1.1 (26.1.1), 0.145.1+26.1 (26.1), 0.141.3+1.21.11 (1.21.11), 0.138.4+1.21.10 (1.21.10), 0.134.1+1.21.9 (1.21.9), 0.136.1+1.21.8 (1.21.8), 0.129.0+1.21.7 (1.21.7), 0.128.1+1.21.6 (1.21.6), 0.128.1+1.21.5 (1.21.5), 0.119.4+1.21.4 (1.21.4), 0.112.1+1.21.3 (1.21.3), 0.116.7+1.21.1 (1.21.1), 0.92.2+1.20.1 (1.20.1), 0.77.0+1.19.2 (1.19.2), 0.76.0+1.18.2 (1.18.2), 0.46.1+1.17 (1.17.1), 0.42.0+1.16 (1.16.5)
+- **NeoForge**: 26.2.0.16-beta (26.2), 26.1.2.80 (26.1.2), 26.1.1.15-beta (26.1.1), 26.1.0.19-beta (26.1), 21.11.37-beta (1.21.11), 21.10.64 (1.21.10), 21.9.16-beta (1.21.9), 21.8.52 (1.21.8), 21.7.2-beta (1.21.7), 21.6.20-beta (1.21.6), 21.5.96 (1.21.5), 21.4.156 (1.21.4), 21.3.95 (1.21.3), 21.1.209 (1.21.1)
 - **Forge**: 47.4.0 (1.20.1), 43.4.0 (1.19.2), 40.2.0 (1.18.2), 37.1.1 (1.17.1), 36.2.34 (1.16.5)
 
 ## Build Configuration
 
 - **Build DSL**: Groovy DSL (not Kotlin DSL) - for compatibility with Architectury Loom
-- **Mappings**: Mojang mappings (not Yarn) - code uses official Minecraft class names (e.g., `net.minecraft.core.Registry`)
-- **Shadow Plugin**: com.gradleup.shadow - for bundling common module into platform-specific JARs
+- **Mappings**: Mojang mappings (not Yarn) - code uses official Minecraft class names (e.g., `net.minecraft.core.Registry`). MC 26.1+ is unobfuscated: no `mappings` dependency, no remapping
+- **Shadow Plugin**: com.gradleup.shadow - for bundling common module into platform-specific JARs. On MC 26.1+ `shadowJar` (not `remapJar`) produces the final artifact
+- **Gradle**: 9.5.1 wrapper. `gradle/gradle-daemon-jvm.properties` pins the daemon JVM to Java 25 (auto-provisioned via foojay resolver), required for MC 26.1+ development
+- **Per-version toolchain**: `props/{version}.properties` can override `loom_plugin` (`dev.architectury.loom` [default] or `dev.architectury.loom-no-remap` for 26.1+), `loom_version`, `architectury_plugin_version`, and `shadow_version`. Versions are resolved in `settings.gradle` (pluginManagement) and the Loom plugin marker is put on the buildscript classpath in the root `build.gradle`
 
 ## Commands
 
 **Build**:
-- `./gradlew build` - Build for default version (1.21.11)
+- `./gradlew build` - Build for default version (26.2)
 - `./gradlew build -Ptarget_mc_version=1.20.1` - Build for specific version
-- `./gradlew buildAll` - Build for all supported versions (1.16.5, 1.17.1, 1.18.2, 1.19.2, 1.20.1, 1.21.1, 1.21.3, 1.21.4, 1.21.5, 1.21.6, 1.21.7, 1.21.8, 1.21.9, 1.21.10, 1.21.11)
+- `./gradlew buildAll` - Build for all supported versions (1.16.5, 1.17.1, 1.18.2, 1.19.2, 1.20.1, 1.21.1, 1.21.3, 1.21.4, 1.21.5, 1.21.6, 1.21.7, 1.21.8, 1.21.9, 1.21.10, 1.21.11, 26.1, 26.1.1, 26.1.2, 26.2)
 
 **Clean**:
 - `./gradlew cleanAll` - Clean all supported versions
 
-**Run Client** (1.21.11):
+**Run Client** (26.2):
 - Fabric: `./gradlew :fabric:runClient`
 - NeoForge: `./gradlew :neoforge:runClient`
+
+**Run Client** (26.1.2):
+- Fabric: `./gradlew :fabric:runClient -Ptarget_mc_version=26.1.2`
+- NeoForge: `./gradlew :neoforge:runClient -Ptarget_mc_version=26.1.2`
+
+**Run Client** (26.1.1):
+- Fabric: `./gradlew :fabric:runClient -Ptarget_mc_version=26.1.1`
+- NeoForge: `./gradlew :neoforge:runClient -Ptarget_mc_version=26.1.1`
+
+**Run Client** (26.1):
+- Fabric: `./gradlew :fabric:runClient -Ptarget_mc_version=26.1`
+- NeoForge: `./gradlew :neoforge:runClient -Ptarget_mc_version=26.1`
+
+**Run Client** (1.21.11):
+- Fabric: `./gradlew :fabric:runClient -Ptarget_mc_version=1.21.11`
+- NeoForge: `./gradlew :neoforge:runClient -Ptarget_mc_version=1.21.11`
 
 **Run Client** (1.21.10):
 - Fabric: `./gradlew :fabric:runClient -Ptarget_mc_version=1.21.10`
@@ -164,6 +186,8 @@ docs/                 (documentation)
 - **MC 1.17.1 Forge API differences from 1.16.5**: `FMLServerStartedEvent` moved to `net.minecraftforge.fmlserverevents` package. Forge `PlayerEvent` uses `getEntity()` (not `getPlayer()`) with Mojang mappings.
 - **MC 1.18.2+ Forge API differences from 1.17.1**: `FMLServerStartedEvent` replaced by `net.minecraftforge.event.server.ServerStartedEvent`.
 - **MC 1.21.11 API differences from 1.21.10**: `ResourceLocation` renamed to `Identifier` (same package `net.minecraft.resources`). `GameRules` moved from `net.minecraft.world.level.GameRules` to `net.minecraft.world.level.gamerules.GameRules`. `RULE_SPAWN_RADIUS` renamed to `RESPAWN_RADIUS`. GameRules API changed: `getGameRules().getRule(key).set(value, server)` → `getGameRules().set(key, value, server)`.
+- **MC 26.1 differences from 1.21.11 (unobfuscated Minecraft)**: MC 26.1+ ships unobfuscated and requires Java 25 (also for the Gradle JVM). Build changes: use `dev.architectury.loom-no-remap` (1.17.x) + architectury-plugin 3.5-SNAPSHOT + Shadow 9.x, no `mappings` dependency, `modImplementation`/`modApi` → `implementation`/`api`, no `remapJar`/`remapSourcesJar` (final jar = `shadowJar`; Loom's `include()` for jar-in-jar still works and is applied by the plain `jar` task), common project dependency uses the default configuration (not `namedElements`). Fabric Loader minimum is 0.18.4. NeoForge versioning is now 4-part (`26.1.0.19-beta` for MC 26.1) and `neoforge.mods.toml` no longer declares `modLoader`/`loaderVersion`. API: `SavedDataType` takes an `Identifier` instead of a String name, and saved data files move from flat `data/<name>.dat` to `data/<namespace>/<path>.dat` — `com.beginnersdelight.util.SavedDataMigration` copies the legacy file on first access so upgraded worlds do not regenerate structures.
+- **MC 26.2 API differences from 26.1.2**: `BlockTags.SAPLINGS` constant removed (the vanilla `minecraft:saplings` data tag still exists) — use `com.beginnersdelight.util.ModBlockTags.SAPLINGS`. pack_format is `[107, 1]` (26.1–26.1.2 use `[101, 1]`).
 
 ## Workflow Guidelines
 

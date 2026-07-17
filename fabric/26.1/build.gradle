@@ -1,0 +1,123 @@
+// MC 26.1+ is unobfuscated: the Loom no-remap plugin is applied by the root project,
+// there is no remapJar, and the final artifact is produced by shadowJar.
+plugins {
+    id 'com.gradleup.shadow'
+}
+
+architectury {
+    platformSetupLoomIde()
+    fabric()
+}
+
+configurations {
+    common {
+        canBeResolved = true
+        canBeConsumed = false
+    }
+    compileClasspath.extendsFrom common
+    runtimeClasspath.extendsFrom common
+    developmentFabric.extendsFrom common
+
+    shadowBundle {
+        canBeResolved = true
+        canBeConsumed = false
+    }
+}
+
+def commonModule = ':common-26.1'
+
+dependencies {
+    implementation "net.fabricmc:fabric-loader:$rootProject.fabric_loader_version"
+    api "net.fabricmc.fabric-api:fabric-api:$rootProject.fabric_api_version"
+
+    // Bundle the TOML config library into the Fabric jar (NeoForge/Forge ship night-config).
+    implementation include("com.electronwill.night-config:core:3.8.3")
+    implementation include("com.electronwill.night-config:toml:3.8.3")
+
+    common(project(path: commonModule)) { transitive false }
+    shadowBundle project(path: commonModule, configuration: 'transformProductionFabric')
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir '../base/src/main/java'
+            srcDir 'src/main/java'
+        }
+        resources {
+            srcDir 'src/main/resources'
+            srcDir '../base/src/main/resources'
+        }
+    }
+}
+
+loom {
+    if (project(commonModule).loom.accessWidenerPath != null) {
+        accessWidenerPath = project(commonModule).loom.accessWidenerPath
+    }
+
+    runs {
+        client {
+            client()
+            runDir("run")
+        }
+        server {
+            server()
+            runDir("run")
+        }
+    }
+}
+
+processResources {
+    from(project(commonModule).sourceSets.main.resources) {
+        exclude 'beginnersdelight.mixins.json'
+    }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    inputs.property 'version', project.version
+
+    filesMatching('fabric.mod.json') {
+        expand 'version': project.version
+    }
+}
+
+jar {
+    archiveClassifier = 'raw'
+}
+
+shadowJar {
+    dependsOn jar
+    // Repackage the plain jar output (including nested jars added by Loom's include())
+    // instead of the raw source-set outputs.
+    mainSpec.sourcePaths.clear()
+    from(zipTree(jar.archiveFile))
+    exclude 'beginnersdelight.mixins.json'
+    configurations = [project.configurations.shadowBundle]
+    archiveBaseName = rootProject.archives_name
+    archiveVersion = "${rootProject.mod_version}+${rootProject.ext.minecraft_version}-fabric"
+    archiveClassifier = null
+}
+
+assemble.dependsOn shadowJar
+
+java {
+    withSourcesJar()
+}
+
+tasks.named('sourcesJar').configure {
+    archiveBaseName = rootProject.archives_name
+    archiveVersion = "${rootProject.mod_version}+${rootProject.ext.minecraft_version}-fabric"
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            artifactId = "${rootProject.archives_name}-fabric"
+            from components.java
+        }
+    }
+
+    repositories {
+    }
+}

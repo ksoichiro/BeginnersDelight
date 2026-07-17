@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Minecraft 26.2 support (Fabric + NeoForge)
+- Minecraft 26.1.2 support (Fabric + NeoForge)
+- Minecraft 26.1.1 support (Fabric + NeoForge)
+- Minecraft 26.1 support (Fabric + NeoForge)
+- Migrate saved generation state to the new `data/<namespace>/<path>.dat` layout used by MC 26.1+, copying the legacy flat file so worlds upgraded from older versions do not regenerate the starter house or village
 - Village Mode — an opt-in feature that grows a village around the world spawn as players join. Enable it with `/beginnersdelight village enable`; each new player gets their own house connected by dirt paths, with decoration buildings (well, shed, storehouse, farm) placed periodically. Includes per-player house binding with respawn-at-house support, `status`/`test` commands, and a `config/beginnersdelight.toml` config file (plot size, height tolerance, path generation, respawn behavior) that can be re-read at runtime with `/beginnersdelight config reload`. Available on all supported versions (Fabric, NeoForge, and Forge)
 
 ### Fixed

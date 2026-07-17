@@ -56,6 +56,10 @@ The chest in the starter house contains helpful items for early game:
 
 ### Multi-Loader & Multi-Version Support
 This mod supports **multiple Minecraft versions and mod loaders**!
+- **26.2**: Fabric and NeoForge
+- **26.1.2**: Fabric and NeoForge
+- **26.1.1**: Fabric and NeoForge
+- **26.1**: Fabric and NeoForge
 - **1.21.11**: Fabric and NeoForge
 - **1.21.10**: Fabric and NeoForge
 - **1.21.9**: Fabric and NeoForge
@@ -75,6 +79,26 @@ This mod supports **multiple Minecraft versions and mod loaders**!
 - Shared codebase ensures consistent experience across versions and loaders
 
 ### Requirements
+
+#### Minecraft 26.2
+- **Mod Loader**:
+  - Fabric Loader 0.18.4+ with Fabric API 0.154.2+26.2, OR
+  - NeoForge 26.2.0.16-beta+
+
+#### Minecraft 26.1.2
+- **Mod Loader**:
+  - Fabric Loader 0.18.4+ with Fabric API 0.154.2+26.1.2, OR
+  - NeoForge 26.1.2.80+
+
+#### Minecraft 26.1.1
+- **Mod Loader**:
+  - Fabric Loader 0.18.4+ with Fabric API 0.145.4+26.1.1, OR
+  - NeoForge 26.1.1.15-beta+
+
+#### Minecraft 26.1
+- **Mod Loader**:
+  - Fabric Loader 0.18.4+ with Fabric API 0.145.1+26.1, OR
+  - NeoForge 26.1.0.19-beta+
 
 #### Minecraft 1.21.11
 - **Mod Loader**:
@@ -200,6 +224,6 @@ Check out the **Gallery** tab above for screenshots showcasing:
 
 ---
 
-**Developed for Minecraft Java Edition 1.21.11 / 1.21.10 / 1.21.9 / 1.21.8 / 1.21.7 / 1.21.6 / 1.21.5 / 1.21.4 / 1.21.3 / 1.21.1 / 1.20.1 / 1.19.2 / 1.18.2 / 1.17.1 / 1.16.5**
+**Developed for Minecraft Java Edition 26.2 / 26.1.2 / 26.1.1 / 26.1 / 1.21.11 / 1.21.10 / 1.21.9 / 1.21.8 / 1.21.7 / 1.21.6 / 1.21.5 / 1.21.4 / 1.21.3 / 1.21.1 / 1.20.1 / 1.19.2 / 1.18.2 / 1.17.1 / 1.16.5**
 
 A safe start for every adventure. 🏠
