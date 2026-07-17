@@ -6,11 +6,44 @@ pluginManagement {
         maven { url 'https://maven.minecraftforge.net/' }
         gradlePluginPortal()
     }
+
+    // Plugin versions differ per target Minecraft version: MC 26.1+ (unobfuscated)
+    // needs Architectury Loom 1.17+/architectury-plugin 3.5/Shadow 9.x, while older
+    // versions stay on the Loom 1.13 line. Overrides live in props/{version}.properties.
+    def pmTargetVersion = settings.providers.gradleProperty('target_mc_version').getOrNull()
+    def pmVersionProps = new Properties()
+    if (pmTargetVersion != null) {
+        def pmPropsFile = new File(settings.rootDir, "props/${pmTargetVersion}.properties")
+        if (pmPropsFile.exists()) {
+            pmPropsFile.withInputStream { pmVersionProps.load(it) }
+        }
+    }
+    def pmLoomVersion = pmVersionProps.getProperty('loom_version', '1.13-SNAPSHOT')
+    def pmArchPluginVersion = pmVersionProps.getProperty('architectury_plugin_version', '3.4-SNAPSHOT')
+    def pmShadowVersion = pmVersionProps.getProperty('shadow_version', '8.3.11')
+
+    resolutionStrategy {
+        eachPlugin {
+            switch (requested.id.id) {
+                case 'dev.architectury.loom':
+                case 'dev.architectury.loom-no-remap':
+                    useVersion(pmLoomVersion)
+                    break
+                case 'architectury-plugin':
+                    useVersion(pmArchPluginVersion)
+                    break
+                case 'com.gradleup.shadow':
+                    useVersion(pmShadowVersion)
+                    break
+            }
+        }
+    }
 }
 
 // Enable automatic download of Java toolchains
+// 1.0.0+ is required for Gradle 9 (0.8.0 references JvmVendorSpec fields removed in Gradle 9)
 plugins {
-    id 'org.gradle.toolchains.foojay-resolver-convention' version '0.8.0'
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
 }
 
 rootProject.name = 'beginnersdelight'

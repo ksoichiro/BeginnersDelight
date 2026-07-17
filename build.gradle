@@ -1,7 +1,33 @@
+// The Loom plugin ID differs per Minecraft version: MC 26.1+ is unobfuscated and uses
+// 'dev.architectury.loom-no-remap', while older versions use 'dev.architectury.loom'.
+// plugins {} cannot declare a dynamic ID, so the marker artifact is added to the
+// buildscript classpath here and applied by ID in the subprojects block below.
+buildscript {
+    repositories {
+        maven { url 'https://maven.fabricmc.net/' }
+        maven { url 'https://maven.architectury.dev/' }
+        maven { url 'https://maven.neoforged.net/releases/' }
+        maven { url 'https://maven.minecraftforge.net/' }
+        gradlePluginPortal()
+    }
+    dependencies {
+        def bsTargetVersion = project.findProperty('target_mc_version')
+        def bsProps = new Properties()
+        def bsPropsFile = new File(project.rootDir, "props/${bsTargetVersion}.properties")
+        if (bsPropsFile.exists()) {
+            bsPropsFile.withInputStream { bsProps.load(it) }
+        }
+        def bsLoomPluginId = bsProps.getProperty('loom_plugin', 'dev.architectury.loom')
+        def bsLoomVersion = bsProps.getProperty('loom_version', '1.13-SNAPSHOT')
+        classpath "${bsLoomPluginId}:${bsLoomPluginId}.gradle.plugin:${bsLoomVersion}"
+    }
+}
+
+// Plugin versions are resolved per target Minecraft version in settings.gradle
+// (pluginManagement.resolutionStrategy), driven by props/{version}.properties.
 plugins {
-    id 'dev.architectury.loom' version '1.13-SNAPSHOT' apply false
-    id 'architectury-plugin' version '3.4-SNAPSHOT'
-    id 'com.gradleup.shadow' version '8.3.6' apply false
+    id 'architectury-plugin'
+    id 'com.gradleup.shadow' apply false
 }
 
 // Multi-version support: Load version-specific properties
@@ -34,13 +60,18 @@ architectury {
     minecraft = project.ext.minecraft_version
 }
 
+// MC 26.1+ is unobfuscated: no mappings, no remapping (final jar comes from shadowJar).
+def loomPluginId = project.ext.has('loom_plugin') ? project.ext.loom_plugin : 'dev.architectury.loom'
+def isUnobfuscated = loomPluginId == 'dev.architectury.loom-no-remap'
+ext.is_unobfuscated = isUnobfuscated
+
 allprojects {
     group = rootProject.maven_group
     version = rootProject.mod_version
 }
 
 subprojects {
-    apply plugin: 'dev.architectury.loom'
+    apply plugin: loomPluginId
     apply plugin: 'architectury-plugin'
     apply plugin: 'maven-publish'
 
@@ -70,7 +101,10 @@ subprojects {
 
     dependencies {
         minecraft "com.mojang:minecraft:$rootProject.ext.minecraft_version"
-        mappings loom.officialMojangMappings()
+        // Unobfuscated versions (MC 26.1+) have no mappings to apply
+        if (!isUnobfuscated) {
+            mappings loom.officialMojangMappings()
+        }
     }
 
     java {

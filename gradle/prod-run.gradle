@@ -13,6 +13,17 @@ def prodBaseDir = "${rootDir}/run-prod"
 def prodCacheDir = "${prodBaseDir}/cache"
 def mcVersion = project.ext.minecraft_version
 
+// Gradle 9 removed Project.exec(); obtain ExecOperations via service injection instead.
+interface ProdRunExecOps {
+    @javax.inject.Inject
+    org.gradle.process.ExecOperations getExecOperations()
+}
+def prodExecOperations = project.objects.newInstance(ProdRunExecOps).execOperations
+
+// MC 26.1+ (unobfuscated) has no remapJar; the final artifact comes from shadowJar.
+def prodFinalJarTask = rootProject.ext.has('is_unobfuscated') && rootProject.ext.is_unobfuscated
+    ? 'shadowJar' : 'remapJar'
+
 // --- Helper: Download file with caching ---
 // Skips download if file already exists. Delete run-prod/cache/ to force re-download.
 ext.prodDownloadFile = { String url, File dest ->
@@ -469,7 +480,7 @@ if (project.name == 'fabric') {
     tasks.register('setupProdMods') {
         group = 'beginners delight prod'
         description = "Copy built mod JAR and dependencies to mods/ for Fabric ${mcVersion}"
-        dependsOn 'remapJar'
+        dependsOn prodFinalJarTask
 
         doLast {
             def modsDir = file("${prodBaseDir}/instances/fabric-${mcVersion}/mods")
@@ -477,7 +488,7 @@ if (project.name == 'fabric') {
             modsDir.mkdirs()
 
             // Built mod JAR
-            def modJar = tasks.named('remapJar').get().archiveFile.get().asFile
+            def modJar = tasks.named(prodFinalJarTask).get().archiveFile.get().asFile
             ant.copy(file: modJar, todir: modsDir)
             logger.lifecycle("  Mod: ${modJar.name}")
 
@@ -624,7 +635,7 @@ if (project.name == 'neoforge') {
             def launcher = javaToolchains.launcherFor {
                 languageVersion = JavaLanguageVersion.of(project.ext.java_version)
             }.get()
-            project.exec {
+            prodExecOperations.exec {
                 commandLine launcher.executablePath.asFile.absolutePath,
                     '-jar', installerJar.absolutePath,
                     '--installClient', neoforgeInstallDir.absolutePath
@@ -642,7 +653,7 @@ if (project.name == 'neoforge') {
     tasks.register('setupProdMods') {
         group = 'beginners delight prod'
         description = "Copy built mod JAR and dependencies to mods/ for NeoForge ${mcVersion}"
-        dependsOn 'remapJar'
+        dependsOn prodFinalJarTask
 
         doLast {
             def modsDir = file("${prodBaseDir}/instances/neoforge-${mcVersion}/mods")
@@ -650,7 +661,7 @@ if (project.name == 'neoforge') {
             modsDir.mkdirs()
 
             // Built mod JAR
-            def modJar = tasks.named('remapJar').get().archiveFile.get().asFile
+            def modJar = tasks.named(prodFinalJarTask).get().archiveFile.get().asFile
             ant.copy(file: modJar, todir: modsDir)
             logger.lifecycle("  Mod: ${modJar.name}")
 
@@ -800,7 +811,7 @@ if (project.name == 'forge') {
             def launcher = javaToolchains.launcherFor {
                 languageVersion = JavaLanguageVersion.of(project.ext.java_version)
             }.get()
-            project.exec {
+            prodExecOperations.exec {
                 commandLine launcher.executablePath.asFile.absolutePath,
                     '-jar', installerJar.absolutePath,
                     '--installClient', forgeInstallDir.absolutePath
@@ -818,7 +829,7 @@ if (project.name == 'forge') {
     tasks.register('setupProdMods') {
         group = 'beginners delight prod'
         description = "Copy built mod JAR and dependencies to mods/ for Forge ${mcVersion}"
-        dependsOn 'remapJar'
+        dependsOn prodFinalJarTask
 
         doLast {
             def modsDir = file("${prodBaseDir}/instances/forge-${mcVersion}/mods")
@@ -826,7 +837,7 @@ if (project.name == 'forge') {
             modsDir.mkdirs()
 
             // Built mod JAR
-            def modJar = tasks.named('remapJar').get().archiveFile.get().asFile
+            def modJar = tasks.named(prodFinalJarTask).get().archiveFile.get().asFile
             ant.copy(file: modJar, todir: modsDir)
             logger.lifecycle("  Mod: ${modJar.name}")
 

@@ -4,6 +4,13 @@
 def supportedVersions = ['1.16.5', '1.17.1', '1.18.2', '1.19.2', '1.20.1', '1.21.1', '1.21.3', '1.21.4', '1.21.5', '1.21.6', '1.21.7', '1.21.8', '1.21.9', '1.21.10', '1.21.11']
 def taskGroup = 'beginners delight build'
 
+// Gradle 9 removed Project.exec(); obtain ExecOperations via service injection instead.
+interface MultiVersionExecOps {
+    @javax.inject.Inject
+    org.gradle.process.ExecOperations getExecOperations()
+}
+def execOperations = project.objects.newInstance(MultiVersionExecOps).execOperations
+
 // ============================================================
 // Clean Tasks
 // ============================================================
@@ -16,7 +23,8 @@ supportedVersions.each { version ->
         description = "Clean build outputs for Minecraft ${version}"
 
         doLast {
-            project.exec {
+            execOperations.exec {
+                workingDir = rootDir
                 commandLine './gradlew', 'clean', "-Ptarget_mc_version=${version}"
             }
         }
@@ -31,7 +39,8 @@ tasks.register('cleanAll') {
         supportedVersions.each { version ->
             logger.lifecycle(">>> Cleaning for Minecraft ${version}...")
 
-            project.exec {
+            execOperations.exec {
+                workingDir = rootDir
                 commandLine './gradlew', 'clean', "-Ptarget_mc_version=${version}"
             }
         }
@@ -61,7 +70,8 @@ supportedVersions.each { version ->
         }
 
         doLast {
-            project.exec {
+            execOperations.exec {
+                workingDir = rootDir
                 commandLine './gradlew', 'clean', 'build', "-Ptarget_mc_version=${version}", '-x', 'test'
             }
         }
@@ -90,7 +100,8 @@ tasks.register('buildAll') {
             logger.lifecycle('')
 
             try {
-                project.exec {
+                execOperations.exec {
+                    workingDir = rootDir
                     commandLine './gradlew', 'clean', 'build', "-Ptarget_mc_version=${version}", '-x', 'test'
                     errorOutput = System.err
                 }
@@ -134,7 +145,8 @@ tasks.register('release') {
 
     doLast {
         ['cleanAll', 'buildAll', 'collectJars'].each { taskName ->
-            project.exec {
+            execOperations.exec {
+                workingDir = rootDir
                 commandLine './gradlew', taskName
             }
         }

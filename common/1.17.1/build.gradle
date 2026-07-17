@@ -30,6 +30,13 @@ sourceSets {
 
 // NBT Structure Multi-Version Conversion
 // Converts 1.21.1 NBT structure files to 1.17.1 format (DataVersion update + directory rename)
+// Gradle 9 removed Project.exec(); obtain ExecOperations via service injection instead.
+interface NbtExecOps {
+    @javax.inject.Inject
+    org.gradle.process.ExecOperations getExecOperations()
+}
+def nbtExecOperations = project.objects.newInstance(NbtExecOps).execOperations
+
 tasks.register('convertNbtStructures', Exec) {
     group = 'build'
     description = 'Convert NBT structure files from 1.21.1 to 1.17.1 format'
@@ -49,7 +56,7 @@ tasks.register('convertNbtStructures', Exec) {
 
     doFirst {
         try {
-            exec {
+            nbtExecOperations.exec {
                 commandLine 'python3', '-c', 'import nbtlib'
                 standardOutput = new ByteArrayOutputStream()
                 errorOutput = new ByteArrayOutputStream()
