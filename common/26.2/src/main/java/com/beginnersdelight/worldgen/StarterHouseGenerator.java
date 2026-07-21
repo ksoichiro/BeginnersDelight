@@ -81,6 +81,12 @@ public class StarterHouseGenerator {
             return;
         }
 
+        if (ModGameRules.GENERATE_STARTER_HOUSE == null
+                || !overworld.getGameRules().get(ModGameRules.GENERATE_STARTER_HOUSE)) {
+            BeginnersDelight.LOGGER.debug("Starter house generation disabled by game rule; skipping");
+            return;
+        }
+
         BlockPos spawnPos = overworld.getRespawnData().pos();
         BeginnersDelight.LOGGER.info("Generating starter house near spawn point: {}", spawnPos);
 
