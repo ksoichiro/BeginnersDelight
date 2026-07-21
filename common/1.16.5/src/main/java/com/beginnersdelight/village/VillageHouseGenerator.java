@@ -33,6 +33,12 @@ public class VillageHouseGenerator {
 
     private static final ResourceLocation STARTER_HOUSE_LOOT =
             new ResourceLocation(BeginnersDelight.MOD_ID, "chests/starter_house");
+
+    // Additional containers (e.g. the second half of a double chest) receive this
+    // supplies table instead of a duplicate starter kit, so players get useful
+    // early-game consumables rather than redundant wooden tools.
+    private static final ResourceLocation STARTER_HOUSE_SUPPLIES_LOOT =
+            new ResourceLocation(BeginnersDelight.MOD_ID, "chests/starter_house_supplies");
     private static final ResourceLocation VILLAGE_STOREHOUSE_LOOT =
             new ResourceLocation(BeginnersDelight.MOD_ID, "chests/village_storehouse");
     private static final ResourceLocation VILLAGE_FARM_LOOT =
@@ -355,13 +361,20 @@ public class VillageHouseGenerator {
 
     private static void assignLootTables(ServerLevel level, BlockPos placePos, Vec3i structureSize,
                                           Random random) {
+        // Only the first container gets the starter kit (food + one set of wooden
+        // tools); any further containers get supplies instead, so a double chest
+        // (two block entities) does not yield duplicate tool sets.
+        boolean primaryAssigned = false;
         for (int x = placePos.getX(); x < placePos.getX() + structureSize.getX(); x++) {
             for (int y = placePos.getY(); y < placePos.getY() + structureSize.getY(); y++) {
                 for (int z = placePos.getZ(); z < placePos.getZ() + structureSize.getZ(); z++) {
                     BlockEntity be = level.getBlockEntity(new BlockPos(x, y, z));
                     if (be instanceof RandomizableContainerBlockEntity) {
                         RandomizableContainerBlockEntity container = (RandomizableContainerBlockEntity) be;
-                        container.setLootTable(STARTER_HOUSE_LOOT, random.nextLong());
+                        ResourceLocation loot = primaryAssigned
+                                ? STARTER_HOUSE_SUPPLIES_LOOT : STARTER_HOUSE_LOOT;
+                        container.setLootTable(loot, random.nextLong());
+                        primaryAssigned = true;
                     }
                 }
             }

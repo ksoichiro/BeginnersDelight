@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Fill the extra container of a starter house (and village-mode player house) — such as the second half of a double chest — with early-game supplies (coal, oak planks, torches, wheat seeds) instead of a duplicate set of wooden tools, so a house no longer yields redundant tool sets
+
 ## [0.5.0] - 2026-07-17
 
 ### Added
