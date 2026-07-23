@@ -32,7 +32,7 @@ public class BeginnersDelightFabric implements ModInitializer {
         ModGameRules.GENERATE_STARTER_HOUSE = GameRuleBuilder
                 .forBoolean(starterHouseDefault)
                 .category(GameRuleCategory.MISC)
-                .buildAndRegister(Identifier.withDefaultNamespace(ModGameRules.RULE_NAME));
+                .buildAndRegister(Identifier.parse(ModGameRules.RULE_NAME));
 
         ServerLifecycleEvents.SERVER_STARTED.register(StarterHouseGenerator::tryGenerate);
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) ->

@@ -1,5 +1,6 @@
 package com.beginnersdelight.worldgen;
 
+import com.beginnersdelight.BeginnersDelight;
 import net.minecraft.world.level.gamerules.GameRule;
 
 /**
@@ -10,8 +11,12 @@ import net.minecraft.world.level.gamerules.GameRule;
  */
 public final class ModGameRules {
 
-    /** Vanilla game rules share one global namespace, so this is prefixed with the mod name. */
-    public static final String RULE_NAME = "beginnersDelightGenerateStarterHouse";
+    // In MC 26.x game rules are registry entries keyed by an Identifier whose path must match
+    // [a-z0-9/._-], so the name uses the mod's own namespace and a snake_case path (camelCase,
+    // which older MC versions accepted, is rejected as an Identifier path and crashes at
+    // registration). The same string doubles as a plain flat key on the older String-based
+    // game-rule versions, keeping the /gamerule name identical across all versions.
+    public static final String RULE_NAME = BeginnersDelight.MOD_ID + ":generate_starter_house";
 
     /** Assigned by the loader initializer after registering the rule. */
     public static GameRule<Boolean> GENERATE_STARTER_HOUSE;
