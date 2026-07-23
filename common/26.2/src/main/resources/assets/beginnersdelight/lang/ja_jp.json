@@ -1,0 +1,4 @@
+{
+  "gamerule.beginnersdelight.generate_starter_house": "Beginner's Delight: スターターハウスを生成",
+  "gamerule.beginnersdelight.generate_starter_house.description": "新しく作成するワールドでスポーン地点にスターターハウスを生成するかどうか。ワールド作成時に設定するのが最適です。後から変更しても、まだ生成されていないワールドにのみ影響します。"
+}
