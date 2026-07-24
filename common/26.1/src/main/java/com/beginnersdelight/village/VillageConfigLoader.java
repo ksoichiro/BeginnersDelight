@@ -33,6 +33,8 @@ public final class VillageConfigLoader {
     private static final String K_MAX_HEIGHT_DIFFERENCE = "max_height_difference";
     private static final String K_GENERATE_PATHS = "generate_paths";
     private static final String K_RESPAWN_AT_HOUSE = "respawn_at_house";
+    private static final String K_STARTER_HOUSE = "starter_house";
+    private static final String K_AUTO_GENERATE = "auto_generate";
 
     private static final int MIN_PLOT_SIZE = 5;
     private static final int MAX_PLOT_SIZE = 256;
@@ -99,16 +101,19 @@ public final class VillageConfigLoader {
                 VillageConfigDefaults.GENERATE_PATHS);
         boolean respawnAtHouse = readBoolean(parsed, K_VILLAGE + "." + K_RESPAWN_AT_HOUSE,
                 VillageConfigDefaults.RESPAWN_AT_HOUSE);
+        boolean autoGenerateStarterHouse = readBoolean(parsed, K_STARTER_HOUSE + "." + K_AUTO_GENERATE,
+                VillageConfigDefaults.AUTO_GENERATE_STARTER_HOUSE);
 
         // Surface unknown top-level keys at WARN; the most common mistake is misspelling at top level.
         for (CommentedConfig.Entry entry : parsed.entrySet()) {
             String key = entry.getKey();
-            if (!key.equals(K_SCHEMA_VERSION) && !key.equals(K_VILLAGE)) {
+            if (!key.equals(K_SCHEMA_VERSION) && !key.equals(K_VILLAGE) && !key.equals(K_STARTER_HOUSE)) {
                 BeginnersDelight.LOGGER.warn("Unknown top-level key in {}: {}", CONFIG_FILE_NAME, key);
             }
         }
 
-        return new VillageConfig(plotSize, maxHeightDifference, generatePaths, respawnAtHouse);
+        return new VillageConfig(plotSize, maxHeightDifference, generatePaths, respawnAtHouse,
+                autoGenerateStarterHouse);
     }
 
     private static boolean readBoolean(CommentedConfig parsed, String path, boolean defaultValue) {

@@ -2,44 +2,24 @@ package com.beginnersdelight.neoforge;
 
 import com.beginnersdelight.BeginnersDelight;
 import com.beginnersdelight.village.VillageCommand;
-import com.beginnersdelight.village.VillageConfigLoader;
 import com.beginnersdelight.village.VillageManager;
-import com.beginnersdelight.worldgen.ModGameRules;
 import com.beginnersdelight.worldgen.StarterHouseGenerator;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.level.gamerules.GameRuleCategory;
-import net.minecraft.world.level.gamerules.GameRules;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
-import net.neoforged.fml.loading.FMLPaths;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
-import net.neoforged.neoforge.registries.RegisterEvent;
 
 @Mod(BeginnersDelight.MOD_ID)
 public class BeginnersDelightNeoForge {
     public BeginnersDelightNeoForge(IEventBus modEventBus) {
         BeginnersDelight.init();
 
-        boolean starterHouseDefault = VillageConfigLoader
-                .load(FMLPaths.CONFIGDIR.get())
-                .isAutoGenerateStarterHouse();
-
-        // MC 26.x game rules live in the frozen minecraft:game_rule registry, which vanilla's
-        // Bootstrap.bootStrap() already froze before this constructor runs. NeoForge unfreezes every
-        // built-in registry and fires a RegisterEvent per registry key on the mod bus (including
-        // game_rule) before re-freezing, so the registration must happen inside that event, not here.
-        modEventBus.addListener((RegisterEvent event) -> {
-            if (event.getRegistryKey().equals(Registries.GAME_RULE)) {
-                ModGameRules.GENERATE_STARTER_HOUSE = GameRules.registerBoolean(
-                        ModGameRules.RULE_NAME,
-                        GameRuleCategory.MISC,
-                        starterHouseDefault);
-            }
-        });
+        // The game-rule API was restructured in MC 1.21.11, so registration lives in a
+        // per-era NeoForgeGameRules picked by each subproject's source set.
+        NeoForgeGameRules.register(modEventBus);
 
         IEventBus bus = NeoForge.EVENT_BUS;
         bus.addListener((ServerStartedEvent event) ->

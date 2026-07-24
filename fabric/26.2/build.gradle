@@ -43,6 +43,7 @@ sourceSets {
         java {
             srcDir '../base/src/main/java'
             srcDir 'src/main/java'
+            srcDir '../gamerule-modern/src/main/java'
         }
         resources {
             srcDir 'src/main/resources'

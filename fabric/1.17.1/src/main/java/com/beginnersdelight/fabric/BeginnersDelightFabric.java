@@ -15,6 +15,10 @@ public class BeginnersDelightFabric implements ModInitializer {
     public void onInitialize() {
         BeginnersDelight.init();
 
+        // The game-rule API was restructured in MC 1.21.11, so registration lives in a
+        // per-era FabricGameRules picked by each subproject's source set.
+        FabricGameRules.register();
+
         ServerLifecycleEvents.SERVER_STARTED.register(StarterHouseGenerator::tryGenerate);
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) ->
                 StarterHouseGenerator.onPlayerJoin(handler.player));

@@ -49,6 +49,7 @@ sourceSets {
             // Version-specific entry point uses CommandRegistrationCallback v1
             // (v2 unavailable in 1.17.1), so base source dir is not included
             srcDir 'src/main/java'
+            srcDir '../gamerule-legacy/src/main/java'
         }
         resources {
             srcDir 'src/main/resources'

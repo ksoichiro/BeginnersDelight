@@ -13,12 +13,15 @@ public final class VillageConfig {
     private final int maxHeightDifference;
     private final boolean generatePaths;
     private final boolean respawnAtHouse;
+    private final boolean autoGenerateStarterHouse;
 
-    public VillageConfig(int plotSize, int maxHeightDifference, boolean generatePaths, boolean respawnAtHouse) {
+    public VillageConfig(int plotSize, int maxHeightDifference, boolean generatePaths, boolean respawnAtHouse,
+                         boolean autoGenerateStarterHouse) {
         this.plotSize = plotSize;
         this.maxHeightDifference = maxHeightDifference;
         this.generatePaths = generatePaths;
         this.respawnAtHouse = respawnAtHouse;
+        this.autoGenerateStarterHouse = autoGenerateStarterHouse;
     }
 
     public int getPlotSize() {
@@ -35,5 +38,9 @@ public final class VillageConfig {
 
     public boolean isRespawnAtHouse() {
         return respawnAtHouse;
+    }
+
+    public boolean isAutoGenerateStarterHouse() {
+        return autoGenerateStarterHouse;
     }
 }

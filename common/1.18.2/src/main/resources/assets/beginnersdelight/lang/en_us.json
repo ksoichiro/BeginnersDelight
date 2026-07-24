@@ -1,0 +1,4 @@
+{
+  "gamerule.beginnersdelight:generate_starter_house": "Beginner's Delight: Generate starter house",
+  "gamerule.beginnersdelight:generate_starter_house.description": "Whether newly created worlds generate a starter house at spawn. Best set when creating a world; changing it later only affects worlds that have not generated one yet."
+}
