@@ -14,6 +14,7 @@ A multi-loader Minecraft mod that generates a small starter house at the world s
 - **Multiplayer Support**: All players spawn at the same location with the starter house
 - **Safe Removal**: Uses only vanilla blocks, so the structure remains intact even after removing the mod
 - **No Regeneration**: The house is generated only once and never duplicated
+- **Per-World Toggle**: Turn the starter house off for a single world from the "Game Rules" screen while creating it, or later with `/gamerule beginnersdelight:generate_starter_house <true|false>`. New worlds default to on; set `[starter_house] auto_generate = false` in `config/beginnersdelight.toml` to make them default to off instead. Existing worlds are unaffected — an already-generated house is never removed, and enabling the rule later generates one on the next server start
 - **Village Mode** (optional): Grow a village around the world spawn as players join — each new player gets their own house connected by dirt paths, with decoration buildings (well, shed, storehouse, farm) appearing as the village grows. Enable it in-game with `/beginnersdelight village enable`; players can respawn at their own house. Configurable via a `config/beginnersdelight.toml` file, reloadable in-game with `/beginnersdelight config reload`
 
 ## Supported Versions
@@ -529,7 +530,7 @@ cd BeginnersDelight
 ```
 BeginnersDelight/
 ├── common/
-│   ├── shared/              # Shared version-agnostic sources (included via srcDir)
+│   ├── shared/              # Version-agnostic reference sources (not a Gradle subproject; not built)
 │   ├── 26.2/                # Common module for MC 26.2
 │   │   └── src/main/
 │   │       ├── java/com/beginnersdelight/

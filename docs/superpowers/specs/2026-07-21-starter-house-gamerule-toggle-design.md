@@ -22,9 +22,9 @@
 
 ## 全体モデル(セマンティクス)
 
-- **真の切替スイッチ = カスタム boolean ゲームルール `beginnersDelightGenerateStarterHouse`(ワールド単位)**
+- **真の切替スイッチ = カスタム boolean ゲームルール `beginnersdelight:generate_starter_house`(ワールド単位)**
   - ワールド作成画面の「ゲームルール」で ON/OFF 可能。
-  - ゲーム内でも `/gamerule beginnersDelightGenerateStarterHouse <true|false>` で変更可能。
+  - ゲーム内でも `/gamerule beginnersdelight:generate_starter_house <true|false>` で変更可能。
   - ゲームルールはワールドごとに永続化されるため、要望の「特定ワールドだけ」を満たす。
 - **設定ファイルは「ゲームルールの登録時デフォルト値」を決めるだけ**
   - `beginnersdelight.toml` に `[starter_house] auto_generate = true` を追加。
@@ -44,10 +44,9 @@ MC の仕様上、ゲームルールの既定値は**登録時(Mod 初期化時)
 
 ## 命名
 
-- ゲームルール名: `beginnersDelightGenerateStarterHouse`
-  - vanilla ゲームルールは単一のグローバル名前空間・camelCase(`doDaylightCycle` 等)で、
-    レジストリのような mod ID 名前空間分離がない。衝突回避のため mod 名相当のプレフィックス
-    + 説明的な名前を camelCase にするのがコミュニティ慣例であり、それに従う。
+- ゲームルール名: `beginnersdelight:generate_starter_house`
+  - 当初案は camelCase の `beginnersDelightGenerateStarterHouse`(vanilla の `doDaylightCycle` 等に倣う慣例)だったが、実装時に変更。MC 26.x ではゲームルールがレジストリ `minecraft:game_rule` のエントリで、名前は Identifier パス(`[a-z0-9/._-]`)でなければ登録時にクラッシュするため、camelCase は使えない。mod 名前空間 + snake_case の `beginnersdelight:generate_starter_house` に統一した。
+  - 旧版(1.16.5〜1.21.10)ではゲームルール名がただの String なのでコロンを含んでも問題なく、同じ名前を全バージョンで使用できる。
 - 設定: `[starter_house]` セクション / `auto_generate`(boolean)
 
 ## 変更コンポーネント
@@ -119,7 +118,7 @@ if (!overworld.getGameRules().getBoolean(ModGameRules.GENERATE_STARTER_HOUSE)) {
 
 - (a) 作成画面でゲームルール ON → 初回起動で家が生成される。
 - (b) 作成画面で OFF → 家が生成されない。
-- (c) `/gamerule beginnersDelightGenerateStarterHouse <値>` の設定/取得が機能する。
+- (c) `/gamerule beginnersdelight:generate_starter_house <値>` の設定/取得が機能する。
 - (d) 設定ファイルで `auto_generate = false` → 新規作成時のゲームルールデフォルトが OFF。
 - (e) 既存(生成済み)ワールドで挙動が変わらない(spawn 復元含む)。
 - ビルド: 対象版で `./gradlew build`(横展開後は必要に応じて対象版を `buildAll`)。

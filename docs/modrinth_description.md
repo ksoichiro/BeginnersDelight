@@ -36,6 +36,12 @@ The chest in the starter house contains helpful items for early game:
 - **Respawn at home**: Players can respawn at their own house
 - **Configurable**: Adjust plot size, path generation, and respawn behavior in a `config/beginnersdelight.toml` file, reloadable in-game with `/beginnersdelight config reload`
 
+### 🎚️ Per-World Toggle
+- **Choose per world**: Uncheck `beginnersdelight:generate_starter_house` in the "Game Rules" screen while creating a world to skip the starter house for that world only
+- **Change it later**: `/gamerule beginnersdelight:generate_starter_house <true|false>`
+- **Pick your default**: New worlds default to on; set `[starter_house] auto_generate = false` in `config/beginnersdelight.toml` to make them default to off
+- **Existing worlds are safe**: A house that has already been generated is never removed, and turning the rule on later generates one on the next server start
+
 ### 🔧 Safe to Remove
 - Built entirely with vanilla blocks (oak wood, cobblestone, etc.)
 - The structure remains intact even after removing the mod

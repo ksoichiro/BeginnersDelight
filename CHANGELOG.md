@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Per-world control over starter house generation via a new `beginnersdelight:generate_starter_house` game rule. Turn it off in the "Game Rules" screen while creating a world to skip the starter house for that world only, or change it later with `/gamerule beginnersdelight:generate_starter_house <true|false>`. The default for new worlds stays on and can be flipped for every new world with the new `[starter_house] auto_generate` option in `config/beginnersdelight.toml`. Existing worlds are unaffected: a house that has already been generated is never removed, and turning the rule on later generates one on the next server start. Available on all supported versions (Fabric, NeoForge, and Forge)
+
 ### Changed
 
 - Fill the extra container of a starter house (and village-mode player house) — such as the second half of a double chest — with early-game supplies (coal, oak planks, torches, wheat seeds) instead of a duplicate set of wooden tools, so a house no longer yields redundant tool sets

@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add a per-world custom game rule `beginnersDelightGenerateStarterHouse` (default configurable) that controls whether the starter house auto-generates, so it can be enabled/disabled per world at world-creation time.
+**Goal:** Add a per-world custom game rule `beginnersdelight:generate_starter_house` (default configurable) that controls whether the starter house auto-generates, so it can be enabled/disabled per world at world-creation time.
 
 **Architecture:** A common class holds the game rule `Key`. Each loader registers the rule at mod init, using the mod config's `starter_house.auto_generate` value as the registered default. `StarterHouseGenerator.tryGenerate()` gates its *initial* generation path on that rule. Config is the default source; the per-world game rule is the authority.
 
@@ -11,7 +11,7 @@
 ## Global Constraints
 
 - Default MC version for dev/build: **26.2**. Build a version with `./gradlew build -Ptarget_mc_version=<ver>`.
-- Game rule name (verbatim, camelCase, no namespace): **`beginnersDelightGenerateStarterHouse`**.
+- Game rule name (verbatim): **`beginnersdelight:generate_starter_house`**. (Originally planned as camelCase `beginnersDelightGenerateStarterHouse`, but changed during implementation: MC 26.x registers game rules in the `minecraft:game_rule` registry, whose name must be a valid Identifier path `[a-z0-9/._-]`, so camelCase crashes at registration. The namespaced snake_case form works on every version — pre-26.x names are plain Strings that accept the colon.)
 - Config key: section **`[starter_house]`**, key **`auto_generate`**, boolean, **default `true`**.
 - `schema_version` in `beginnersdelight-default-config.toml` and `VillageConfigDefaults.CURRENT_SCHEMA_VERSION`: bump **1 → 2**.
 - Minimize changes to existing logic; only gate the *not-yet-generated* path in `tryGenerate`. Do NOT change the `isGenerated()` restore path.
@@ -113,11 +113,11 @@ schema_version = 2
 ```toml
 
 [starter_house]
-# Default value of the "beginnersDelightGenerateStarterHouse" game rule for newly
+# Default value of the "beginnersdelight:generate_starter_house" game rule for newly
 # created worlds. When true, new worlds generate the starter house at spawn (the
 # classic behavior). Set to false to make new worlds skip it by default; you can
 # still enable it per world from the "Game Rules" screen when creating a world, or
-# with: /gamerule beginnersDelightGenerateStarterHouse true
+# with: /gamerule beginnersdelight:generate_starter_house true
 # This does not affect worlds that already exist.
 auto_generate = true
 ```
@@ -163,7 +163,7 @@ import net.minecraft.world.level.gamerules.GameRules;
 public final class ModGameRules {
 
     /** Vanilla game rules share one global namespace, so this is prefixed with the mod name. */
-    public static final String RULE_NAME = "beginnersDelightGenerateStarterHouse";
+    public static final String RULE_NAME = "beginnersdelight:generate_starter_house";
 
     /** Assigned by the loader initializer after registering the rule. */
     public static GameRule<Boolean> GENERATE_STARTER_HOUSE;
@@ -268,7 +268,7 @@ Expected: BUILD SUCCESSFUL (both `:fabric` and `:neoforge` jars produced).
 
 ```bash
 git add fabric/base/src/main/java/com/beginnersdelight/fabric/BeginnersDelightFabric.java neoforge/base/src/main/java/com/beginnersdelight/neoforge/BeginnersDelightNeoForge.java
-git commit -m "feat: register beginnersDelightGenerateStarterHouse game rule (26.2 Fabric/NeoForge)"
+git commit -m "feat: register beginnersdelight:generate_starter_house game rule (26.2 Fabric/NeoForge)"
 ```
 
 ---
@@ -282,22 +282,22 @@ This task confirms the core UX assumption (the custom game rule appears and work
 - [ ] **Step 1: Fabric — game rule ON (default)**
 
 Run: `./gradlew :fabric:runClient -Ptarget_mc_version=26.2`
-Create a new world → "More" / world options → **Game Rules** → confirm `beginnersDelightGenerateStarterHouse` is listed and defaults to ON. Create the world.
+Create a new world → "More" / world options → **Game Rules** → confirm `beginnersdelight:generate_starter_house` is listed and defaults to ON. Create the world.
 Expected: the starter house generates at spawn as before.
 
 - [ ] **Step 2: Fabric — game rule OFF**
 
-Create another new world, toggle `beginnersDelightGenerateStarterHouse` **OFF** in the Game Rules screen, create it.
+Create another new world, toggle `beginnersdelight:generate_starter_house` **OFF** in the Game Rules screen, create it.
 Expected: NO starter house is generated; the player spawns via vanilla behavior.
 
 - [ ] **Step 3: Fabric — in-game command**
 
-In the ON world, run `/gamerule beginnersDelightGenerateStarterHouse` → reports `true`. Set `false`, restart the world, confirm no *new* generation occurs (the already-built house remains — that is expected, `isGenerated` is sticky).
+In the ON world, run `/gamerule beginnersdelight:generate_starter_house` → reports `true`. Set `false`, restart the world, confirm no *new* generation occurs (the already-built house remains — that is expected, `isGenerated` is sticky).
 
 - [ ] **Step 4: Config default OFF**
 
 Edit `<configdir>/beginnersdelight.toml` → `[starter_house] auto_generate = false`. Launch, create a new world, open Game Rules.
-Expected: `beginnersDelightGenerateStarterHouse` now defaults to **OFF**.
+Expected: `beginnersdelight:generate_starter_house` now defaults to **OFF**.
 
 - [ ] **Step 5: NeoForge — repeat Steps 1–2**
 
@@ -373,7 +373,7 @@ For each version, in order (suggested: 1.21.11, 26.1.2, 26.1.1, 26.1, then 1.21.
 
 - [ ] **Step 1: CHANGELOG (Unreleased)**
 
-Add an entry describing the new `beginnersDelightGenerateStarterHouse` game rule (per-world, default from `starter_house.auto_generate`, settable at world creation / via `/gamerule`), and that existing worlds are unaffected. Use the `minecraft-mod:update-changelog` skill if preferred.
+Add an entry describing the new `beginnersdelight:generate_starter_house` game rule (per-world, default from `starter_house.auto_generate`, settable at world creation / via `/gamerule`), and that existing worlds are unaffected. Use the `minecraft-mod:update-changelog` skill if preferred.
 
 - [ ] **Step 2: README + store descriptions**
 
