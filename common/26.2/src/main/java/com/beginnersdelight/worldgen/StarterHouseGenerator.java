@@ -228,12 +228,28 @@ public class StarterHouseGenerator {
             return null;
         }
 
-        // Only raise to sea level when the ground is actually submerged (ocean/lake),
-        // to avoid building underwater. Dry ground below sea level (deep valleys, cave
-        // areas) keeps its real height so the house sits on the ground, not floating.
-        int seaLevel = level.getSeaLevel();
-        if (resultY < seaLevel && isSubmerged(level, centerX, centerZ, resultY, seaLevel)) {
-            resultY = seaLevel;
+        // Keep the floor above the water surface of any ocean/lake that reaches the
+        // area being reshaped. The lowest sample is often dry ground that still lies
+        // below the waterline of adjacent water (a shoreline slope), and since the
+        // surroundings get flattened down to the floor, that water then floods the
+        // house. Dry ground below sea level (deep valleys) is left at its real height
+        // so the house sits on the ground instead of floating.
+        // Raising the floor widens the scanned band, so repeat until it comes out
+        // clear; a handful of rounds is plenty for terrain that holds water.
+        int floorY = resultY;
+        for (int round = 0; round < 4; round++) {
+            int waterSurfaceY = findHighestFluidSurface(level, startX, startZ, structureSize, floorY);
+            if (waterSurfaceY < floorY) {
+                break;
+            }
+            floorY = waterSurfaceY + 1;
+        }
+        // fillFoundation reaches 10 blocks below the floor, so a bigger lift than that
+        // would leave the house standing on nothing. A spot needing one (water perched
+        // on a cliff right beside the footprint) cannot be drained by raising at all,
+        // so keep the house on the real ground rather than float it above a gap.
+        if (floorY - resultY <= 9) {
+            resultY = floorY;
         }
 
         return new BlockPos(startX, resultY, startZ);
@@ -368,18 +384,44 @@ public class StarterHouseGenerator {
     }
 
     /**
-     * Returns true if the column at the given XZ is submerged: any fluid exists
-     * between the ground and sea level. Used to decide whether placement should be
-     * raised to sea level (to avoid building underwater) versus kept on dry ground
-     * that merely sits below sea level (deep valleys/caves), which must not float up.
+     * Returns the Y of the highest fluid surface found at or above {@code floorY}
+     * within the whole area the generator reshapes (structure footprint plus the
+     * foundation margin and the terrain blend ring), or {@link Integer#MIN_VALUE}
+     * when that area holds no such fluid.
+     *
+     * The scan covers every column, not just the footprint corners: a pond or the
+     * ocean touching one edge is enough to flood the flattened surroundings, and
+     * the corner samples alone routinely miss it.
      */
-    private static boolean isSubmerged(ServerLevel level, int x, int z, int groundY, int seaLevel) {
-        for (int y = groundY; y <= seaLevel; y++) {
-            if (!level.getBlockState(new BlockPos(x, y, z)).getFluidState().isEmpty()) {
-                return true;
+    private static int findHighestFluidSurface(ServerLevel level, int startX, int startZ,
+                                               net.minecraft.core.Vec3i size, int floorY) {
+        // Same reach as fillFoundation's margin plus blendSurroundingTerrain's radius.
+        int extend = 2 + 3;
+        int minX = startX - extend;
+        int maxX = startX + size.getX() + extend;
+        int minZ = startZ - extend;
+        int maxZ = startZ + size.getZ() + extend;
+
+        // Water sitting well above the floor rests on terrain the blending never cuts
+        // into, so it cannot reach the house; a few blocks of headroom is enough.
+        // Sea level is always included so an ocean is still seen when the detected
+        // floor happens to be far below it.
+        int scanTop = Math.max(level.getSeaLevel(), floorY + 4);
+
+        int highest = Integer.MIN_VALUE;
+        for (int x = minX; x < maxX; x++) {
+            for (int z = minZ; z < maxZ; z++) {
+                for (int y = scanTop; y >= floorY; y--) {
+                    if (!level.getBlockState(new BlockPos(x, y, z)).getFluidState().isEmpty()) {
+                        if (y > highest) {
+                            highest = y;
+                        }
+                        break;
+                    }
+                }
             }
         }
-        return false;
+        return highest;
     }
 
     /**

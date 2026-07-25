@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Stop the starter house and village-mode buildings from being placed below the waterline next to an ocean, lake or river. Placement used the lowest ground found across the footprint, which on a shoreline slope is dry ground several blocks under the surrounding water surface, and the check that raised placement out of the water only looked at the single centre column — so a building whose centre happened to be on dry land was built in a pit below the water level and flooded once the surrounding terrain was flattened. The water surface is now measured across the whole area the generator reshapes, and the floor is raised just above it
 - Stop dirt and grass blocks from being left floating in mid-air among bamboo when a starter house (or village-mode building) generates in a bamboo jungle. Bamboo, sugar cane, cactus and sweet berry bushes are no longer mistaken for the ground surface, so terrain blending measures the real terrain height instead of the top of a plant. This also keeps the starter house at the world spawn in bamboo jungles instead of relocating away from it, and lets village paths pave columns where bamboo grows
 - Stop bamboo from collapsing around a freshly generated house: stalks growing where the ground is flattened or blended are now taken down cleanly while the house is built, instead of losing their footing and breaking apart a moment later with break sounds and scattered drops. Bamboo outside the modified ground is left standing
 
