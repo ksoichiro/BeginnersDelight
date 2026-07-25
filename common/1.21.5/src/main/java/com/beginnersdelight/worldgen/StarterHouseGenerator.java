@@ -250,7 +250,8 @@ public class StarterHouseGenerator {
             if (state.isAir() || !state.getFluidState().isEmpty()) {
                 continue;
             }
-            if (state.is(BlockTags.LEAVES) || state.is(BlockTags.LOGS)
+            if (isNonGroundPlant(state)
+                    || state.is(BlockTags.LEAVES) || state.is(BlockTags.LOGS)
                     || state.is(BlockTags.FLOWERS) || state.is(BlockTags.SAPLINGS)
                     || state.is(Blocks.TALL_GRASS) || state.is(Blocks.SHORT_GRASS)
                     || state.is(BlockTags.REPLACEABLE_BY_TREES)
@@ -260,6 +261,21 @@ public class StarterHouseGenerator {
             return y + 1;
         }
         return -1;
+    }
+
+    /**
+     * Returns true if the block is a plant that grows on top of the ground and
+     * therefore must not be mistaken for the ground itself. These are not covered
+     * by the vegetation tags checked above. Bamboo matters most: a stalk reaches
+     * about 16 blocks, so counting it as ground puts the detected surface far above
+     * the real terrain and leaves blocks floating in mid-air after blending.
+     */
+    private static boolean isNonGroundPlant(BlockState state) {
+        return state.is(Blocks.BAMBOO)
+                || state.is(Blocks.BAMBOO_SAPLING)
+                || state.is(Blocks.SUGAR_CANE)
+                || state.is(Blocks.CACTUS)
+                || state.is(Blocks.SWEET_BERRY_BUSH);
     }
 
     /**
@@ -480,6 +496,53 @@ public class StarterHouseGenerator {
                 }
             }
         }
+
+        clearTallPlants(level, placePos, structureSize);
+    }
+
+    /**
+     * Removes tall plants (bamboo, sugar cane, ...) from the area the foundation
+     * flattens. They are not covered by the loop above: they keep growing past the
+     * scanned band, and the foundation fill later removes their bottom block with a
+     * regular block update, which destroys the rest of the stalk with break sounds
+     * and scattered drops. Clearing whole columns up front with UPDATE_KNOWN_SHAPE
+     * avoids both. Plants outside the foundation area are left standing.
+     */
+    private static void clearTallPlants(ServerLevel level, BlockPos placePos,
+                                         net.minecraft.core.Vec3i structureSize) {
+        int margin = 2;
+        int minX = placePos.getX() - margin;
+        int maxX = placePos.getX() + structureSize.getX() + margin;
+        int minZ = placePos.getZ() - margin;
+        int maxZ = placePos.getZ() + structureSize.getZ() + margin;
+
+        for (int x = minX; x < maxX; x++) {
+            for (int z = minZ; z < maxZ; z++) {
+                int groundY = findGroundY(level, x, z);
+                if (groundY != -1) {
+                    clearTallPlantColumn(level, x, z, groundY);
+                }
+            }
+        }
+    }
+
+    /**
+     * Removes the tall plant standing on the given ground level as a whole column.
+     * Clearing runs bottom-up with UPDATE_KNOWN_SHAPE so no shape update reaches the
+     * blocks above: they keep standing until the loop removes them. Taking only the
+     * bottom block out instead would leave the rest unsupported, and it would collapse
+     * a tick later with break sounds and drops that the cleanup pass no longer covers.
+     */
+    private static void clearTallPlantColumn(ServerLevel level, int x, int z, int groundY) {
+        // Tallest plant handled here is bamboo at 16 blocks; leave headroom.
+        int maxPlantHeight = 32;
+        for (int y = groundY; y < groundY + maxPlantHeight; y++) {
+            BlockPos pos = new BlockPos(x, y, z);
+            if (!isNonGroundPlant(level.getBlockState(pos))) {
+                break;
+            }
+            level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2 | 16);
+        }
     }
 
     private static boolean isVegetation(BlockState state) {
@@ -688,7 +751,8 @@ public class StarterHouseGenerator {
                 continue;
             }
             // Skip vegetation and thin ground cover
-            if (state.is(BlockTags.LEAVES) || state.is(BlockTags.LOGS)
+            if (isNonGroundPlant(state)
+                    || state.is(BlockTags.LEAVES) || state.is(BlockTags.LOGS)
                     || state.is(BlockTags.FLOWERS) || state.is(BlockTags.SAPLINGS)
                     || state.is(Blocks.TALL_GRASS) || state.is(Blocks.SHORT_GRASS)
                     || isThinGroundCover(state)) {
@@ -764,6 +828,9 @@ public class StarterHouseGenerator {
                 int targetY = floorY + (int) Math.round((naturalY - floorY) * ratio);
 
                 if (naturalY > targetY) {
+                    // Take down any tall plant standing here first: carving the
+                    // ground from under it would leave the stalk hanging in the air.
+                    clearTallPlantColumn(level, x, z, naturalY);
                     // Terrain higher than target: carve down to create a slope
                     for (int y = targetY; y < naturalY; y++) {
                         level.setBlock(new BlockPos(x, y, z), Blocks.AIR.defaultBlockState(), 2);
@@ -782,6 +849,9 @@ public class StarterHouseGenerator {
                     // ground plunges away, so filling would build an unnatural dirt pillar into the
                     // void. Leave the natural cliff intact.
                     if (floorY - naturalY > 6) continue;
+                    // Take down any tall plant standing here first: burying its base
+                    // would break the rest of the stalk apart.
+                    clearTallPlantColumn(level, x, z, naturalY);
                     // Terrain lower than target: fill up to create a slope
                     for (int y = naturalY; y < targetY; y++) {
                         BlockState fill = (y == targetY - 1) ? surfaceBlock : subsurfaceBlock;

@@ -15,6 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fill the extra container of a starter house (and village-mode player house) — such as the second half of a double chest — with early-game supplies (coal, oak planks, torches, wheat seeds) instead of a duplicate set of wooden tools, so a house no longer yields redundant tool sets
 
+### Fixed
+
+- Stop dirt and grass blocks from being left floating in mid-air among bamboo when a starter house (or village-mode building) generates in a bamboo jungle. Bamboo, sugar cane, cactus and sweet berry bushes are no longer mistaken for the ground surface, so terrain blending measures the real terrain height instead of the top of a plant. This also keeps the starter house at the world spawn in bamboo jungles instead of relocating away from it, and lets village paths pave columns where bamboo grows
+- Stop bamboo from collapsing around a freshly generated house: stalks growing where the ground is flattened or blended are now taken down cleanly while the house is built, instead of losing their footing and breaking apart a moment later with break sounds and scattered drops. Bamboo outside the modified ground is left standing
+
 ## [0.5.0] - 2026-07-17
 
 ### Added

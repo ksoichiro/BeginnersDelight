@@ -92,10 +92,22 @@ public class VillagePathGenerator {
     }
 
     private static boolean isRemovableVegetation(BlockState state) {
-        return state.is(BlockTags.REPLACEABLE_BY_TREES)
+        return isNonGroundPlant(state)
+                || state.is(BlockTags.REPLACEABLE_BY_TREES)
                 || state.is(BlockTags.FLOWERS)
                 || state.is(BlockTags.SAPLINGS)
                 || state.is(Blocks.TALL_GRASS)
                 || state.is(Blocks.SHORT_GRASS);
+    }
+
+    // Plants that grow on top of the ground and must not be mistaken for the ground
+    // itself. Bamboo matters most: a stalk reaches about 16 blocks, so counting it as
+    // ground makes the path skip the column instead of paving the real surface.
+    private static boolean isNonGroundPlant(BlockState state) {
+        return state.is(Blocks.BAMBOO)
+                || state.is(Blocks.BAMBOO_SAPLING)
+                || state.is(Blocks.SUGAR_CANE)
+                || state.is(Blocks.CACTUS)
+                || state.is(Blocks.SWEET_BERRY_BUSH);
     }
 }
