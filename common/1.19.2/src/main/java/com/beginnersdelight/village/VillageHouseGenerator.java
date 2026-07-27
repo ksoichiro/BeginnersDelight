@@ -304,6 +304,7 @@ public class VillageHouseGenerator {
             BlockState state = level.getBlockState(new BlockPos(x, y, z));
             if (state.isAir() || !state.getFluidState().isEmpty()) continue;
             if (isNonGroundPlant(state)
+                    || isMushroom(state)
                     || state.is(BlockTags.LEAVES) || state.is(BlockTags.LOGS)
                     || state.is(BlockTags.FLOWERS) || state.is(BlockTags.SAPLINGS)
                     || state.is(Blocks.TALL_GRASS) || state.is(Blocks.GRASS)
@@ -327,6 +328,21 @@ public class VillageHouseGenerator {
                 || state.is(Blocks.SWEET_BERRY_BUSH);
     }
 
+    // Mushrooms: the small ones plus huge-mushroom cap/stem blocks. They belong to none
+    // of the vegetation tags checked above (vanilla keeps them in their own
+    // replaceable_by_mushrooms tag), so without this they survive clearVegetation and are
+    // instead destroyed later by the shape updates terrain reshaping sends out. That drops
+    // mushroom items which removeDroppedItems cannot reliably sweep up: item entities in
+    // chunks that are not tracked yet are invisible to the entity query, so they are left
+    // floating next to the finished building.
+    private static boolean isMushroom(BlockState state) {
+        return state.is(Blocks.BROWN_MUSHROOM)
+                || state.is(Blocks.RED_MUSHROOM)
+                || state.is(Blocks.BROWN_MUSHROOM_BLOCK)
+                || state.is(Blocks.RED_MUSHROOM_BLOCK)
+                || state.is(Blocks.MUSHROOM_STEM);
+    }
+
     private static boolean isThinGroundCover(BlockState state) {
         return state.is(Blocks.SNOW) || state.is(Blocks.MOSS_CARPET);
     }
@@ -335,7 +351,8 @@ public class VillageHouseGenerator {
         return state.is(BlockTags.LEAVES) || state.is(BlockTags.LOGS)
                 || state.is(BlockTags.SAPLINGS) || state.is(BlockTags.FLOWERS)
                 || state.is(Blocks.TALL_GRASS) || state.is(Blocks.GRASS)
-                || isThinGroundCover(state);
+                || isThinGroundCover(state)
+                || isMushroom(state);
     }
 
     private static void clearVegetation(ServerLevel level, BlockPos placePos, Vec3i structureSize) {
@@ -772,6 +789,7 @@ public class VillageHouseGenerator {
             BlockState state = level.getBlockState(new BlockPos(x, y, z));
             if (state.isAir() || !state.getFluidState().isEmpty()) continue;
             if (isNonGroundPlant(state)
+                    || isMushroom(state)
                     || state.is(BlockTags.LEAVES) || state.is(BlockTags.LOGS)
                     || state.is(BlockTags.FLOWERS) || state.is(BlockTags.SAPLINGS)
                     || state.is(Blocks.TALL_GRASS) || state.is(Blocks.GRASS)

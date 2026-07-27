@@ -270,6 +270,7 @@ public class StarterHouseGenerator {
                 continue;
             }
             if (isNonGroundPlant(state)
+                    || isMushroom(state)
                     || state.is(BlockTags.LEAVES) || state.is(BlockTags.LOGS)
                     || state.is(BlockTags.FLOWERS) || state.is(BlockTags.SAPLINGS)
                     || state.is(Blocks.TALL_GRASS) || state.is(Blocks.SHORT_GRASS)
@@ -295,6 +296,25 @@ public class StarterHouseGenerator {
                 || state.is(Blocks.SUGAR_CANE)
                 || state.is(Blocks.CACTUS)
                 || state.is(Blocks.SWEET_BERRY_BUSH);
+    }
+
+    /**
+     * Returns true for mushrooms: the small ones plus the cap/stem blocks of huge
+     * mushrooms. Mushrooms belong to none of the vegetation tags checked above
+     * (vanilla keeps them in their own {@code replaceable_by_mushrooms} tag), so
+     * without this they survive {@link #clearVegetation} and are instead destroyed
+     * later by the shape updates that terrain reshaping sends out. That drops
+     * mushroom items which {@link #removeDroppedItems} cannot reliably sweep up:
+     * during server start the surrounding chunks are not tracked yet, and item
+     * entities in untracked chunks are invisible to the entity query, so they are
+     * left floating next to the finished house.
+     */
+    private static boolean isMushroom(BlockState state) {
+        return state.is(Blocks.BROWN_MUSHROOM)
+                || state.is(Blocks.RED_MUSHROOM)
+                || state.is(Blocks.BROWN_MUSHROOM_BLOCK)
+                || state.is(Blocks.RED_MUSHROOM_BLOCK)
+                || state.is(Blocks.MUSHROOM_STEM);
     }
 
     /**
@@ -599,7 +619,8 @@ public class StarterHouseGenerator {
                 || state.is(BlockTags.LEAVES)
                 || state.is(BlockTags.LOGS)
                 || state.is(BlockTags.SAPLINGS)
-                || state.is(BlockTags.FLOWERS);
+                || state.is(BlockTags.FLOWERS)
+                || isMushroom(state);
     }
 
     /**
@@ -797,6 +818,7 @@ public class StarterHouseGenerator {
             }
             // Skip vegetation and thin ground cover
             if (isNonGroundPlant(state)
+                    || isMushroom(state)
                     || state.is(BlockTags.LEAVES) || state.is(BlockTags.LOGS)
                     || state.is(BlockTags.FLOWERS) || state.is(BlockTags.SAPLINGS)
                     || state.is(Blocks.TALL_GRASS) || state.is(Blocks.SHORT_GRASS)

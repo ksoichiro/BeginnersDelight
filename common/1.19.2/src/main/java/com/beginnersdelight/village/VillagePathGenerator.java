@@ -86,7 +86,12 @@ public class VillagePathGenerator {
                 || state.is(BlockTags.FLOWERS)
                 || state.is(BlockTags.SAPLINGS)
                 || state.is(Blocks.TALL_GRASS)
-                || state.is(Blocks.GRASS);
+                || state.is(Blocks.GRASS)
+                // Only the small mushrooms: a path clears a single block above the
+                // surface, so counting huge-mushroom cap/stem blocks as removable would
+                // carve one block out of a huge mushroom and leave the rest floating.
+                || state.is(Blocks.BROWN_MUSHROOM)
+                || state.is(Blocks.RED_MUSHROOM);
     }
 
     // Plants that grow on top of the ground and must not be mistaken for the ground
