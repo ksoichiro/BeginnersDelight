@@ -16,6 +16,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
@@ -131,6 +132,10 @@ public class StarterHouseGenerator {
         // inside blocks during structure placement
         removeMobs(level, placePos, template.getSize());
 
+        // Remember the thin ground cover (snow, moss carpet, ...) before it is
+        // cleared so it can be laid back over the finished terrain.
+        Map<Long, BlockState> groundCover = captureGroundCover(level, placePos, template.getSize());
+
         // Pre-clear vegetation and ground-cover blocks to prevent them from dropping
         // items when their supporting blocks are removed during terrain modification.
         // Uses UPDATE_KNOWN_SHAPE to suppress shape update propagation so adjacent
@@ -162,6 +167,10 @@ public class StarterHouseGenerator {
         // Replace surface dirt next to grass with grass so the leveled/blended
         // ring blends naturally with the surrounding grassland.
         naturalizeDirtSurface(level, placePos, template.getSize());
+
+        // Put the snow/carpet cover back on the reshaped surroundings so the house
+        // does not sit in a sharply outlined bare patch.
+        restoreGroundCover(level, placePos, template.getSize(), groundCover);
 
         // Remove item entities (seeds, sticks, etc.) dropped by destroyed vegetation
         removeDroppedItems(level, placePos, template.getSize());
@@ -621,6 +630,169 @@ public class StarterHouseGenerator {
                 || state.is(BlockTags.SAPLINGS)
                 || state.is(BlockTags.FLOWERS)
                 || isMushroom(state);
+    }
+
+    /**
+     * Records the thin ground cover standing on every column that is about to be
+     * reshaped, so {@link #restoreGroundCover} can lay it back down afterwards.
+     * {@link #clearVegetation} strips this cover and nothing used to put it back,
+     * which left the house inside a sharply outlined bare rectangle -- glaring in
+     * snowy biomes, where the surroundings are snow-covered right up to that edge.
+     *
+     * {@link #findGroundY} skips thin cover, so the block it points at is the cover
+     * itself whenever a column has one.
+     */
+    private static Map<Long, BlockState> captureGroundCover(ServerLevel level, BlockPos placePos,
+                                                             net.minecraft.core.Vec3i structureSize) {
+        Map<Long, BlockState> cover = new HashMap<>();
+        // Same reach as clearVegetation, which is what removes the cover.
+        int margin = 2;
+        int blendRadius = 3;
+        int extend = margin + blendRadius + 1;
+
+        int minX = placePos.getX() - extend;
+        int maxX = placePos.getX() + structureSize.getX() + extend;
+        int minZ = placePos.getZ() - extend;
+        int maxZ = placePos.getZ() + structureSize.getZ() + extend;
+
+        for (int x = minX; x < maxX; x++) {
+            for (int z = minZ; z < maxZ; z++) {
+                int groundY = findGroundY(level, x, z);
+                if (groundY == -1) {
+                    continue;
+                }
+                BlockState state = level.getBlockState(new BlockPos(x, groundY, z));
+                if (isThinGroundCover(state)) {
+                    cover.put(columnKey(x, z), state);
+                }
+            }
+        }
+        return cover;
+    }
+
+    /**
+     * Lays the recorded ground cover back onto the reshaped surface, one column at a
+     * time. Columns that had no cover to begin with (bare ground under a tree, ...)
+     * stay bare, so the result keeps the natural patchiness instead of turning into a
+     * uniform slab of snow. Columns the building itself stands on get no cover back:
+     * a freshly built house has nothing lying on it.
+     */
+    private static void restoreGroundCover(ServerLevel level, BlockPos placePos,
+                                            net.minecraft.core.Vec3i structureSize,
+                                            Map<Long, BlockState> cover) {
+        int margin = 2;
+        int blendRadius = 3;
+        int extend = margin + blendRadius + 1;
+
+        int minX = placePos.getX() - extend;
+        int maxX = placePos.getX() + structureSize.getX() + extend;
+        int minZ = placePos.getZ() - extend;
+        int maxZ = placePos.getZ() + structureSize.getZ() + extend;
+
+        for (int x = minX; x < maxX; x++) {
+            for (int z = minZ; z < maxZ; z++) {
+                boolean insideFootprint = x >= placePos.getX()
+                        && x < placePos.getX() + structureSize.getX()
+                        && z >= placePos.getZ()
+                        && z < placePos.getZ() + structureSize.getZ();
+                if (insideFootprint && isStructureColumn(level, x, z,
+                        placePos.getY(), structureSize.getY())) {
+                    clearStaleSnowy(level, x, z, placePos.getY());
+                    continue;
+                }
+                int groundY = findGroundY(level, x, z);
+                if (groundY == -1) {
+                    continue;
+                }
+                BlockPos pos = new BlockPos(x, groundY, z);
+                BlockState recorded = cover.get(columnKey(x, z));
+                boolean covered = recorded != null
+                        && level.getBlockState(pos).isAir()
+                        && recorded.canSurvive(level, pos);
+                if (covered) {
+                    level.setBlock(pos, recorded, 2);
+                }
+
+                // Grass, podzol and mycelium only look snowed over while SNOWY is set,
+                // and the flag no longer matches the surface: clearVegetation took the
+                // snow away with UPDATE_KNOWN_SHAPE, which suppresses the shape update
+                // that would have cleared it, while the blocks the foundation fill put
+                // down carry the default (unset) value. Sync it with what actually lies
+                // on top so no white-but-snowless -- or snowed-but-green -- patch shows.
+                BlockPos belowPos = pos.below();
+                BlockState below = level.getBlockState(belowPos);
+                if (below.hasProperty(BlockStateProperties.SNOWY)) {
+                    // Read what is really on the ground rather than assuming the
+                    // cover is ours: a column outside the reshaped band still carries
+                    // the snow clearVegetation never reached, since that pass only
+                    // scans from the floor level upward.
+                    boolean snowy = isSnowCover(level.getBlockState(pos));
+                    if (below.getValue(BlockStateProperties.SNOWY) != snowy) {
+                        level.setBlock(belowPos,
+                                below.setValue(BlockStateProperties.SNOWY, snowy), 2);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Drops the leftover SNOWY flag from the ground of a column the building stands
+     * on. The snow that made it white is gone for good there, and on the sheltered
+     * ground under a roof overhang -- the one part of such a column that stays
+     * visible -- it would otherwise read as a white patch with nothing lying on it.
+     * Vanilla leaves that ground green too: a village generates before the top layer
+     * is frozen, so no snow ever reaches under the eaves.
+     */
+    private static void clearStaleSnowy(ServerLevel level, int x, int z, int floorY) {
+        // The reshaped ground inside the footprint sits at floorY - 1; scan a little
+        // deeper only to skip over any air the template left below the floor.
+        for (int y = floorY - 1; y >= floorY - 3; y--) {
+            BlockPos pos = new BlockPos(x, y, z);
+            BlockState state = level.getBlockState(pos);
+            if (state.isAir()) {
+                continue;
+            }
+            if (state.hasProperty(BlockStateProperties.SNOWY)
+                    && state.getValue(BlockStateProperties.SNOWY)
+                    && !isSnowCover(level.getBlockState(pos.above()))) {
+                level.setBlock(pos, state.setValue(BlockStateProperties.SNOWY, false), 2);
+            }
+            return;
+        }
+    }
+
+    /**
+     * Returns true when the building itself stands on this column, i.e. the template
+     * put a block somewhere in the column's structure band. Open ground inside the
+     * template's bounding box -- the yard beside an L-shaped house, for instance --
+     * is not part of the building and keeps its ground cover like the rest of the
+     * surroundings. Ground under a roof overhang counts as built on and stays bare,
+     * which is also what a sheltered patch looks like naturally.
+     */
+    private static boolean isStructureColumn(ServerLevel level, int x, int z,
+                                              int floorY, int height) {
+        for (int y = floorY; y < floorY + height; y++) {
+            if (!level.getBlockState(new BlockPos(x, y, z)).isAir()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Returns true for the blocks that make the ground below them render snowed over,
+     * matching vanilla's SnowyDirtBlock.
+     */
+    private static boolean isSnowCover(BlockState state) {
+        return state.is(Blocks.SNOW) || state.is(Blocks.SNOW_BLOCK);
+    }
+
+    /**
+     * Packs an XZ column coordinate into a single map key.
+     */
+    private static long columnKey(int x, int z) {
+        return ((long) x << 32) | (z & 0xffffffffL);
     }
 
     /**

@@ -14,6 +14,10 @@ import net.minecraft.world.level.block.state.BlockState;
  */
 public class VillagePathGenerator {
 
+    // Tallest plant that can stand on a paved column is bamboo at about 16 blocks;
+    // leave headroom.
+    private static final int MAX_SURFACE_PLANT_HEIGHT = 32;
+
     /**
      * Generates a dirt path between two positions.
      * Traces X-axis first, then Z-axis (L-shaped path).
@@ -57,13 +61,21 @@ public class VillagePathGenerator {
         BlockState state = level.getBlockState(surfacePos);
 
         if (state.is(Blocks.GRASS_BLOCK) || state.is(Blocks.DIRT)) {
-            level.setBlock(surfacePos, Blocks.DIRT_PATH.defaultBlockState(), 2);
-
-            BlockPos above = surfacePos.above();
-            BlockState aboveState = level.getBlockState(above);
-            if (isRemovableVegetation(aboveState)) {
-                level.setBlock(above, Blocks.AIR.defaultBlockState(), 2);
+            // Take whatever stands on the surface away first, bottom-up and with
+            // UPDATE_KNOWN_SHAPE so it goes quietly: nothing that grows on grass
+            // survives on a path block, so paving first would let the shape update
+            // break it into drops -- a snowball for every paved column in a snowy
+            // biome, which the village generator never sweeps up. The whole stack
+            // has to go: findPathSurface descends past every removable block, so
+            // clearing one would leave the top half of a tall plant, or the rest of
+            // a bamboo stalk, hanging over the finished path.
+            for (int i = 1; i <= MAX_SURFACE_PLANT_HEIGHT; i++) {
+                BlockPos above = surfacePos.above(i);
+                if (!isRemovableVegetation(level.getBlockState(above))) break;
+                level.setBlock(above, Blocks.AIR.defaultBlockState(), 2 | 16);
             }
+
+            level.setBlock(surfacePos, Blocks.DIRT_PATH.defaultBlockState(), 2);
         }
     }
 
@@ -80,16 +92,24 @@ public class VillagePathGenerator {
         return -1;
     }
 
+    private static boolean isThinGroundCover(BlockState state) {
+        return state.is(Blocks.SNOW) || state.is(Blocks.MOSS_CARPET)
+                || state.is(Blocks.PINK_PETALS);
+    }
+
     // 1.20.1: No BlockTags.REPLACEABLE_BY_TREES — use explicit block/tag checks instead
     private static boolean isRemovableVegetation(BlockState state) {
-        return isNonGroundPlant(state)
+        // Thin ground cover counts: a snowy biome covers every column, so treating a
+        // snow layer as ground would leave the village without any paths at all.
+        return isThinGroundCover(state)
+                || isNonGroundPlant(state)
                 || state.is(BlockTags.FLOWERS)
                 || state.is(BlockTags.SAPLINGS)
                 || state.is(Blocks.TALL_GRASS)
                 || state.is(Blocks.GRASS)
-                // Only the small mushrooms: a path clears a single block above the
-                // surface, so counting huge-mushroom cap/stem blocks as removable would
-                // carve one block out of a huge mushroom and leave the rest floating.
+                // Only the small mushrooms: a huge mushroom does not rest on the
+                // column it happens to overhang, so counting its cap/stem blocks as
+                // removable would carve a hole out of one standing next to the path.
                 || state.is(Blocks.BROWN_MUSHROOM)
                 || state.is(Blocks.RED_MUSHROOM);
     }
