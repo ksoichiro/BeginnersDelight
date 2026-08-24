@@ -24,6 +24,8 @@ The chest in the starter house contains helpful items for early game:
 - Basic wooden tools
 - Torches for lighting
 
+Some house designs come with more than one chest or barrel. Only one of them holds the starter items above; the others are filled with extra supplies: coal, oak planks, torches, and wheat seeds.
+
 ### 🎮 Multiplayer Ready
 - Works on both singleplayer and multiplayer servers
 - All players spawn at the same location near the starter house
