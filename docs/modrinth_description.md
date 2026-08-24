@@ -14,12 +14,12 @@ Beginner's Delight automatically generates a small starter house at the world sp
 
 ### 🏡 Starter House at Spawn
 - **Automatic Generation**: A small wooden house appears at the world spawn point when a new world is created
-- **Survival Essentials**: Includes a bed, chest with starter items, and torch lighting
+- **Survival Essentials**: Includes a bed, a chest or barrel with starter items, and torch lighting
 - **Multiple Designs**: Randomly selects from several house variants for variety
 - **Terrain Adaptive**: Placement adjusts to the local terrain surface
 
 ### 📦 Starter Supplies
-The chest in the starter house contains helpful items for early game:
+The starter container — a chest, or a barrel in the one design that has no chest — contains helpful items for early game:
 - Food (bread, apples)
 - Basic wooden tools
 - Torches for lighting
