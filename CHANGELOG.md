@@ -7,22 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-08-25
+
 ### Added
 
-- Per-world control over starter house generation via a new `beginnersdelight:generate_starter_house` game rule. Turn it off in the "Game Rules" screen while creating a world to skip the starter house for that world only, or change it later with `/gamerule beginnersdelight:generate_starter_house <true|false>`. The default for new worlds stays on and can be flipped for every new world with the new `[starter_house] auto_generate` option in `config/beginnersdelight.toml`. Existing worlds are unaffected: a house that has already been generated is never removed, and turning the rule on later generates one on the next server start. Available on all supported versions (Fabric, NeoForge, and Forge)
+- Per-world control over starter house generation via a new `beginnersdelight:generate_starter_house` game rule. Turn it off in the "Game Rules" screen while creating a world, or change it later with `/gamerule beginnersdelight:generate_starter_house <true|false>`. New worlds default to on; set `[starter_house] auto_generate = false` in `config/beginnersdelight.toml` to make them default to off instead. Existing worlds are unaffected — a house that has already been generated is never removed, and turning the rule on later generates one on the next server start. Available on all supported versions (Fabric, NeoForge, and Forge)
 
 ### Changed
 
-- Fill the extra containers of a starter house (and village-mode player house) with early-game supplies (coal, oak planks, torches, wheat seeds) instead of duplicate sets of wooden tools, so a house no longer yields redundant tool sets. Some house designs are furnished with a chest plus a few barrels, and one with two chests; the starter kit goes to the chest — or, for the one design that has no chest at all, to the first barrel — and every other container holds supplies
+- Fill the extra containers of a starter house (and village-mode player house) with early-game supplies (coal, oak planks, torches, wheat seeds) instead of a duplicate set of wooden tools. The starter kit goes to the first chest — or to the first barrel in the one design that has no chest — and every other container holds supplies
 
 ### Fixed
 
-- Stop the starter house and village-mode buildings from being placed below the waterline next to an ocean, lake or river. Placement used the lowest ground found across the footprint, which on a shoreline slope is dry ground several blocks under the surrounding water surface, and the check that raised placement out of the water only looked at the single centre column — so a building whose centre happened to be on dry land was built in a pit below the water level and flooded once the surrounding terrain was flattened. The water surface is now measured across the whole area the generator reshapes, and the floor is raised just above it
-- Stop dirt and grass blocks from being left floating in mid-air among bamboo when a starter house (or village-mode building) generates in a bamboo jungle. Bamboo, sugar cane, cactus and sweet berry bushes are no longer mistaken for the ground surface, so terrain blending measures the real terrain height instead of the top of a plant. This also keeps the starter house at the world spawn in bamboo jungles instead of relocating away from it, and lets village paths pave columns where bamboo grows
-- Stop bamboo from collapsing around a freshly generated house: stalks growing where the ground is flattened or blended are now taken down cleanly while the house is built, instead of losing their footing and breaking apart a moment later with break sounds and scattered drops. Bamboo outside the modified ground is left standing
-- Stop mushroom items from being left floating around a freshly generated house. Mushrooms are in none of the vegetation tags the generator checked, so they were not cleared with the rest of the plants; reshaping the terrain then broke them and scattered the drops, which the cleanup pass could not reliably collect during world creation. Mushrooms (and huge mushrooms) growing where the ground is flattened or blended are now removed cleanly while the building is placed, and they are no longer mistaken for the ground surface. Applies to the starter house and to village-mode buildings and paths
-- Stop a starter house (or village-mode building) in a snowy biome from standing in a sharply outlined snow-free rectangle. The generator clears snow layers along with the vegetation so they do not drop as items when the ground beneath them is reshaped, but never put them back, leaving a six-block-wide bare band around the building — and the grass that had been under the snow kept its white, snowed-over top, so the band showed up as a white ring inside a green one. Each column's ground cover is now recorded before the terrain is reshaped and laid back down on the finished surface, and the snowed-over state of the block underneath is kept in step with what actually lies on top. Columns that had no cover to begin with stay bare, so the ground keeps its natural patchiness instead of turning into a uniform slab of snow, and ground sheltered under a roof overhang stays clear like it does around a vanilla village. Moss carpet, pink petals and pale moss carpet are restored the same way
-- Let village-mode paths pave through snow and other thin ground cover. A snow layer or carpet was treated as the ground surface, so no path block was placed on any column carrying one — which in a snowy biome is very nearly every column, leaving the village with no paths at all. The cover is now taken off the column before it is paved, and removed the same silent way the generator removes plants, so no snowballs are left lying along the paths
+- Stop the starter house and village-mode buildings from being built below the waterline, and flooding, when they generate on the shore of an ocean, lake or river
+- Stop dirt and grass blocks from being left floating in mid-air when a building generates in a bamboo jungle. Bamboo, sugar cane, cactus and sweet berry bushes are no longer mistaken for the ground surface, so the starter house also stays at the world spawn there instead of relocating away from it, and village paths pave columns where bamboo grows
+- Stop bamboo from collapsing with break sounds and scattered drops around a freshly generated building. Stalks standing where the ground is reshaped are now taken down cleanly, and bamboo outside that area is left standing
+- Stop mushroom items from being left floating around a freshly generated building. Mushrooms (and huge mushrooms) are now cleared along with the rest of the vegetation, and are no longer mistaken for the ground surface
+- Stop a building in a snowy biome from standing in a sharply outlined snow-free rectangle. Snow and other thin ground cover (moss carpet, pink petals, pale moss carpet) is now laid back down after the terrain is reshaped, and the ground underneath keeps its snowed-over look in step with what lies on top. Columns that had no cover to begin with stay bare, so the ground keeps its natural patchiness, and ground sheltered under a roof overhang stays clear like it does around a vanilla village
+- Let village-mode paths pave through snow and other thin ground cover. A snow layer counted as the ground surface, so in a snowy biome almost no path block was placed at all; the cover is now removed before the column is paved, without leaving snowballs behind
 
 ## [0.5.0] - 2026-07-17
 
@@ -107,7 +109,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Structure generation state persistence using SavedData to prevent regeneration
 - One-time generation per world with per-player tracking
 
-[Unreleased]: https://github.com/ksoichiro/BeginnersDelight/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/ksoichiro/BeginnersDelight/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/ksoichiro/BeginnersDelight/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/ksoichiro/BeginnersDelight/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/ksoichiro/BeginnersDelight/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/ksoichiro/BeginnersDelight/compare/v0.2.0...v0.3.0
