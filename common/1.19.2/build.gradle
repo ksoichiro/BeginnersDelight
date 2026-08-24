@@ -1,3 +1,7 @@
+plugins {
+    id 'com.github.ksoichiro.mcmod'
+}
+
 architectury {
     common rootProject.ext.enabled_platforms.split(',')
 }
@@ -29,67 +33,40 @@ sourceSets {
 }
 
 // NBT Structure Multi-Version Conversion
-// Converts 1.21.1 NBT structure files to 1.19.2 format (DataVersion update + directory rename)
-// Gradle 9 removed Project.exec(); obtain ExecOperations via service injection instead.
-interface NbtExecOps {
-    @javax.inject.Inject
-    org.gradle.process.ExecOperations getExecOperations()
-}
-def nbtExecOperations = project.objects.newInstance(NbtExecOps).execOperations
-
-tasks.register('convertNbtStructures', Exec) {
-    group = 'build'
-    description = 'Convert NBT structure files from 1.21.1 to 1.19.2 format'
-
-    onlyIf {
-        project.ext.minecraft_version == '1.19.2'
+// Converts the 1.21.1 NBT structure files to the item format this version reads
+// (legacy item tags instead of the data components introduced in 1.20.5), restamps
+// the DataVersion, and renames the structure directory from singular to plural.
+// The conversion runs on the JVM inside the shared mcmod plugin, so the build needs
+// no python3/nbtlib on PATH. Only nbtConversion is enabled here: the multi-version
+// and release tasks come from the script plugins applied in the root build.
+mcmod {
+    multiVersion {
+        enabled = false
     }
-
-    // 1.21.1 uses 'structure' (singular), 1.19.2 uses 'structures' (plural)
-    def inputDir = rootProject.file('common/1.21.1/src/main/resources/data/beginnersdelight/structure')
-    def outputDir = file('build/generated/nbt/data/beginnersdelight/structures')
-    def scriptPath = rootProject.file('scripts/convert_nbt_1_21_to_1_20.py')
-
-    inputs.dir(inputDir).optional()
-    inputs.file(scriptPath)
-    outputs.dir(outputDir)
-
-    doFirst {
-        try {
-            nbtExecOperations.exec {
-                commandLine 'python3', '-c', 'import nbtlib'
-                standardOutput = new ByteArrayOutputStream()
-                errorOutput = new ByteArrayOutputStream()
-            }
-        } catch (Exception e) {
-            throw new GradleException(
-                'Python 3 with nbtlib is required for NBT conversion. ' +
-                'Install with: pip3 install nbtlib'
-            )
-        }
-
-        if (!inputDir.exists()) {
-            logger.warn("Input directory does not exist: ${inputDir}")
-            logger.warn("Skipping NBT conversion")
-            return
-        }
-
-        if (!scriptPath.exists()) {
-            throw new GradleException("NBT conversion script not found: ${scriptPath}")
-        }
-
-        logger.lifecycle('')
-        logger.lifecycle('Converting NBT structures from 1.21.1 to 1.19.2 format...')
-        logger.lifecycle("  Input:  ${inputDir}")
-        logger.lifecycle("  Output: ${outputDir}")
-        logger.lifecycle('')
+    resourceValidation {
+        enabled = false
     }
-
-    commandLine 'python3', scriptPath.absolutePath, '--batch', '--data-version', '3120', inputDir.absolutePath, outputDir.absolutePath
+    nbtConversion {
+        enabled = true
+        sourceVersion = '1.21.1'
+        targetVersion = '1.19.2'
+        inputDir = rootProject.file('common/1.21.1/src/main/resources/data/beginnersdelight/structure')
+        outputDir = file('build/generated/nbt/data/beginnersdelight/structures')
+    }
 }
 
-// Run NBT conversion before processing resources
-processResources.dependsOn convertNbtStructures
+// The plugin registers its own outputDir as a resource root, from an afterEvaluate
+// block nested inside the one it registers when applied. Nest one level so this runs
+// after it and takes that root back out: ours is the parent directory
+// 'build/generated/nbt', which is what gives the files their
+// data/beginnersdelight/structures/ path. Leaving both registered puts a second,
+// unnamespaced copy of every structure at the JAR root.
+project.afterEvaluate {
+    project.afterEvaluate {
+        sourceSets.main.resources.srcDirs = sourceSets.main.resources.srcDirs -
+                file('build/generated/nbt/data/beginnersdelight/structures')
+    }
+}
 
 // Expand pack_format variable in pack.mcmeta
 processResources {
@@ -98,10 +75,33 @@ processResources {
     filesMatching('pack.mcmeta') {
         expand 'pack_format': project.ext.pack_format
     }
+
+    // Guard the duplicate-resource-root removal above. If a future version of the
+    // mcmod plugin changes how or when it registers its outputDir, that removal
+    // silently stops matching and every structure is packaged twice: once under
+    // data/beginnersdelight/structures/, once unnamespaced at the archive root.
+    // Nothing else notices -- Minecraft ignores the stray copies -- so check the
+    // packaged layout here instead.
+    doLast {
+        def stray = fileTree(dir: destinationDir, includes: ['*.nbt']).files
+        if (!stray.isEmpty()) {
+            throw new GradleException(
+                "${stray.size()} structure file(s) landed at the resource root " +
+                "(${destinationDir}): the duplicate resource root removal in this " +
+                "file no longer matches what the mcmod plugin registers")
+        }
+        def packaged = fileTree(dir: destinationDir,
+                includes: ['data/beginnersdelight/structures/*.nbt']).files
+        if (packaged.isEmpty()) {
+            throw new GradleException(
+                "No converted structures under data/beginnersdelight/structures/ in " +
+                "${destinationDir}: the conversion output is missing from resources")
+        }
+    }
 }
 
 // Set duplicates strategy for sourcesJar to avoid conflicts
 tasks.named('sourcesJar') {
-    dependsOn convertNbtStructures
+    dependsOn 'convertNbt'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }

@@ -1,9 +1,22 @@
 pluginManagement {
+    // gradle/shared is a git submodule providing the mcmod plugin (used by the
+    // MC 1.16.5-1.20.1 common modules for NBT structure conversion). Fail early and
+    // clearly when it is missing: includeBuild resolves before build.gradle gets a
+    // chance to run its own check.
+    if (!new File(settingsDir, 'gradle/shared/build.gradle').exists()) {
+        throw new GradleException(
+            "gradle/shared submodule is not initialized. Run: git submodule update --init")
+    }
+    includeBuild 'gradle/shared'
     repositories {
         maven { url 'https://maven.fabricmc.net/' }
         maven { url 'https://maven.architectury.dev/' }
         maven { url 'https://maven.neoforged.net/releases/' }
         maven { url 'https://maven.minecraftforge.net/' }
+        // gradle/shared's mcmod plugin depends on com.github.Querz:NBT, which is only
+        // published on JitPack. Plugin classpath resolution for an includeBuild uses
+        // this repositories block, not gradle/shared's own, so it must be listed here.
+        maven { url 'https://jitpack.io' }
         gradlePluginPortal()
     }
 

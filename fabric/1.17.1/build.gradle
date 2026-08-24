@@ -76,7 +76,11 @@ loom {
 }
 
 processResources {
-    dependsOn project(commonModule).tasks.named('convertNbtStructures')
+    // Task path (a String) rather than tasks.named(...): the mcmod plugin registers
+    // convertNbt from the common project's afterEvaluate, so it does not exist yet
+    // while this project is being evaluated. Gradle resolves the path when it builds
+    // the task graph, by which time the registration has happened.
+    dependsOn "${commonModule}:convertNbt"
 
     from(project(commonModule).sourceSets.main.resources) {
         exclude 'beginnersdelight.mixins.json'
