@@ -24,6 +24,7 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.level.gamerules.GameRules;
@@ -516,25 +517,55 @@ public class StarterHouseGenerator {
     private static void assignLootTables(ServerLevel level, BlockPos placePos,
                                           net.minecraft.core.Vec3i structureSize,
                                           RandomSource random) {
-        // Only the first container gets the starter kit (food + one set of wooden
-        // tools); any further containers get supplies instead, so a double chest
-        // (two block entities) does not yield duplicate tool sets.
-        boolean primaryAssigned = false;
+        // A house can hold several containers: a chest plus a few barrels that are
+        // there as furnishing, or two chests. Only one of them gets the starter kit
+        // (food + one set of wooden tools) and the rest get supplies, so the player
+        // is not handed the same tools over and over.
+        BlockPos primaryPos = findPrimaryContainer(level, placePos, structureSize);
         for (int x = placePos.getX(); x < placePos.getX() + structureSize.getX(); x++) {
             for (int y = placePos.getY(); y < placePos.getY() + structureSize.getY(); y++) {
                 for (int z = placePos.getZ(); z < placePos.getZ() + structureSize.getZ(); z++) {
                     BlockPos pos = new BlockPos(x, y, z);
                     BlockEntity blockEntity = level.getBlockEntity(pos);
                     if (blockEntity instanceof RandomizableContainerBlockEntity container) {
-                        ResourceKey<LootTable> loot = primaryAssigned
-                                ? STARTER_HOUSE_SUPPLIES_LOOT : STARTER_HOUSE_LOOT;
+                        ResourceKey<LootTable> loot = pos.equals(primaryPos)
+                                ? STARTER_HOUSE_LOOT : STARTER_HOUSE_SUPPLIES_LOOT;
                         container.setLootTable(loot, random.nextLong());
-                        primaryAssigned = true;
                         BeginnersDelight.LOGGER.debug("Assigned loot table to container at {}", pos);
                     }
                 }
             }
         }
+    }
+
+    /**
+     * Picks the container that receives the starter kit: the first chest in scan
+     * order, or -- for the house variants furnished with barrels only -- the first
+     * container of any kind. A chest is preferred because it is the one a beginner
+     * opens first; leaving the kit in a decorative barrel would hide the food and
+     * tools the house exists to hand over.
+     */
+    private static BlockPos findPrimaryContainer(ServerLevel level, BlockPos placePos,
+                                                  net.minecraft.core.Vec3i structureSize) {
+        BlockPos firstContainer = null;
+        for (int x = placePos.getX(); x < placePos.getX() + structureSize.getX(); x++) {
+            for (int y = placePos.getY(); y < placePos.getY() + structureSize.getY(); y++) {
+                for (int z = placePos.getZ(); z < placePos.getZ() + structureSize.getZ(); z++) {
+                    BlockPos pos = new BlockPos(x, y, z);
+                    BlockEntity blockEntity = level.getBlockEntity(pos);
+                    if (!(blockEntity instanceof RandomizableContainerBlockEntity)) {
+                        continue;
+                    }
+                    if (blockEntity instanceof ChestBlockEntity) {
+                        return pos;
+                    }
+                    if (firstContainer == null) {
+                        firstContainer = pos;
+                    }
+                }
+            }
+        }
+        return firstContainer;
     }
 
     /**
