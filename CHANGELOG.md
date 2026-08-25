@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Build a house for every player in Village Mode. Players teleported to the starter house were bound to it instead, so no player house, path or decoration was ever generated. Affected worlds are repaired on the next server start, moving those players into their own house when they rejoin
+
 ## [0.6.0] - 2026-08-25
 
 ### Added

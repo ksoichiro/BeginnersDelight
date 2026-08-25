@@ -139,6 +139,29 @@ public class VillageData extends SavedData {
         setDirty();
     }
 
+    /**
+     * Unbinds every player sharing the given plot except one, so that the others are
+     * treated as houseless again. The lowest UUID is kept as the owner to make the
+     * choice stable across restarts. Returns how many players were released.
+     */
+    public int releaseDuplicatePlotOwners(GridPos gridPos) {
+        UUID owner = null;
+        for (Map.Entry<UUID, GridPos> entry : playerHouses.entrySet()) {
+            if (!gridPos.equals(entry.getValue())) continue;
+            if (owner == null || entry.getKey().compareTo(owner) < 0) {
+                owner = entry.getKey();
+            }
+        }
+        if (owner == null) return 0;
+
+        UUID keep = owner;
+        int before = playerHouses.size();
+        playerHouses.entrySet().removeIf(e -> gridPos.equals(e.getValue()) && !keep.equals(e.getKey()));
+        int released = before - playerHouses.size();
+        if (released > 0) setDirty();
+        return released;
+    }
+
     public BlockPos getHousePosition(GridPos gridPos) {
         return housePositions.get(gridPos);
     }

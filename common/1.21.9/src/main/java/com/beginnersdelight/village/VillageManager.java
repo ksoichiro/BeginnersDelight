@@ -30,6 +30,14 @@ public class VillageManager {
         ServerLevel overworld = server.overworld();
         VillageData data = VillageData.get(overworld);
 
+        // In 0.5.0 and 0.6.0, every player who had been teleported to the starter house
+        // was bound to it instead of getting a house of their own. Release all but one
+        // owner so the rest are assigned a house the next time they join.
+        int released = data.releaseDuplicatePlotOwners(new GridPos(0, 0));
+        if (released > 0) {
+            BeginnersDelight.LOGGER.info("Released {} player(s) from the shared starter house", released);
+        }
+
         if (data.isEnabled() && data.getCenterPos() == null) {
             initializeGrid(overworld, data);
         }
@@ -48,8 +56,12 @@ public class VillageManager {
 
         if (data.hasHouse(player.getUUID())) return;
 
+        // Reuse the starter house as this player's village house instead of building a
+        // redundant one. It stands on the single reserved center plot, so only the first
+        // player can inherit it; everyone else gets a house of their own.
         StarterHouseData starterData = StarterHouseData.get(overworld);
-        if (starterData.hasBeenTeleported(player.getUUID()) && starterData.getSpawnPos() != null) {
+        if (starterData.hasBeenTeleported(player.getUUID()) && starterData.getSpawnPos() != null
+                && data.getPlotState(new GridPos(0, 0)) != PlotState.OCCUPIED) {
             registerStarterHouseAsVillageHouse(overworld, player, data, starterData.getSpawnPos());
             return;
         }
