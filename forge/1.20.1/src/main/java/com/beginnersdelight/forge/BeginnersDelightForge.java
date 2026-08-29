@@ -6,14 +6,17 @@ import com.beginnersdelight.village.VillageConfigLoader;
 import com.beginnersdelight.village.VillageManager;
 import com.beginnersdelight.worldgen.ModGameRules;
 import com.beginnersdelight.worldgen.StarterHouseGenerator;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.GameRules;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegisterCommandsEvent;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.loading.FMLPaths;
+import net.minecraftforge.server.ServerLifecycleHooks;
 
 @Mod(BeginnersDelight.MOD_ID)
 public class BeginnersDelightForge {
@@ -52,6 +55,13 @@ public class BeginnersDelightForge {
         MinecraftForge.EVENT_BUS.addListener((PlayerEvent.PlayerRespawnEvent event) -> {
             if (event.getEntity() instanceof ServerPlayer serverPlayer)
                 VillageManager.onPlayerRespawn(serverPlayer);
+        });
+        MinecraftForge.EVENT_BUS.addListener((TickEvent.ServerTickEvent event) -> {
+            if (event.phase != TickEvent.Phase.END) return;
+            MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+            if (server != null) {
+                VillageManager.onServerTick(server);
+            }
         });
         MinecraftForge.EVENT_BUS.addListener((RegisterCommandsEvent event) ->
                 VillageCommand.register(event.getDispatcher()));

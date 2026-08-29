@@ -8,8 +8,12 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * Orchestrates village mode operations.
@@ -19,12 +23,21 @@ public class VillageManager {
 
     private static VillageConfig config = VillageConfigDefaults.defaults();
 
+    // This version has no way for a client to report that it has finished loading, so the
+    // build simply waits. How long delivery takes depends on render distance and
+    // connection speed, so no value is right everywhere; waiting too little costs the
+    // stale lighting described on onPlayerJoin, which clears when the player reconnects.
+    private static final int JOIN_ASSIGNMENT_MAX_WAIT_TICKS = 40;
+
+    private static final Map<UUID, Integer> pendingHouseAssignments = new HashMap<>();
+
     /**
      * Initializes the village system on server start.
      * Loads config and initializes the grid center if village mode is enabled
      * but no center has been set yet.
      */
     public static void onServerStarted(MinecraftServer server) {
+        pendingHouseAssignments.clear();
         config = VillageConfigLoader.load(resolveConfigDir(server));
 
         ServerLevel overworld = server.overworld();
@@ -46,7 +59,7 @@ public class VillageManager {
     /**
      * Handles a player joining the server.
      * If village mode is enabled and the player has no house, assigns one.
-     * If the player already has a house, teleports them to it.
+     * Players who already have a house are left where they are.
      */
     public static void onPlayerJoin(ServerPlayer player) {
         ServerLevel overworld = player.server.overworld();
@@ -64,7 +77,55 @@ public class VillageManager {
             registerStarterHouseAsVillageHouse(overworld, player, data, starterData.getSpawnPos());
             return;
         }
-        assignHouse(overworld, player, data);
+
+        // Only the build is held back, not the decision above. Placing blocks inside the
+        // join event leaves the client with stale lighting around the new house and its
+        // path: its chunks are still on their way when the blocks change, so the light
+        // updates that follow never reach the player.
+        pendingHouseAssignments.put(player.getUUID(), JOIN_ASSIGNMENT_MAX_WAIT_TICKS);
+    }
+
+    /**
+     * Builds the houses whose wait has elapsed.
+     */
+    public static void onServerTick(MinecraftServer server) {
+        if (pendingHouseAssignments.isEmpty()) return;
+
+        for (UUID uuid : new HashSet<>(pendingHouseAssignments.keySet())) {
+            ServerPlayer player = server.getPlayerList().getPlayer(uuid);
+            // A player who left while waiting is served on their next join instead.
+            if (player == null) {
+                pendingHouseAssignments.remove(uuid);
+                continue;
+            }
+            int remaining = pendingHouseAssignments.get(uuid) - 1;
+            if (remaining > 0 && !clientHasLoaded(player)) {
+                pendingHouseAssignments.put(uuid, remaining);
+                continue;
+            }
+            pendingHouseAssignments.remove(uuid);
+
+            ServerLevel overworld = server.overworld();
+            VillageData data = VillageData.get(overworld);
+            // Village mode can be switched off, or the player housed, during the wait.
+            if (!data.isEnabled() || data.hasHouse(uuid)) continue;
+            try {
+                assignHouse(overworld, player, data);
+            } catch (RuntimeException e) {
+                // The build runs on the server tick now, so letting this escape would take
+                // the server down rather than just one player's login, as it used to.
+                BeginnersDelight.LOGGER.error("Failed to assign a village house to player {}",
+                        player.getName().getString(), e);
+            }
+        }
+    }
+
+    /**
+     * This version's client sends no "finished loading" report, so there is nothing to
+     * wait on and the build falls back to JOIN_ASSIGNMENT_MAX_WAIT_TICKS elapsing.
+     */
+    private static boolean clientHasLoaded(ServerPlayer player) {
+        return false;
     }
 
     /**

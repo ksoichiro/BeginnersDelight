@@ -8,8 +8,16 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 
+/**
+ * Shared Fabric entry point. MC 1.16.5, 1.17.1 and 1.18.2 do not use this file: their
+ * subprojects leave {@code ../base/src/main/java} off the source set because they need
+ * the v1 CommandRegistrationCallback, and keep their own copy instead. Any listener
+ * added here has to be added to those three copies as well, or the feature it drives
+ * silently does nothing on them -- the build stays green either way.
+ */
 public class BeginnersDelightFabric implements ModInitializer {
     @Override
     public void onInitialize() {
@@ -30,6 +38,7 @@ public class BeginnersDelightFabric implements ModInitializer {
                 VillageManager.onPlayerJoin(handler.player));
         ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) ->
                 VillageManager.onPlayerRespawn(newPlayer));
+        ServerTickEvents.END_SERVER_TICK.register(VillageManager::onServerTick);
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) ->
                 VillageCommand.register(dispatcher));
 

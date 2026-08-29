@@ -8,6 +8,7 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v1.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 
 public class BeginnersDelightFabric implements ModInitializer {
@@ -30,6 +31,7 @@ public class BeginnersDelightFabric implements ModInitializer {
                 VillageManager.onPlayerJoin(handler.player));
         ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) ->
                 VillageManager.onPlayerRespawn(newPlayer));
+        ServerTickEvents.END_SERVER_TICK.register(VillageManager::onServerTick);
         CommandRegistrationCallback.EVENT.register((dispatcher, dedicated) ->
                 VillageCommand.register(dispatcher));
 

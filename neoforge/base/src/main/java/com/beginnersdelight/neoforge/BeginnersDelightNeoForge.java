@@ -11,6 +11,7 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
 @Mod(BeginnersDelight.MOD_ID)
 public class BeginnersDelightNeoForge {
@@ -42,6 +43,8 @@ public class BeginnersDelightNeoForge {
             if (event.getEntity() instanceof ServerPlayer serverPlayer)
                 VillageManager.onPlayerRespawn(serverPlayer);
         });
+        bus.addListener((ServerTickEvent.Post event) ->
+                VillageManager.onServerTick(event.getServer()));
         bus.addListener((RegisterCommandsEvent event) ->
                 VillageCommand.register(event.getDispatcher()));
 
