@@ -34,19 +34,9 @@ public class BeginnersDelightForge {
                 GameRules.Category.MISC,
                 GameRules.BooleanValue.create(starterHouseDefault));
 
-        MinecraftForge.EVENT_BUS.addListener((FMLServerStartedEvent event) ->
-                StarterHouseGenerator.tryGenerate(event.getServer()));
-        MinecraftForge.EVENT_BUS.addListener((PlayerEvent.PlayerLoggedInEvent event) -> {
-            if (event.getEntity() instanceof ServerPlayer) {
-                StarterHouseGenerator.onPlayerJoin((ServerPlayer) event.getEntity());
-            }
-        });
-        MinecraftForge.EVENT_BUS.addListener((PlayerEvent.PlayerRespawnEvent event) -> {
-            if (event.getEntity() instanceof ServerPlayer) {
-                StarterHouseGenerator.onPlayerRespawn((ServerPlayer) event.getEntity(), event.isEndConquered());
-            }
-        });
-
+        // VillageManager must see a player's join before StarterHouseGenerator marks them as
+        // teleported, or a brand-new player looks indistinguishable from a returning starter
+        // house resident and steals the shared plot from whoever actually lived there.
         MinecraftForge.EVENT_BUS.addListener((FMLServerStartedEvent event) ->
                 VillageManager.onServerStarted(event.getServer()));
         MinecraftForge.EVENT_BUS.addListener((PlayerEvent.PlayerLoggedInEvent event) -> {
@@ -68,6 +58,19 @@ public class BeginnersDelightForge {
         });
         MinecraftForge.EVENT_BUS.addListener((RegisterCommandsEvent event) ->
                 VillageCommand.register(event.getDispatcher()));
+
+        MinecraftForge.EVENT_BUS.addListener((FMLServerStartedEvent event) ->
+                StarterHouseGenerator.tryGenerate(event.getServer()));
+        MinecraftForge.EVENT_BUS.addListener((PlayerEvent.PlayerLoggedInEvent event) -> {
+            if (event.getEntity() instanceof ServerPlayer) {
+                StarterHouseGenerator.onPlayerJoin((ServerPlayer) event.getEntity());
+            }
+        });
+        MinecraftForge.EVENT_BUS.addListener((PlayerEvent.PlayerRespawnEvent event) -> {
+            if (event.getEntity() instanceof ServerPlayer) {
+                StarterHouseGenerator.onPlayerRespawn((ServerPlayer) event.getEntity(), event.isEndConquered());
+            }
+        });
 
         BeginnersDelight.LOGGER.info("Beginner's Delight (Forge) initialized");
     }

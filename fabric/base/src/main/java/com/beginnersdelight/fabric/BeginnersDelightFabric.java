@@ -27,12 +27,9 @@ public class BeginnersDelightFabric implements ModInitializer {
         // per-era FabricGameRules picked by each subproject's source set.
         FabricGameRules.register();
 
-        ServerLifecycleEvents.SERVER_STARTED.register(StarterHouseGenerator::tryGenerate);
-        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) ->
-                StarterHouseGenerator.onPlayerJoin(handler.player));
-        ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) ->
-                StarterHouseGenerator.onPlayerRespawn(newPlayer, !alive));
-
+        // VillageManager must see a player's join before StarterHouseGenerator marks them as
+        // teleported, or a brand-new player looks indistinguishable from a returning starter
+        // house resident and steals the shared plot from whoever actually lived there.
         ServerLifecycleEvents.SERVER_STARTED.register(VillageManager::onServerStarted);
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) ->
                 VillageManager.onPlayerJoin(handler.player));
@@ -41,6 +38,12 @@ public class BeginnersDelightFabric implements ModInitializer {
         ServerTickEvents.END_SERVER_TICK.register(VillageManager::onServerTick);
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) ->
                 VillageCommand.register(dispatcher));
+
+        ServerLifecycleEvents.SERVER_STARTED.register(StarterHouseGenerator::tryGenerate);
+        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) ->
+                StarterHouseGenerator.onPlayerJoin(handler.player));
+        ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) ->
+                StarterHouseGenerator.onPlayerRespawn(newPlayer, !alive));
 
         BeginnersDelight.LOGGER.info("Beginner's Delight (Fabric) initialized");
     }

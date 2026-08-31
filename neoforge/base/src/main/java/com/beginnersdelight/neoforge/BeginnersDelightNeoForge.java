@@ -22,17 +22,10 @@ public class BeginnersDelightNeoForge {
         // per-era NeoForgeGameRules picked by each subproject's source set.
         NeoForgeGameRules.register(modEventBus);
 
+        // VillageManager must see a player's join before StarterHouseGenerator marks them as
+        // teleported, or a brand-new player looks indistinguishable from a returning starter
+        // house resident and steals the shared plot from whoever actually lived there.
         IEventBus bus = NeoForge.EVENT_BUS;
-        bus.addListener((ServerStartedEvent event) ->
-                StarterHouseGenerator.tryGenerate(event.getServer()));
-        bus.addListener((PlayerEvent.PlayerLoggedInEvent event) -> {
-            if (event.getEntity() instanceof ServerPlayer serverPlayer)
-                StarterHouseGenerator.onPlayerJoin(serverPlayer);
-        });
-        bus.addListener((PlayerEvent.PlayerRespawnEvent event) -> {
-            if (event.getEntity() instanceof ServerPlayer serverPlayer)
-                StarterHouseGenerator.onPlayerRespawn(serverPlayer, event.isEndConquered());
-        });
         bus.addListener((ServerStartedEvent event) ->
                 VillageManager.onServerStarted(event.getServer()));
         bus.addListener((PlayerEvent.PlayerLoggedInEvent event) -> {
@@ -47,6 +40,17 @@ public class BeginnersDelightNeoForge {
                 VillageManager.onServerTick(event.getServer()));
         bus.addListener((RegisterCommandsEvent event) ->
                 VillageCommand.register(event.getDispatcher()));
+
+        bus.addListener((ServerStartedEvent event) ->
+                StarterHouseGenerator.tryGenerate(event.getServer()));
+        bus.addListener((PlayerEvent.PlayerLoggedInEvent event) -> {
+            if (event.getEntity() instanceof ServerPlayer serverPlayer)
+                StarterHouseGenerator.onPlayerJoin(serverPlayer);
+        });
+        bus.addListener((PlayerEvent.PlayerRespawnEvent event) -> {
+            if (event.getEntity() instanceof ServerPlayer serverPlayer)
+                StarterHouseGenerator.onPlayerRespawn(serverPlayer, event.isEndConquered());
+        });
 
         BeginnersDelight.LOGGER.info("Beginner's Delight (NeoForge) initialized");
     }
