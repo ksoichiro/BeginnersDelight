@@ -18,15 +18,11 @@ configurations {
 sourceSets {
     main {
         java {
-            srcDir '../base/src/main/java'
             srcDir 'src/main/java'
         }
         resources {
             srcDirs = []
-            // Version-specific resources FIRST (higher priority)
             srcDir 'src/main/resources'
-            // Shared resources SECOND (lower priority)
-            srcDir '../base/src/main/resources'
         }
     }
 }

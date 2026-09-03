@@ -36,7 +36,6 @@
 
 ```
 common/
-  shared/             (shared version-agnostic sources, NOT a Gradle subproject)
   26.2/               (version-specific common module)
   26.1.2/             (version-specific common module)
   ...                 (26.1.1, 26.1, 1.21.11, ..., 1.16.5)
@@ -51,7 +50,6 @@ neoforge/
   26.1.2/             (version-specific NeoForge subproject)
   ...                 (26.1.1, 26.1, 1.21.11, ..., 1.21.1)
 forge/
-  base/               (shared Forge sources, NOT a Gradle subproject)
   1.20.1/             (version-specific Forge subproject)
   1.19.2/             (version-specific Forge subproject)
   ...                 (1.18.2, 1.17.1, 1.16.5)
