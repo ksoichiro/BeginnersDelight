@@ -18,6 +18,13 @@ public class VillagePathGenerator {
     // leave headroom.
     private static final int MAX_SURFACE_PLANT_HEIGHT = 32;
 
+    // How far above/below the previous column's surface to look for the next one.
+    // Scanning from the world top would follow a ravine or cave mouth straight down
+    // to its floor, dropping the path dozens of blocks for a single column; bounding
+    // the search to the previous column's height instead makes such columns bridge
+    // across at that height.
+    private static final int SURFACE_SEARCH_RANGE = 8;
+
     /**
      * Generates a dirt path between two positions.
      * Traces X-axis first, then Z-axis (L-shaped path).
@@ -29,6 +36,7 @@ public class VillagePathGenerator {
         int z = from.getZ();
         int targetX = to.getX();
         int targetZ = to.getZ();
+        int referenceY = from.getY();
 
         // Determine primary axis (X first, then Z)
         int stepX = x < targetX ? 1 : -1;
@@ -36,31 +44,42 @@ public class VillagePathGenerator {
 
         // Trace along X-axis (2-block wide: ±1 on Z)
         while (x != targetX) {
-            placePathBlock(level, x, z);
-            placePathBlock(level, x, z + 1);
+            referenceY = placePathBlock(level, x, z, referenceY);
+            placePathBlock(level, x, z + 1, referenceY);
             x += stepX;
         }
 
         // Trace along Z-axis (2-block wide: ±1 on X)
         while (z != targetZ) {
-            placePathBlock(level, x, z);
-            placePathBlock(level, x + 1, z);
+            referenceY = placePathBlock(level, x, z, referenceY);
+            placePathBlock(level, x + 1, z, referenceY);
             z += stepZ;
         }
 
         // Place at final position
-        placePathBlock(level, x, z);
-        placePathBlock(level, x + 1, z);
+        referenceY = placePathBlock(level, x, z, referenceY);
+        placePathBlock(level, x + 1, z, referenceY);
     }
 
-    private static void placePathBlock(ServerLevel level, int x, int z) {
-        int y = findPathSurface(level, x, z);
-        if (y == -1) return;
+    /**
+     * Finds the ground surface at the given XZ, near referenceY, and replaces it
+     * with Dirt Path if it is a suitable block (grass or dirt). If no ground is
+     * found within range (a ravine or cave mouth), bridges across at referenceY
+     * instead of paving whatever lies far below.
+     * Returns the Y the path now sits at, for the next column to reference.
+     */
+    private static int placePathBlock(ServerLevel level, int x, int z, int referenceY) {
+        int y = findPathSurface(level, x, z, referenceY);
+        if (y == NO_SURFACE) return referenceY;
 
-        BlockPos surfacePos = new BlockPos(x, y, z);
+        boolean bridging = y == BRIDGE_NEEDED;
+        int surfaceY = bridging ? referenceY : y;
+        BlockPos surfacePos = new BlockPos(x, surfaceY, z);
         BlockState state = level.getBlockState(surfacePos);
 
-        if (state.is(Blocks.GRASS_BLOCK) || state.is(Blocks.DIRT)) {
+        // Bridging across a gap counts as suitable unconditionally: there is no real
+        // surface block to check the type of. Otherwise only replace grass and dirt.
+        if (bridging || state.is(Blocks.GRASS_BLOCK) || state.is(Blocks.DIRT)) {
             // Take whatever stands on the surface away first, bottom-up and with
             // UPDATE_KNOWN_SHAPE so it goes quietly: nothing that grows on grass
             // survives on a path block, so paving first would let the shape update
@@ -76,20 +95,34 @@ public class VillagePathGenerator {
             }
 
             level.setBlock(surfacePos, Blocks.DIRT_PATH.defaultBlockState(), 2);
+            return surfaceY;
         }
+
+        return referenceY;
     }
 
-    private static int findPathSurface(ServerLevel level, int x, int z) {
-        int maxY = level.getMaxBuildHeight() - 1;
-        int minY = level.getMinBuildHeight();
+    // Sentinels returned by findPathSurface, distinguished from real Y coordinates
+    // (which never reach these magnitudes).
+    private static final int NO_SURFACE = Integer.MIN_VALUE;
+    private static final int BRIDGE_NEEDED = Integer.MIN_VALUE + 1;
+
+    /**
+     * Scans for the surface block near referenceY, bounded by SURFACE_SEARCH_RANGE.
+     * Returns the Y of the surface block, NO_SURFACE if water/lava blocks the column,
+     * or BRIDGE_NEEDED if nothing solid was found within range.
+     */
+    private static int findPathSurface(ServerLevel level, int x, int z, int referenceY) {
+        int maxY = Math.min(level.getMaxBuildHeight() - 1, referenceY + SURFACE_SEARCH_RANGE);
+        int minY = Math.max(level.getMinBuildHeight(), referenceY - SURFACE_SEARCH_RANGE);
         for (int y = maxY; y >= minY; y--) {
             BlockState state = level.getBlockState(new BlockPos(x, y, z));
             if (state.isAir()) continue;
-            if (!state.getFluidState().isEmpty()) return -1;
+            if (!state.getFluidState().isEmpty()) return NO_SURFACE; // Water/lava — skip
             if (isRemovableVegetation(state)) continue;
+            // Found solid ground
             return y;
         }
-        return -1;
+        return BRIDGE_NEEDED;
     }
 
     private static boolean isThinGroundCover(BlockState state) {
