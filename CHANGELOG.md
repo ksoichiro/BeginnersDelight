@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Let village paths pave over sand and terracotta, and clear a potted plant or lantern standing in the way, instead of only replacing grass and dirt. Paths in a desert or badlands (mesa) biome went almost entirely unpaved, and a path could stop one column short of a door decorated with either block
 - Stop the first village house from getting a path to nowhere when the starter house is turned off via game rule. The path always targeted the village center on the assumption a starter house stood there; it now only does so when one actually does
 - Stop the starter house from carving a large flattened pad into a hillside. Placement now levels up to the footprint's highest point and fills in the low side instead of digging down to the lowest, so a sloped build site keeps its shape instead of being excavated flat
+- Stop the starter house from appearing to float above the ground in a snowy biome or on grass with flowers. Foundation filling mistook a leftover snow layer, grass or flower for solid ground and stopped one block short, leaving that thin cover standing in as the floor instead of being built over
 
 ## [0.6.0] - 2026-08-25
 

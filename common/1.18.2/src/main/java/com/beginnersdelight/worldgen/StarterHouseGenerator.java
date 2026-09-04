@@ -268,17 +268,45 @@ public class StarterHouseGenerator {
             if (state.isAir() || !state.getFluidState().isEmpty()) {
                 continue;
             }
-            if (isNonGroundPlant(state)
-                    || isMushroom(state)
-                    || state.is(BlockTags.LEAVES) || state.is(BlockTags.LOGS)
-                    || state.is(BlockTags.FLOWERS) || state.is(BlockTags.SAPLINGS)
-                    || state.is(Blocks.TALL_GRASS) || state.is(Blocks.GRASS)
-                    || state.is(Blocks.SNOW) || state.is(Blocks.MOSS_CARPET)) {
+            if (isNonGroundCover(state)) {
                 continue;
             }
             return y + 1;
         }
         return -1;
+    }
+
+    /**
+     * Returns true for anything growing on or lying over the ground that must not
+     * be mistaken for the ground itself: trees, plants, mushrooms, and thin cover
+     * like snow layers or flowers. Used by {@link #findGroundY} to skip past growth
+     * while scanning down for the real surface. For the narrower "safe to fill
+     * through" notion used by {@link #fillFoundation}, see
+     * {@link #isFillableShortCover}.
+     */
+    private static boolean isNonGroundCover(BlockState state) {
+        return isNonGroundPlant(state)
+                    || isMushroom(state)
+                    || state.is(BlockTags.LEAVES) || state.is(BlockTags.LOGS)
+                    || state.is(BlockTags.FLOWERS) || state.is(BlockTags.SAPLINGS)
+                    || state.is(Blocks.TALL_GRASS) || state.is(Blocks.GRASS)
+                    || state.is(Blocks.SNOW) || state.is(Blocks.MOSS_CARPET);
+    }
+
+    /**
+     * Returns true for short growth that always sits directly on the solid block
+     * beneath it: thin ground cover plus grass and flowers. Used by
+     * {@link #fillFoundation} to decide what to fill straight through. Unlike the
+     * full {@link #isNonGroundCover} set, this deliberately excludes leaves, logs,
+     * mushrooms and other tall/elevated growth -- those are not guaranteed to have
+     * solid ground directly beneath them (a branch overhanging a ravine, a mushroom
+     * on a cave wall), so treating them as fillable could tunnel the fill loop
+     * through a void instead of stopping at them as it used to.
+     */
+    private static boolean isFillableShortCover(BlockState state) {
+        return state.is(Blocks.SNOW) || state.is(Blocks.MOSS_CARPET)
+                || state.is(BlockTags.FLOWERS)
+                || state.is(Blocks.TALL_GRASS) || state.is(Blocks.GRASS);
     }
 
     /**
@@ -640,7 +668,14 @@ public class StarterHouseGenerator {
                 for (int y = floorY - 1; y >= floorY - FOUNDATION_FILL_DEPTH; y--) {
                     BlockPos pos = new BlockPos(x, y, z);
                     BlockState existing = level.getBlockState(pos);
-                    if (!existing.isAir() && existing.getFluidState().isEmpty()) {
+                    // Ground cover (snow layers, grass, flowers, ...) never gets cleared
+                    // above: clearVegetation and Phase 1 only scan from floorY up, so cover
+                    // sitting below floorY survives untouched. Treat it as fillable instead
+                    // of solid, or it stops the loop one block short and leaves a
+                    // sub-block-height layer standing in as the floor, with the house wall
+                    // starting a whole block above it.
+                    if (!existing.isAir() && existing.getFluidState().isEmpty()
+                            && !isFillableShortCover(existing)) {
                         break;
                     }
                     BlockState fill = (y == floorY - 1) ? surfaceBlock : subsurfaceBlock;
