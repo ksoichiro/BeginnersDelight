@@ -74,7 +74,8 @@ public class VillageManager {
         StarterHouseData starterData = StarterHouseData.get(overworld);
         if (starterData.hasBeenTeleported(player.getUUID()) && starterData.getSpawnPos() != null
                 && data.getPlotState(new GridPos(0, 0)) != PlotState.OCCUPIED) {
-            registerStarterHouseAsVillageHouse(overworld, player, data, starterData.getSpawnPos());
+            registerStarterHouseAsVillageHouse(overworld, player, data,
+                    starterData.getSpawnPos(), starterData.getDoorPos());
             return;
         }
 
@@ -180,7 +181,8 @@ public class VillageManager {
      * This avoids generating a redundant house for players who already have the starter house.
      */
     private static void registerStarterHouseAsVillageHouse(ServerLevel overworld, ServerPlayer player,
-                                                            VillageData data, BlockPos starterHousePos) {
+                                                            VillageData data, BlockPos starterHousePos,
+                                                            BlockPos starterDoorPos) {
         if (data.getCenterPos() == null) {
             initializeGrid(overworld, data);
         }
@@ -190,7 +192,9 @@ public class VillageManager {
         data.setPlotState(centerGrid, PlotState.OCCUPIED);
         data.setPlayerHouse(player.getUUID(), centerGrid);
         data.setHousePosition(centerGrid, starterHousePos);
-        data.setDoorPosition(centerGrid, starterHousePos);
+        // Worlds generated before the door position was tracked fall back to the
+        // interior spawn point rather than crash.
+        data.setDoorPosition(centerGrid, starterDoorPos != null ? starterDoorPos : starterHousePos);
 
         // Count as a house for decoration tracking
         data.incrementHouseCountSinceLastDecoration();

@@ -1,6 +1,7 @@
 package com.beginnersdelight.worldgen;
 
 import com.beginnersdelight.BeginnersDelight;
+import com.beginnersdelight.util.StructureDoorUtil;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
@@ -172,8 +173,13 @@ public class StarterHouseGenerator {
         net.minecraft.core.Vec3i size = template.getSize();
         BlockPos insidePos = placePos.offset(size.getX() / 2, 1, size.getZ() / 2);
 
+        // Locate the structure's actual door and target the exterior side it
+        // opens onto; falls back to the south wall if no door block is found.
+        BlockPos doorFrontPos = StructureDoorUtil.findDoorFrontPos(level, placePos, size);
+
         // Store spawn position in SavedData for player join teleport
         data.setSpawnPos(insidePos);
+        data.setDoorPos(doorFrontPos);
 
         // Set world spawn and radius (used as fallback for death respawn without bed)
         level.setDefaultSpawnPos(insidePos, 0.0f);

@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Build a house for every player in Village Mode. Players teleported to the starter house were bound to it instead, so no player house, path or decoration was ever generated. Affected worlds are repaired on the next server start, moving those players into their own house when they rejoin
 - Stop a brand-new player from taking over the starter house before a returning resident who lived there earlier gets a chance to rejoin. The join handlers ran in an order that made a first-time joiner look like a returning resident
 - Stop village paths from plunging to the bottom of a ravine or cave mouth they cross. Each column was paved at whatever ground it found scanning straight down from the world top, so an opening to the sky sent the path dozens of blocks below its neighbors; it now bridges across at the surrounding path height instead
+- Connect village paths to the actual front door of a house instead of a fixed point that assumed every house faced the same direction. The path target is now detected from the placed structure's own door and walks clear of its porch, so paths reach the door on every house layout instead of running onto the roof or stopping short in mid-air near it
 
 ## [0.6.0] - 2026-08-25
 

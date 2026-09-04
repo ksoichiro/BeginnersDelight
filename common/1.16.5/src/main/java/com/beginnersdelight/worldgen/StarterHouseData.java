@@ -23,10 +23,14 @@ public class StarterHouseData extends SavedData {
     private static final String TAG_SPAWN_X = "spawn_x";
     private static final String TAG_SPAWN_Y = "spawn_y";
     private static final String TAG_SPAWN_Z = "spawn_z";
+    private static final String TAG_DOOR_X = "door_x";
+    private static final String TAG_DOOR_Y = "door_y";
+    private static final String TAG_DOOR_Z = "door_z";
     private static final String TAG_TELEPORTED_PLAYERS = "teleported_players";
 
     private boolean generated;
     private BlockPos spawnPos;
+    private BlockPos doorPos;
     private final Set<UUID> teleportedPlayers = new HashSet<>();
 
     public StarterHouseData() {
@@ -44,6 +48,13 @@ public class StarterHouseData extends SavedData {
                     tag.getInt(TAG_SPAWN_X),
                     tag.getInt(TAG_SPAWN_Y),
                     tag.getInt(TAG_SPAWN_Z)
+            );
+        }
+        if (tag.contains(TAG_DOOR_X)) {
+            doorPos = new BlockPos(
+                    tag.getInt(TAG_DOOR_X),
+                    tag.getInt(TAG_DOOR_Y),
+                    tag.getInt(TAG_DOOR_Z)
             );
         }
         if (tag.contains(TAG_TELEPORTED_PLAYERS)) {
@@ -66,6 +77,11 @@ public class StarterHouseData extends SavedData {
             tag.putInt(TAG_SPAWN_X, spawnPos.getX());
             tag.putInt(TAG_SPAWN_Y, spawnPos.getY());
             tag.putInt(TAG_SPAWN_Z, spawnPos.getZ());
+        }
+        if (doorPos != null) {
+            tag.putInt(TAG_DOOR_X, doorPos.getX());
+            tag.putInt(TAG_DOOR_Y, doorPos.getY());
+            tag.putInt(TAG_DOOR_Z, doorPos.getZ());
         }
         ListTag list = new ListTag();
         for (UUID uuid : teleportedPlayers) {
@@ -93,6 +109,15 @@ public class StarterHouseData extends SavedData {
 
     public void setSpawnPos(BlockPos spawnPos) {
         this.spawnPos = spawnPos;
+        setDirty();
+    }
+
+    public BlockPos getDoorPos() {
+        return doorPos;
+    }
+
+    public void setDoorPos(BlockPos doorPos) {
+        this.doorPos = doorPos;
         setDirty();
     }
 

@@ -29,11 +29,13 @@ public class StarterHouseData extends SavedData {
             instance.group(
                     Codec.BOOL.fieldOf("generated").forGetter(d -> d.generated),
                     BlockPos.CODEC.optionalFieldOf("spawn_pos").forGetter(d -> Optional.ofNullable(d.spawnPos)),
+                    BlockPos.CODEC.optionalFieldOf("door_pos").forGetter(d -> Optional.ofNullable(d.doorPos)),
                     UUIDUtil.CODEC.listOf().fieldOf("teleported_players").forGetter(d -> new ArrayList<>(d.teleportedPlayers))
-            ).apply(instance, (generated, spawnPos, teleportedPlayers) -> {
+            ).apply(instance, (generated, spawnPos, doorPos, teleportedPlayers) -> {
                 StarterHouseData data = new StarterHouseData();
                 data.generated = generated;
                 data.spawnPos = spawnPos.orElse(null);
+                data.doorPos = doorPos.orElse(null);
                 data.teleportedPlayers.addAll(teleportedPlayers);
                 return data;
             })
@@ -48,6 +50,7 @@ public class StarterHouseData extends SavedData {
 
     private boolean generated;
     private BlockPos spawnPos;
+    private BlockPos doorPos;
     private final Set<UUID> teleportedPlayers = new HashSet<>();
 
     public StarterHouseData() {
@@ -70,6 +73,15 @@ public class StarterHouseData extends SavedData {
 
     public void setSpawnPos(BlockPos spawnPos) {
         this.spawnPos = spawnPos;
+        setDirty();
+    }
+
+    public BlockPos getDoorPos() {
+        return doorPos;
+    }
+
+    public void setDoorPos(BlockPos doorPos) {
+        this.doorPos = doorPos;
         setDirty();
     }
 

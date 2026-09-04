@@ -1,6 +1,7 @@
 package com.beginnersdelight.village;
 
 import com.beginnersdelight.BeginnersDelight;
+import com.beginnersdelight.util.StructureDoorUtil;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.core.registries.Registries;
@@ -233,10 +234,7 @@ public class VillageHouseGenerator {
         BlockPos interiorPos = placePos.offset(size.getX() / 2, 1, size.getZ() / 2);
 
         // Door front position: south side center, one block outside the structure
-        BlockPos doorFrontPos = new BlockPos(
-                placePos.getX() + size.getX() / 2,
-                placePos.getY(),
-                placePos.getZ() + size.getZ());
+        BlockPos doorFrontPos = StructureDoorUtil.findDoorFrontPos(level, placePos, size);
 
         return Optional.of(new PlacementResult(interiorPos, doorFrontPos));
     }
@@ -281,7 +279,7 @@ public class VillageHouseGenerator {
         restoreGroundCover(level, placePos, size, surfacePos.getY(), groundCover);
         removeDroppedItems(level, surfacePos, size);
         BlockPos interiorPos = surfacePos.offset(size.getX() / 2, 1, size.getZ() / 2);
-        BlockPos doorFrontPos = new BlockPos(surfacePos.getX() + size.getX() / 2, surfacePos.getY(), surfacePos.getZ() + size.getZ());
+        BlockPos doorFrontPos = StructureDoorUtil.findDoorFrontPos(level, surfacePos, size);
         return Optional.of(new PlacementResult(interiorPos, doorFrontPos));
     }
     public static String selectRandomDecoration(RandomSource random) { return DECORATION_VARIANTS[random.nextInt(DECORATION_VARIANTS.length)]; }
