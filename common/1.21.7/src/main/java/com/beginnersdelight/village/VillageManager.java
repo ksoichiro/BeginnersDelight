@@ -265,8 +265,9 @@ public class VillageManager {
                 if (nearestDoor != null) {
                     VillagePathGenerator.generatePath(overworld, placement.doorFrontPos(), nearestDoor);
                 }
-            } else {
-                // First house — connect to village center
+            } else if (data.getPlotState(new GridPos(0, 0)) == PlotState.OCCUPIED) {
+                // First house — connect to village center, but only if a starter house
+                // actually stands there (it may be disabled via game rule)
                 BlockPos center = data.getCenterPos();
                 VillagePathGenerator.generatePath(overworld, placement.doorFrontPos(), center);
             }
