@@ -5,12 +5,13 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.FlowerPotBlock;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
  * Generates dirt paths between village houses.
  * Traces L-shaped paths (X-axis first, then Z-axis) and replaces
- * grass/dirt surface blocks with Dirt Path blocks.
+ * natural ground surface blocks with Dirt Path blocks.
  */
 public class VillagePathGenerator {
 
@@ -63,9 +64,10 @@ public class VillagePathGenerator {
 
     /**
      * Finds the ground surface at the given XZ, near referenceY, and replaces it
-     * with Dirt Path if it is a suitable block (grass or dirt). If no ground is
-     * found within range (a ravine or cave mouth), bridges across at referenceY
-     * instead of paving whatever lies far below.
+     * with Dirt Path if it is a suitable block (natural ground, see
+     * {@link #isPavableGround}). If no ground is found within range (a ravine or
+     * cave mouth), bridges across at referenceY instead of paving whatever lies
+     * far below.
      * Returns the Y the path now sits at, for the next column to reference.
      */
     private static int placePathBlock(ServerLevel level, int x, int z, int referenceY) {
@@ -78,8 +80,8 @@ public class VillagePathGenerator {
         BlockState state = level.getBlockState(surfacePos);
 
         // Bridging across a gap counts as suitable unconditionally: there is no real
-        // surface block to check the type of. Otherwise only replace grass and dirt.
-        if (bridging || state.is(Blocks.GRASS_BLOCK) || state.is(Blocks.DIRT)) {
+        // surface block to check the type of. Otherwise only replace natural ground.
+        if (bridging || isPavableGround(state)) {
             // Take whatever stands on the surface away first, bottom-up and with
             // UPDATE_KNOWN_SHAPE so it goes quietly: nothing that grows on grass
             // survives on a path block, so paving first would let the shape update
@@ -125,6 +127,23 @@ public class VillagePathGenerator {
         return BRIDGE_NEEDED;
     }
 
+    // Grass and dirt cover most biomes, but a desert or badlands (mesa) surface
+    // never touches either, so paths generated there would skip almost every
+    // column. Sand and terracotta are the natural ground blocks of those biomes.
+    private static boolean isPavableGround(BlockState state) {
+        return state.is(Blocks.GRASS_BLOCK) || state.is(Blocks.DIRT)
+                || state.is(Blocks.SAND) || state.is(Blocks.RED_SAND)
+                || state.is(Blocks.TERRACOTTA) || state.is(Blocks.WHITE_TERRACOTTA)
+                || state.is(Blocks.ORANGE_TERRACOTTA) || state.is(Blocks.MAGENTA_TERRACOTTA)
+                || state.is(Blocks.LIGHT_BLUE_TERRACOTTA) || state.is(Blocks.YELLOW_TERRACOTTA)
+                || state.is(Blocks.LIME_TERRACOTTA) || state.is(Blocks.PINK_TERRACOTTA)
+                || state.is(Blocks.GRAY_TERRACOTTA) || state.is(Blocks.LIGHT_GRAY_TERRACOTTA)
+                || state.is(Blocks.CYAN_TERRACOTTA) || state.is(Blocks.PURPLE_TERRACOTTA)
+                || state.is(Blocks.BLUE_TERRACOTTA) || state.is(Blocks.BROWN_TERRACOTTA)
+                || state.is(Blocks.GREEN_TERRACOTTA) || state.is(Blocks.RED_TERRACOTTA)
+                || state.is(Blocks.BLACK_TERRACOTTA);
+    }
+
     private static boolean isThinGroundCover(BlockState state) {
         return state.is(Blocks.SNOW) || state.is(Blocks.MOSS_CARPET)
                 || state.is(Blocks.PINK_PETALS);
@@ -144,7 +163,12 @@ public class VillagePathGenerator {
                 // column it happens to overhang, so counting its cap/stem blocks as
                 // removable would carve a hole out of one standing next to the path.
                 || state.is(Blocks.BROWN_MUSHROOM)
-                || state.is(Blocks.RED_MUSHROOM);
+                || state.is(Blocks.RED_MUSHROOM)
+                // House templates stand a potted plant or lantern right beside the
+                // door; without this a path can't reach the ground under it and
+                // stops one column short of the door.
+                || state.getBlock() instanceof FlowerPotBlock
+                || state.is(Blocks.LANTERN) || state.is(Blocks.SOUL_LANTERN);
     }
 
     // Plants that grow on top of the ground and must not be mistaken for the ground
