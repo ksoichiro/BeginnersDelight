@@ -52,6 +52,16 @@ public class StarterHouseGenerator {
             Registries.LOOT_TABLE,
             ResourceLocation.fromNamespaceAndPath(BeginnersDelight.MOD_ID, "chests/starter_house_supplies"));
 
+    // Footprint relief above which a candidate site is rejected as too uneven
+    // (cliff/ravine/cave edge) for the terrain fill/blend to handle naturally.
+    private static final int MAX_FOOTPRINT_RELIEF = 10;
+
+    // How far fillFoundation reaches below the floor to fill the gap with ground
+    // blocks. Must cover the worst case: footprint relief (MAX_FOOTPRINT_RELIEF)
+    // plus the floor being raised further to clear adjacent water (up to 9, see
+    // findSurfacePosition), with a small buffer.
+    private static final int FOUNDATION_FILL_DEPTH = 20;
+
     private static final String[] STRUCTURE_VARIANTS = {
             "starter_house1",
             "starter_house2",
@@ -198,10 +208,11 @@ public class StarterHouseGenerator {
 
     /**
      * Finds a suitable surface position for placing the structure.
-     * Samples surface Y across the footprint (skipping vegetation) and uses
-     * the minimum so the structure sits flush with the lowest terrain point.
-     * This prevents the structure from being placed on cliff edges with a
-     * large dirt foundation below.
+     * Scans surface Y across every column of the footprint (skipping vegetation)
+     * and uses the highest point so the structure sits flush with the tallest
+     * terrain under it. The gap under lower columns is filled in by
+     * {@link #fillFoundation} instead, so slopes keep their natural shape rather
+     * than being carved flat down to the lowest point.
      */
     private static BlockPos findSurfacePosition(ServerLevel level, BlockPos center,
                                                  net.minecraft.core.Vec3i structureSize) {
@@ -211,41 +222,20 @@ public class StarterHouseGenerator {
         int startX = center.getX() - halfX;
         int startZ = center.getZ() - halfZ;
 
-        // Sample surface Y at the four corners and center of the footprint
-        int endX = startX + structureSize.getX() - 1;
-        int endZ = startZ + structureSize.getZ() - 1;
-        int centerX = center.getX();
-        int centerZ = center.getZ();
-
-        int[][] samplePoints = {
-                {centerX, centerZ},
-                {startX, startZ},
-                {endX, startZ},
-                {startX, endZ},
-                {endX, endZ}
-        };
-
-        int resultY = Integer.MAX_VALUE;
-        for (int[] point : samplePoints) {
-            int y = findGroundY(level, point[0], point[1]);
-            if (y == -1) {
-                return null;
-            }
-            if (y < resultY) {
-                resultY = y;
-            }
-        }
-
-        if (resultY == Integer.MAX_VALUE) {
+        int[] range = scanFootprintHeights(level, startX, startZ,
+                structureSize.getX(), structureSize.getZ());
+        if (range == null) {
             return null;
         }
+        int resultY = range[1];
 
         // Keep the floor above the water surface of any ocean/lake that reaches the
-        // area being reshaped. The lowest sample is often dry ground that still lies
-        // below the waterline of adjacent water (a shoreline slope), and since the
-        // surroundings get flattened down to the floor, that water then floods the
-        // house. Dry ground below sea level (deep valleys) is left at its real height
-        // so the house sits on the ground instead of floating.
+        // area being reshaped. Even the footprint's highest point can still sit
+        // below the waterline of adjacent water (e.g. a valley bottom next to the
+        // sea), and since the surroundings get flattened up to the floor, that
+        // water would otherwise flood the house. Dry ground below sea level (deep
+        // valleys with no adjacent water) is left at its real height so the house
+        // sits on the ground instead of floating.
         // Raising the floor widens the scanned band, so repeat until it comes out
         // clear; a handful of rounds is plenty for terrain that holds water.
         int floorY = resultY;
@@ -256,10 +246,12 @@ public class StarterHouseGenerator {
             }
             floorY = waterSurfaceY + 1;
         }
-        // fillFoundation reaches 10 blocks below the floor, so a bigger lift than that
-        // would leave the house standing on nothing. A spot needing one (water perched
-        // on a cliff right beside the footprint) cannot be drained by raising at all,
-        // so keep the house on the real ground rather than float it above a gap.
+        // fillFoundation fills at most FOUNDATION_FILL_DEPTH blocks below the floor,
+        // and up to MAX_FOOTPRINT_RELIEF of that is already spent reaching the
+        // footprint's lowest column, so a bigger lift than 9 here would leave part
+        // of the house standing on nothing. A spot needing one (water perched on a
+        // cliff right beside the footprint) cannot be drained by raising at all, so
+        // keep the house on the real ground rather than float it above a gap.
         if (floorY - resultY <= 9) {
             resultY = floorY;
         }
@@ -367,8 +359,9 @@ public class StarterHouseGenerator {
     }
 
     /**
-     * Checks whether a build center has solid ground (no large void below) at its
-     * center and four footprint corners.
+     * Checks whether a build center has solid ground (no large void below) across
+     * the whole footprint, and is not so uneven that filling up to its highest
+     * point would need to bridge a cliff, ravine, or cave mouth.
      */
     private static boolean isCenterSuitable(ServerLevel level, BlockPos center,
                                              net.minecraft.core.Vec3i size) {
@@ -376,26 +369,36 @@ public class StarterHouseGenerator {
         int halfZ = size.getZ() / 2;
         int startX = center.getX() - halfX;
         int startZ = center.getZ() - halfZ;
-        int endX = startX + size.getX() - 1;
-        int endZ = startZ + size.getZ() - 1;
-        int[][] points = {
-                {center.getX(), center.getZ()},
-                {startX, startZ}, {endX, startZ},
-                {startX, endZ}, {endX, endZ}
-        };
+        return scanFootprintHeights(level, startX, startZ, size.getX(), size.getZ()) != null;
+    }
+
+    /**
+     * Scans every column of the footprint (not just corners/center) to find the
+     * lowest and highest ground surface, skipping vegetation the same way
+     * {@link #findGroundY} does. Returns {@code null} -- rejecting the site -- when
+     * any column has no ground, sits over a void (see {@link #hasVoidBelow}), or
+     * the footprint's relief exceeds {@link #MAX_FOOTPRINT_RELIEF}, since filling
+     * up to the highest point would then have to bridge a cliff, ravine, or cave
+     * mouth instead of a natural slope.
+     *
+     * @return {@code {minY, maxY}} of the footprint's ground surface, or
+     *         {@code null} if the footprint is unsuitable
+     */
+    private static int[] scanFootprintHeights(ServerLevel level, int startX, int startZ,
+                                               int sizeX, int sizeZ) {
         int minY = Integer.MAX_VALUE;
         int maxY = Integer.MIN_VALUE;
-        for (int[] p : points) {
-            int y = findGroundY(level, p[0], p[1]);
-            if (y == -1) return false;
-            if (hasVoidBelow(level, p[0], p[1], y)) return false;
-            minY = Math.min(minY, y);
-            maxY = Math.max(maxY, y);
+        for (int x = startX; x < startX + sizeX; x++) {
+            for (int z = startZ; z < startZ + sizeZ; z++) {
+                int y = findGroundY(level, x, z);
+                if (y == -1) return null;
+                if (hasVoidBelow(level, x, z, y)) return null;
+                if (y < minY) minY = y;
+                if (y > maxY) maxY = y;
+            }
         }
-        // Reject uneven spots (pit/ravine/cave edges) so the house lands on flat
-        // ground near the surface instead of floating over a hole.
-        if (maxY - minY > 10) return false;
-        return true;
+        if (maxY - minY > MAX_FOOTPRINT_RELIEF) return null;
+        return new int[]{minY, maxY};
     }
 
     /**
@@ -639,12 +642,12 @@ public class StarterHouseGenerator {
                 // Skip columns over a void (no solid ground within reach): filling here would
                 // leave floating dirt above a cave.
                 boolean solidWithinReach = false;
-                for (int sy = floorY - 1; sy >= floorY - 10; sy--) {
+                for (int sy = floorY - 1; sy >= floorY - FOUNDATION_FILL_DEPTH; sy--) {
                     BlockState below = level.getBlockState(new BlockPos(x, sy, z));
                     if (!below.isAir() && below.getFluidState().isEmpty()) { solidWithinReach = true; break; }
                 }
                 if (!solidWithinReach) continue;
-                for (int y = floorY - 1; y >= floorY - 10; y--) {
+                for (int y = floorY - 1; y >= floorY - FOUNDATION_FILL_DEPTH; y--) {
                     BlockPos pos = new BlockPos(x, y, z);
                     BlockState existing = level.getBlockState(pos);
                     if (!existing.isAir() && existing.getFluidState().isEmpty()) {
@@ -1136,8 +1139,9 @@ public class StarterHouseGenerator {
 
     /**
      * Blends corner pillars that were skipped by isOutsideChamfer in fillFoundation.
-     * After fillFoundation, the corners may be tall pillars. This method carves them
-     * down to match the surrounding terrain height.
+     * After fillFoundation, the corners may still be at their natural height --
+     * above the target (a pillar to carve down) or below it (a gap to fill in),
+     * since the floor no longer sits at the lowest point of the footprint.
      */
     private static void blendCornerPillars(ServerLevel level, BlockPos placePos,
                                            net.minecraft.core.Vec3i structureSize) {
@@ -1151,21 +1155,12 @@ public class StarterHouseGenerator {
 
         BlockState dominantBlock = detectDominantSurfaceBlock(level, placePos, structureSize, margin);
         BlockState surfaceBlock = mapToSurfaceBlock(dominantBlock);
+        BlockState subsurfaceBlock = mapToSubsurfaceBlock(surfaceBlock);
 
         // Only process corner points that were skipped by isOutsideChamfer
         for (int x = strMinX - margin; x < strMaxX + margin; x++) {
             for (int z = strMinZ - margin; z < strMaxZ + margin; z++) {
                 if (isOutsideChamfer(x, z, strMinX, strMaxX, strMinZ, strMaxZ, margin)) {
-                    // Find the top of the pillar (scan upward from floorY)
-                    int pillarTop = floorY;
-                    for (int y = floorY; y < floorY + 50; y++) {
-                        if (!level.getBlockState(new BlockPos(x, y, z)).isAir()) {
-                            pillarTop = y + 1;
-                        } else {
-                            break;
-                        }
-                    }
-
                     // Find target Y by sampling adjacent non-corner points
                     // that were already processed by blendSurroundingTerrain
                     int targetY = floorY;
@@ -1196,18 +1191,33 @@ public class StarterHouseGenerator {
                         targetY = floorY;
                     }
 
-                    // Carve down to target level
-                    for (int y = targetY; y < pillarTop; y++) {
-                        level.setBlock(new BlockPos(x, y, z), Blocks.AIR.defaultBlockState(), 2);
-                    }
+                    int naturalY = findGroundY(level, x, z);
+                    if (naturalY == -1) continue;
 
-                    // Place surface block at target level
-                    if (targetY > level.getMinY()) {
-                        // Don't leave a lone surface block floating over a void: only cap
-                        // when there is solid support directly beneath it.
-                        BlockState capSupport = level.getBlockState(new BlockPos(x, targetY - 2, z));
-                        if (!capSupport.isAir() && capSupport.getFluidState().isEmpty()) {
-                            level.setBlock(new BlockPos(x, targetY - 1, z), surfaceBlock, 2);
+                    if (naturalY > targetY) {
+                        // Terrain higher than target: carve down to create a flat corner
+                        clearTallPlantColumn(level, x, z, naturalY);
+                        for (int y = targetY; y < naturalY; y++) {
+                            level.setBlock(new BlockPos(x, y, z), Blocks.AIR.defaultBlockState(), 2);
+                        }
+                        // Place surface block at target level. Don't leave a lone surface
+                        // block floating over a void: only cap when there is solid support
+                        // directly beneath it.
+                        if (targetY > level.getMinY()) {
+                            BlockState capSupport = level.getBlockState(new BlockPos(x, targetY - 2, z));
+                            if (!capSupport.isAir() && capSupport.getFluidState().isEmpty()) {
+                                level.setBlock(new BlockPos(x, targetY - 1, z), surfaceBlock, 2);
+                            }
+                        }
+                    } else if (naturalY < targetY) {
+                        // Don't bridge cliffs/voids: same guard as blendSurroundingTerrain.
+                        if (targetY - naturalY > 6) continue;
+                        // Terrain lower than target: fill up to close the gap left at this
+                        // chamfered corner instead of leaving it hollow.
+                        clearTallPlantColumn(level, x, z, naturalY);
+                        for (int y = naturalY; y < targetY; y++) {
+                            BlockState fill = (y == targetY - 1) ? surfaceBlock : subsurfaceBlock;
+                            level.setBlock(new BlockPos(x, y, z), fill, 2);
                         }
                     }
                 }
