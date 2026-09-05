@@ -409,7 +409,15 @@ public class StarterHouseGenerator {
         int halfZ = size.getZ() / 2;
         int startX = center.getX() - halfX;
         int startZ = center.getZ() - halfZ;
-        if (scanFootprintHeights(level, startX, startZ, size.getX(), size.getZ()) == null) {
+
+        // Same margin fillFoundation reshapes beyond the footprint: a site whose
+        // footprint alone is flat but whose immediate surroundings drop away
+        // sharply (the flat top of a narrow spire) must be rejected too, or
+        // fillFoundation turns that unconstrained margin into an unnaturally
+        // tall vertical pillar instead of bridging a natural slope.
+        int margin = 2;
+        if (scanFootprintHeights(level, startX - margin, startZ - margin,
+                size.getX() + margin * 2, size.getZ() + margin * 2) == null) {
             return false;
         }
 

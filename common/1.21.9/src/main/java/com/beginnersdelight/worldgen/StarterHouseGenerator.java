@@ -396,11 +396,18 @@ public class StarterHouseGenerator {
      */
     private static boolean isCenterSuitable(ServerLevel level, BlockPos center,
                                              net.minecraft.core.Vec3i size) {
+        // Same margin fillFoundation reshapes beyond the footprint: a site whose
+        // footprint alone is flat but whose immediate surroundings drop away
+        // sharply (the flat top of a narrow spire) must be rejected too, or
+        // fillFoundation turns that unconstrained margin into an unnaturally
+        // tall vertical pillar instead of bridging a natural slope.
+        int margin = 2;
         int halfX = size.getX() / 2;
         int halfZ = size.getZ() / 2;
-        int startX = center.getX() - halfX;
-        int startZ = center.getZ() - halfZ;
-        return scanFootprintHeights(level, startX, startZ, size.getX(), size.getZ()) != null;
+        int startX = center.getX() - halfX - margin;
+        int startZ = center.getZ() - halfZ - margin;
+        return scanFootprintHeights(level, startX, startZ,
+                size.getX() + margin * 2, size.getZ() + margin * 2) != null;
     }
 
     /**

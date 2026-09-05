@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Stop the starter house from carving a large flattened pad into a hillside. Placement now levels up to the footprint's highest point and fills in the low side instead of digging down to the lowest, so a sloped build site keeps its shape instead of being excavated flat
 - Stop the starter house from appearing to float above the ground in a snowy biome or on grass with flowers. Foundation filling mistook a leftover snow layer, grass or flower for solid ground and stopped one block short, leaving that thin cover standing in as the floor instead of being built over
 - Remove an entire tree that intersects starter-house placement or terrain blending, including its connected leaves, vines, and snow resting on its canopy. The old block-by-block clearing left cut trunks, hanging vines, or unsupported snow around the generated house
+- Stop the starter house from towering over the surrounding terrain on top of a narrow natural spire. Site suitability only checked the footprint's own unevenness, not the margin foundation filling also reshapes around it, so a flat-topped spire passed the check and got filled straight down into an unnaturally tall pillar; that margin is now checked too, and such sites are avoided like existing cliffs and caves
 
 ## [0.6.0] - 2026-08-25
 
