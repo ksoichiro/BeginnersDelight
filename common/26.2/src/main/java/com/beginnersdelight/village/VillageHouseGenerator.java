@@ -434,7 +434,8 @@ public class VillageHouseGenerator {
 
     private static boolean isThinGroundCover(BlockState state) {
         return state.is(Blocks.SNOW) || state.is(Blocks.MOSS_CARPET)
-                || state.is(Blocks.PINK_PETALS) || state.is(Blocks.PALE_MOSS_CARPET);
+                || state.is(Blocks.PINK_PETALS) || state.is(Blocks.PALE_MOSS_CARPET)
+                || state.is(Blocks.LEAF_LITTER);
     }
 
     // Records the thin ground cover standing on every column about to be reshaped so

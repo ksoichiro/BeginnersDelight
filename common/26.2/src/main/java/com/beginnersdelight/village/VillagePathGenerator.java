@@ -142,7 +142,8 @@ public class VillagePathGenerator {
 
     private static boolean isThinGroundCover(BlockState state) {
         return state.is(Blocks.SNOW) || state.is(Blocks.MOSS_CARPET)
-                || state.is(Blocks.PINK_PETALS) || state.is(Blocks.PALE_MOSS_CARPET);
+                || state.is(Blocks.PINK_PETALS) || state.is(Blocks.PALE_MOSS_CARPET)
+                || state.is(Blocks.LEAF_LITTER);
     }
 
     private static boolean isRemovableVegetation(BlockState state) {
