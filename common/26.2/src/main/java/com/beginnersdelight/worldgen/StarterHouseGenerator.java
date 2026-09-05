@@ -340,6 +340,7 @@ public class StarterHouseGenerator {
                 || state.is(Blocks.BAMBOO_SAPLING)
                 || state.is(Blocks.SUGAR_CANE)
                 || state.is(Blocks.CACTUS)
+                || state.is(Blocks.CACTUS_FLOWER)
                 || state.is(Blocks.SWEET_BERRY_BUSH);
     }
 
@@ -763,15 +764,17 @@ public class StarterHouseGenerator {
      * scanned band, and the foundation fill later removes their bottom block with a
      * regular block update, which destroys the rest of the stalk with break sounds
      * and scattered drops. Clearing whole columns up front with UPDATE_KNOWN_SHAPE
-     * avoids both. Plants outside the foundation area are left standing.
+     * avoids both. The reach also includes a neighboring column: its supporting
+     * block can be changed by the foundation or terrain blend, which otherwise
+     * makes the plant break after this pass.
      */
     private static void clearTallPlants(ServerLevel level, BlockPos placePos,
                                          net.minecraft.core.Vec3i structureSize) {
-        int margin = 2;
-        int minX = placePos.getX() - margin;
-        int maxX = placePos.getX() + structureSize.getX() + margin;
-        int minZ = placePos.getZ() - margin;
-        int maxZ = placePos.getZ() + structureSize.getZ() + margin;
+        int extend = 6; // margin(2) + blendRadius(3) + one shape-update neighbor
+        int minX = placePos.getX() - extend;
+        int maxX = placePos.getX() + structureSize.getX() + extend;
+        int minZ = placePos.getZ() - extend;
+        int maxZ = placePos.getZ() + structureSize.getZ() + extend;
 
         for (int x = minX; x < maxX; x++) {
             for (int z = minZ; z < maxZ; z++) {

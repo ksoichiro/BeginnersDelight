@@ -176,6 +176,7 @@ public class VillagePathGenerator {
                 || state.is(Blocks.BAMBOO_SAPLING)
                 || state.is(Blocks.SUGAR_CANE)
                 || state.is(Blocks.CACTUS)
+                || state.is(Blocks.CACTUS_FLOWER)
                 || state.is(Blocks.SWEET_BERRY_BUSH);
     }
 }

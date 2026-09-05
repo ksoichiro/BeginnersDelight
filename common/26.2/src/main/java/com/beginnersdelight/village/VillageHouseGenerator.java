@@ -414,6 +414,7 @@ public class VillageHouseGenerator {
                 || state.is(Blocks.BAMBOO_SAPLING)
                 || state.is(Blocks.SUGAR_CANE)
                 || state.is(Blocks.CACTUS)
+                || state.is(Blocks.CACTUS_FLOWER)
                 || state.is(Blocks.SWEET_BERRY_BUSH);
     }
 
@@ -599,13 +600,14 @@ public class VillageHouseGenerator {
     // and the foundation fill later removes their bottom block with a regular block
     // update, which destroys the rest of the stalk with break sounds and scattered
     // drops. Clear whole columns up front with UPDATE_KNOWN_SHAPE instead, over the
-    // area that gets flattened; plants outside it are left standing.
+    // area that can receive terrain or adjacent shape updates. A plant just beyond
+    // the flattened area can still lose its supporting block to a neighbor update.
     private static void clearTallPlants(ServerLevel level, BlockPos placePos, Vec3i structureSize) {
-        int margin = 2;
-        int minX = placePos.getX() - margin;
-        int maxX = placePos.getX() + structureSize.getX() + margin;
-        int minZ = placePos.getZ() - margin;
-        int maxZ = placePos.getZ() + structureSize.getZ() + margin;
+        int extend = 6; // margin(2) + blendRadius(3) + one shape-update neighbor
+        int minX = placePos.getX() - extend;
+        int maxX = placePos.getX() + structureSize.getX() + extend;
+        int minZ = placePos.getZ() - extend;
+        int maxZ = placePos.getZ() + structureSize.getZ() + extend;
         for (int x = minX; x < maxX; x++) {
             for (int z = minZ; z < maxZ; z++) {
                 int groundY = findGroundY(level, x, z);
