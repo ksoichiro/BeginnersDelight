@@ -61,6 +61,11 @@ public class StarterHouseGenerator {
     // findSurfacePosition), with a small buffer.
     private static final int FOUNDATION_FILL_DEPTH = 20;
 
+    // The foundation extends two blocks beyond the template and the terrain blend
+    // extends another three. A cave in this band is just as visible as one below
+    // the house, but previously only the template footprint was checked.
+    private static final int TERRAIN_SAFETY_MARGIN = 5;
+
     private static final String[] STRUCTURE_VARIANTS = {
             "starter_house1",
             "starter_house2",
@@ -401,8 +406,33 @@ public class StarterHouseGenerator {
         int halfZ = size.getZ() / 2;
         int startX = center.getX() - halfX - margin;
         int startZ = center.getZ() - halfZ - margin;
-        return scanFootprintHeights(level, startX, startZ,
-                size.getX() + margin * 2, size.getZ() + margin * 2) != null;
+        if (scanFootprintHeights(level, startX, startZ,
+                size.getX() + margin * 2, size.getZ() + margin * 2) == null) {
+            return false;
+        }
+
+        // fillFoundation deliberately leaves unsupported columns alone instead of
+        // bridging a cave. Check the complete area that foundation filling and
+        // terrain blending can touch before choosing a site, so that safeguard does
+        // not leave a patchwork of holes beside an otherwise safe house.
+        return isTerrainBandVoidFree(level,
+                startX - TERRAIN_SAFETY_MARGIN,
+                startZ - TERRAIN_SAFETY_MARGIN,
+                size.getX() + TERRAIN_SAFETY_MARGIN * 2,
+                size.getZ() + TERRAIN_SAFETY_MARGIN * 2);
+    }
+
+    private static boolean isTerrainBandVoidFree(ServerLevel level, int startX, int startZ,
+                                                  int sizeX, int sizeZ) {
+        for (int x = startX; x < startX + sizeX; x++) {
+            for (int z = startZ; z < startZ + sizeZ; z++) {
+                int groundY = findGroundY(level, x, z);
+                if (groundY == -1 || hasVoidBelow(level, x, z, groundY)) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     /**
