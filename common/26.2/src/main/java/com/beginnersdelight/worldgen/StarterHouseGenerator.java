@@ -31,7 +31,9 @@ import net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.level.gamerules.GameRules;
 
+import java.util.ArrayDeque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -154,6 +156,7 @@ public class StarterHouseGenerator {
         // items when their supporting blocks are removed during terrain modification.
         // Uses UPDATE_KNOWN_SHAPE to suppress shape update propagation so adjacent
         // soft blocks don't cascade-break into item entities.
+        clearIntersectingTrees(level, placePos, template.getSize());
         clearVegetation(level, placePos, template.getSize());
 
         // Use UPDATE_KNOWN_SHAPE to suppress shape updates during placement.
@@ -641,6 +644,79 @@ public class StarterHouseGenerator {
         }
 
         clearTallPlants(level, placePos, structureSize);
+    }
+
+    /**
+     * Removes each tree touched by the area that structure placement or terrain
+     * blending can alter. Clearing only the individual blocks in that area leaves
+     * cut-off trunks, unsupported leaves, and hanging vines behind, so collect
+     * each connected canopy, trunk, and vine before removing it as a whole.
+     */
+    private static void clearIntersectingTrees(ServerLevel level, BlockPos placePos,
+                                               net.minecraft.core.Vec3i structureSize) {
+        int margin = 2;
+        int blendRadius = 3;
+        int extend = margin + blendRadius + 1;
+        int minX = placePos.getX() - extend;
+        int maxX = placePos.getX() + structureSize.getX() + extend;
+        int minZ = placePos.getZ() - extend;
+        int maxZ = placePos.getZ() + structureSize.getZ() + extend;
+        int minY = placePos.getY();
+        int maxY = placePos.getY() + structureSize.getY() + 10;
+        Set<BlockPos> visited = new HashSet<>();
+
+        for (int x = minX; x < maxX; x++) {
+            for (int z = minZ; z < maxZ; z++) {
+                for (int y = minY; y <= maxY; y++) {
+                    BlockPos pos = new BlockPos(x, y, z);
+                    if (visited.contains(pos) || !isTreeBlock(level.getBlockState(pos))) {
+                        continue;
+                    }
+                    clearTree(level, pos, visited);
+                }
+            }
+        }
+    }
+
+    private static void clearTree(ServerLevel level, BlockPos start, Set<BlockPos> visited) {
+        ArrayDeque<BlockPos> pending = new ArrayDeque<>();
+        Set<BlockPos> tree = new HashSet<>();
+        pending.add(start);
+
+        while (!pending.isEmpty()) {
+            BlockPos pos = pending.removeFirst();
+            if (!visited.add(pos) || !isTreePart(level.getBlockState(pos))) {
+                continue;
+            }
+            tree.add(pos);
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dy = -1; dy <= 1; dy++) {
+                    for (int dz = -1; dz <= 1; dz++) {
+                        if (dx != 0 || dy != 0 || dz != 0) {
+                            pending.add(pos.offset(dx, dy, dz));
+                        }
+                    }
+                }
+            }
+        }
+
+        for (BlockPos pos : tree) {
+            // UPDATE_KNOWN_SHAPE suppresses the usual support check, so snow resting
+            // on a removed leaf/log would otherwise remain floating in the air.
+            BlockPos above = pos.above();
+            if (isSnowCover(level.getBlockState(above))) {
+                level.setBlock(above, Blocks.AIR.defaultBlockState(), 2 | 16);
+            }
+            level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2 | 16);
+        }
+    }
+
+    private static boolean isTreeBlock(BlockState state) {
+        return state.is(BlockTags.LEAVES) || state.is(BlockTags.LOGS);
+    }
+
+    private static boolean isTreePart(BlockState state) {
+        return isTreeBlock(state) || state.is(Blocks.VINE);
     }
 
     /**
