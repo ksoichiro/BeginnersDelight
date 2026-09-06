@@ -70,6 +70,11 @@ public class StarterHouseGenerator {
     // the house, but previously only the template footprint was checked.
     private static final int TERRAIN_SAFETY_MARGIN = 5;
 
+    // Vanilla leaves can remain attached at a distance of up to seven blocks from
+    // a log. Search this far beyond the altered area for trunks whose canopy must
+    // be preserved.
+    private static final int MAX_LEAF_DISTANCE = 7;
+
     private static final String[] STRUCTURE_VARIANTS = {
             "starter_house1",
             "starter_house2",
@@ -158,8 +163,8 @@ public class StarterHouseGenerator {
         // items when their supporting blocks are removed during terrain modification.
         // Uses UPDATE_KNOWN_SHAPE to suppress shape update propagation so adjacent
         // soft blocks don't cascade-break into item entities.
-        clearIntersectingTrees(level, placePos, template.getSize());
-        clearVegetation(level, placePos, template.getSize());
+        Set<BlockPos> protectedTreeParts = clearIntersectingTrees(level, placePos, template.getSize());
+        clearVegetation(level, placePos, template.getSize(), protectedTreeParts);
 
         // Use UPDATE_KNOWN_SHAPE to suppress shape updates during placement.
         // Without this, doors and other multi-block structures can break when the
@@ -190,6 +195,11 @@ public class StarterHouseGenerator {
         // Put the snow/carpet cover back on the reshaped surroundings so the house
         // does not sit in a sharply outlined bare patch.
         restoreGroundCover(level, placePos, template.getSize(), groundCover);
+
+        // Terrain shaping can replace the supporting log of a protected canopy.
+        // Remove only the leaves that lost their matching outside tree, rather than
+        // leaving a curtain of detached leaves down to the ground.
+        clearDetachedProtectedLeaves(level, protectedTreeParts, placePos, template.getSize());
 
         // Remove item entities (seeds, sticks, etc.) dropped by destroyed vegetation
         removeDroppedItems(level, placePos, template.getSize());
@@ -809,7 +819,8 @@ public class StarterHouseGenerator {
      * removing one soft block does not cascade-break adjacent soft blocks into items.
      */
     private static void clearVegetation(ServerLevel level, BlockPos placePos,
-                                         net.minecraft.core.Vec3i structureSize) {
+                                         net.minecraft.core.Vec3i structureSize,
+                                         Set<BlockPos> protectedTreeParts) {
         int margin = 2;
         int blendRadius = 3;
         int extend = margin + blendRadius + 1;
@@ -829,7 +840,7 @@ public class StarterHouseGenerator {
                     if (state.isAir()) {
                         continue;
                     }
-                    if (isVegetation(state)) {
+                    if (!protectedTreeParts.contains(pos) && isVegetation(state)) {
                         level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2 | 16);
                     }
                 }
@@ -845,8 +856,8 @@ public class StarterHouseGenerator {
      * cut-off trunks, unsupported leaves, and hanging vines behind, so collect
      * each connected canopy, trunk, and vine before removing it as a whole.
      */
-    private static void clearIntersectingTrees(ServerLevel level, BlockPos placePos,
-                                               net.minecraft.core.Vec3i structureSize) {
+    private static Set<BlockPos> clearIntersectingTrees(ServerLevel level, BlockPos placePos,
+                                                        net.minecraft.core.Vec3i structureSize) {
         int margin = 2;
         int blendRadius = 3;
         int extend = margin + blendRadius + 1;
@@ -856,29 +867,236 @@ public class StarterHouseGenerator {
         int maxZ = placePos.getZ() + structureSize.getZ() + extend;
         int minY = placePos.getY();
         int maxY = placePos.getY() + structureSize.getY() + 10;
+        Set<BlockPos> protectedParts = findProtectedTreeParts(level, minX, maxX, minZ, maxZ);
         Set<BlockPos> visited = new HashSet<>();
 
         for (int x = minX; x < maxX; x++) {
             for (int z = minZ; z < maxZ; z++) {
                 for (int y = minY; y <= maxY; y++) {
                     BlockPos pos = new BlockPos(x, y, z);
-                    if (visited.contains(pos) || !isTreeBlock(level.getBlockState(pos))) {
+                    if (visited.contains(pos) || protectedParts.contains(pos)
+                            || !isTreeBlock(level.getBlockState(pos))) {
                         continue;
                     }
-                    clearTree(level, pos, visited);
+                    clearTree(level, pos, visited, protectedParts);
+                }
+            }
+        }
+        return protectedParts;
+    }
+
+    /**
+     * Finds the parts of trees whose trunks are outside the altered area. Leaves
+     * do not record which tree placed them, so a connected-canopy flood fill alone
+     * cannot distinguish adjacent trees. Starting from each outside trunk instead
+     * preserves every leaf that vanilla considers supported by that trunk.
+     */
+    private static Set<BlockPos> findProtectedTreeParts(ServerLevel level, int minX, int maxX,
+                                                         int minZ, int maxZ) {
+        Set<BlockPos> retainedLogs = new HashSet<>();
+        Set<BlockPos> removedLogs = new HashSet<>();
+        Set<BlockPos> visitedRetainedLogs = new HashSet<>();
+        Set<BlockPos> visitedRemovedLogs = new HashSet<>();
+
+        for (int x = minX - MAX_LEAF_DISTANCE; x < maxX + MAX_LEAF_DISTANCE; x++) {
+            for (int z = minZ - MAX_LEAF_DISTANCE; z < maxZ + MAX_LEAF_DISTANCE; z++) {
+                int groundY = findGroundY(level, x, z);
+                if (groundY == -1) {
+                    continue;
+                }
+                BlockPos trunkBase = new BlockPos(x, groundY, z);
+                if (!isTrunkBase(level, trunkBase)) {
+                    continue;
+                }
+                if (isInsideClearedArea(x, z, minX, maxX, minZ, maxZ)) {
+                    collectConnectedLogs(level, trunkBase, removedLogs, visitedRemovedLogs);
+                } else {
+                    collectConnectedLogs(level, trunkBase, retainedLogs, visitedRetainedLogs);
+                }
+            }
+        }
+
+        // Logs that directly connect an inside and outside trunk are ambiguous.
+        // Treat them as part of the removed tree so a shared branch cannot preserve
+        // an otherwise removable canopy.
+        retainedLogs.removeAll(removedLogs);
+
+        Map<BlockPos, Integer> retainedLeafDistances = findLeafDistances(level, retainedLogs);
+        Map<BlockPos, Integer> removedLeafDistances = findLeafDistances(level, removedLogs);
+        Set<BlockPos> protectedParts = new HashSet<>(retainedLogs);
+        for (Map.Entry<BlockPos, Integer> entry : retainedLeafDistances.entrySet()) {
+            int removedDistance = removedLeafDistances.getOrDefault(entry.getKey(),
+                    MAX_LEAF_DISTANCE + 1);
+            // A tie belongs to the removed tree. This trims the shared edge instead
+            // of leaving a curtain of leaves from the tree that was cut down.
+            if (entry.getValue() < removedDistance) {
+                protectedParts.add(entry.getKey());
+            }
+        }
+        return protectedParts;
+    }
+
+    private static boolean isInsideClearedArea(int x, int z, int minX, int maxX,
+                                               int minZ, int maxZ) {
+        return x >= minX && x < maxX && z >= minZ && z < maxZ;
+    }
+
+    /**
+     * A base log is anchored directly above the natural surface with another log
+     * above it. This excludes branches, so only trees rooted outside the cleared
+     * area contribute a protected canopy.
+     */
+    private static boolean isTrunkBase(ServerLevel level, BlockPos pos) {
+        return isTreeLog(level.getBlockState(pos))
+                && !isTreeLog(level.getBlockState(pos.below()))
+                && isTreeLog(level.getBlockState(pos.above()));
+    }
+
+    private static void collectConnectedLogs(ServerLevel level, BlockPos start,
+                                             Set<BlockPos> logs, Set<BlockPos> visited) {
+        ArrayDeque<BlockPos> pending = new ArrayDeque<>();
+        pending.add(start);
+        while (!pending.isEmpty()) {
+            BlockPos pos = pending.removeFirst();
+            if (!visited.add(pos) || !isTreeLog(level.getBlockState(pos))) {
+                continue;
+            }
+            logs.add(pos);
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dy = -1; dy <= 1; dy++) {
+                    for (int dz = -1; dz <= 1; dz++) {
+                        if (dx != 0 || dy != 0 || dz != 0) {
+                            pending.add(pos.offset(dx, dy, dz));
+                        }
+                    }
                 }
             }
         }
     }
 
-    private static void clearTree(ServerLevel level, BlockPos start, Set<BlockPos> visited) {
+    /**
+     * Returns the shortest leaf-path distance from any supplied log to each leaf
+     * of the matching species. Distances are calculated separately for retained
+     * and removed trees, which lets the caller assign a shared canopy to the
+     * nearest trunk instead of preserving it merely because some other tree is
+     * within vanilla's seven-block support distance.
+     */
+    private static Map<BlockPos, Integer> findLeafDistances(ServerLevel level, Set<BlockPos> logs) {
+        Map<BlockPos, Integer> distances = new HashMap<>();
+        for (BlockPos log : logs) {
+            collectLeafDistances(level, log, distances);
+        }
+        return distances;
+    }
+
+    private static void collectLeafDistances(ServerLevel level, BlockPos log,
+                                             Map<BlockPos, Integer> result) {
+        ArrayDeque<BlockPos> pending = new ArrayDeque<>();
+        Map<BlockPos, Integer> distances = new HashMap<>();
+        pending.add(log);
+        distances.put(log, 0);
+
+        while (!pending.isEmpty()) {
+            BlockPos pos = pending.removeFirst();
+            int distance = distances.get(pos);
+            if (distance == MAX_LEAF_DISTANCE) {
+                continue;
+            }
+            for (int[] direction : new int[][] {
+                    {1, 0, 0}, {-1, 0, 0}, {0, 1, 0},
+                    {0, -1, 0}, {0, 0, 1}, {0, 0, -1}}) {
+                BlockPos adjacent = pos.offset(direction[0], direction[1], direction[2]);
+                if (!isLeafForLog(level.getBlockState(log), level.getBlockState(adjacent))
+                        || distances.containsKey(adjacent)) {
+                    continue;
+                }
+                distances.put(adjacent, distance + 1);
+                result.merge(adjacent, distance + 1, Math::min);
+                pending.add(adjacent);
+            }
+        }
+    }
+
+    private static boolean isLeafForLog(BlockState log, BlockState leaf) {
+        if (isOakLog(log)) return leaf.is(Blocks.OAK_LEAVES);
+        if (isBirchLog(log)) return leaf.is(Blocks.BIRCH_LEAVES);
+        if (isSpruceLog(log)) return leaf.is(Blocks.SPRUCE_LEAVES);
+        if (isJungleLog(log)) return leaf.is(Blocks.JUNGLE_LEAVES);
+        if (isAcaciaLog(log)) return leaf.is(Blocks.ACACIA_LEAVES);
+        if (isDarkOakLog(log)) return leaf.is(Blocks.DARK_OAK_LEAVES);
+        if (isMangroveLog(log)) return leaf.is(Blocks.MANGROVE_LEAVES);
+        if (isCherryLog(log)) return leaf.is(Blocks.CHERRY_LEAVES);
+        return false;
+    }
+
+    private static boolean isOakLog(BlockState state) {
+        return state.is(Blocks.OAK_LOG) || state.is(Blocks.OAK_WOOD)
+                || state.is(Blocks.STRIPPED_OAK_LOG) || state.is(Blocks.STRIPPED_OAK_WOOD);
+    }
+
+    private static boolean isBirchLog(BlockState state) {
+        return state.is(Blocks.BIRCH_LOG) || state.is(Blocks.BIRCH_WOOD)
+                || state.is(Blocks.STRIPPED_BIRCH_LOG) || state.is(Blocks.STRIPPED_BIRCH_WOOD);
+    }
+
+    private static boolean isSpruceLog(BlockState state) {
+        return state.is(Blocks.SPRUCE_LOG) || state.is(Blocks.SPRUCE_WOOD)
+                || state.is(Blocks.STRIPPED_SPRUCE_LOG) || state.is(Blocks.STRIPPED_SPRUCE_WOOD);
+    }
+
+    private static boolean isJungleLog(BlockState state) {
+        return state.is(Blocks.JUNGLE_LOG) || state.is(Blocks.JUNGLE_WOOD)
+                || state.is(Blocks.STRIPPED_JUNGLE_LOG) || state.is(Blocks.STRIPPED_JUNGLE_WOOD);
+    }
+
+    private static boolean isAcaciaLog(BlockState state) {
+        return state.is(Blocks.ACACIA_LOG) || state.is(Blocks.ACACIA_WOOD)
+                || state.is(Blocks.STRIPPED_ACACIA_LOG) || state.is(Blocks.STRIPPED_ACACIA_WOOD);
+    }
+
+    private static boolean isDarkOakLog(BlockState state) {
+        return state.is(Blocks.DARK_OAK_LOG) || state.is(Blocks.DARK_OAK_WOOD)
+                || state.is(Blocks.STRIPPED_DARK_OAK_LOG) || state.is(Blocks.STRIPPED_DARK_OAK_WOOD);
+    }
+
+    private static boolean isMangroveLog(BlockState state) {
+        return state.is(Blocks.MANGROVE_LOG) || state.is(Blocks.MANGROVE_WOOD)
+                || state.is(Blocks.STRIPPED_MANGROVE_LOG) || state.is(Blocks.STRIPPED_MANGROVE_WOOD);
+    }
+
+    private static boolean isCherryLog(BlockState state) {
+        return state.is(Blocks.CHERRY_LOG) || state.is(Blocks.CHERRY_WOOD)
+                || state.is(Blocks.STRIPPED_CHERRY_LOG) || state.is(Blocks.STRIPPED_CHERRY_WOOD);
+    }
+
+
+    private static void clearDetachedProtectedLeaves(ServerLevel level, Set<BlockPos> protectedParts,
+                                                      BlockPos placePos,
+                                                      net.minecraft.core.Vec3i structureSize) {
+        int extend = 6; // foundation margin (2) + blend radius (3) + shape-update neighbor
+        int minX = placePos.getX() - extend;
+        int maxX = placePos.getX() + structureSize.getX() + extend;
+        int minZ = placePos.getZ() - extend;
+        int maxZ = placePos.getZ() + structureSize.getZ() + extend;
+        Set<BlockPos> connectedParts = findProtectedTreeParts(level, minX, maxX, minZ, maxZ);
+
+        for (BlockPos pos : protectedParts) {
+            if (!connectedParts.contains(pos) && level.getBlockState(pos).is(BlockTags.LEAVES)) {
+                level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2 | 16);
+            }
+        }
+    }
+
+    private static void clearTree(ServerLevel level, BlockPos start, Set<BlockPos> visited,
+                                  Set<BlockPos> protectedParts) {
         ArrayDeque<BlockPos> pending = new ArrayDeque<>();
         Set<BlockPos> tree = new HashSet<>();
         pending.add(start);
 
         while (!pending.isEmpty()) {
             BlockPos pos = pending.removeFirst();
-            if (!visited.add(pos) || !isTreePart(level.getBlockState(pos))) {
+            if (!visited.add(pos) || protectedParts.contains(pos)
+                    || !isTreePart(level.getBlockState(pos))) {
                 continue;
             }
             tree.add(pos);
@@ -905,7 +1123,11 @@ public class StarterHouseGenerator {
     }
 
     private static boolean isTreeBlock(BlockState state) {
-        return state.is(BlockTags.LEAVES) || state.is(BlockTags.LOGS);
+        return state.is(BlockTags.LEAVES) || isTreeLog(state);
+    }
+
+    private static boolean isTreeLog(BlockState state) {
+        return state.is(BlockTags.LOGS);
     }
 
     private static boolean isTreePart(BlockState state) {
