@@ -141,10 +141,10 @@ public class VillageConfigScreen extends Screen {
                 this.autoGenerateStarterHouse.getValue());
         VillageManager.setConfig(newConfig);
         Path configDir = VillageManager.getClientConfigDir();
-        if (configDir != null) {
-            VillageConfigWriter.save(configDir, newConfig);
+        boolean saved = configDir == null || VillageConfigWriter.save(configDir, newConfig);
+        if (saved) {
+            onClose();
         }
-        onClose();
     }
 
     private void resetToDefaults() {

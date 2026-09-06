@@ -13,7 +13,7 @@
   "config.beginnersdelight.option.respawn_at_house": "Respawn At House",
   "config.beginnersdelight.option.respawn_at_house.tooltip": "If ON, players who have no bed respawn at their village house instead of the world spawn.",
   "config.beginnersdelight.option.auto_generate_starter_house": "Generate Starter House By Default",
-  "config.beginnersdelight.option.auto_generate_starter_house.tooltip": "Default value of the starter house game rule for newly created worlds. Does not affect worlds that already exist.",
+  "config.beginnersdelight.option.auto_generate_starter_house.tooltip": "Default value of the starter house game rule for newly created worlds. Does not affect worlds that already exist. Changing this requires restarting the game to take effect.",
   "config.beginnersdelight.valid_range": "Valid range: %s - %s",
   "config.beginnersdelight.reset": "Reset to Defaults",
   "config.beginnersdelight.note_local": "Local settings: applied to worlds you host.",

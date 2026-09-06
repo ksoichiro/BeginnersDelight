@@ -13,7 +13,7 @@
   "config.beginnersdelight.option.respawn_at_house": "自宅でリスポーン",
   "config.beginnersdelight.option.respawn_at_house.tooltip": "ONの場合、ベッドを持たないプレイヤーはワールドスポーンではなく自分の村の家でリスポーンします。",
   "config.beginnersdelight.option.auto_generate_starter_house": "スターターハウスを既定で生成",
-  "config.beginnersdelight.option.auto_generate_starter_house.tooltip": "新しく作成するワールドにおけるスターターハウスのゲームルールの既定値。既に存在するワールドには影響しません。",
+  "config.beginnersdelight.option.auto_generate_starter_house.tooltip": "新しく作成するワールドにおけるスターターハウスのゲームルールの既定値。既に存在するワールドには影響しません。この設定を変更するにはゲームの再起動が必要です。",
   "config.beginnersdelight.valid_range": "有効範囲: %s ~ %s",
   "config.beginnersdelight.reset": "初期値に戻す",
   "config.beginnersdelight.note_local": "ローカル設定です。あなたがホストするワールドに適用されます。",
