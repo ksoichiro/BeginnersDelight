@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Allow data packs to extend the starter-house pool. Modpacks can add, remove, replace, and weight structure templates for both the world-spawn house and Village Mode player houses. Each entry can preserve the template's containers or opt into the normal starter loot. See `docs/datapack-structure-pools.md` for the versioned schema and examples
+- In-game settings screen for Village Mode (MC 26.2 only for now), reachable from the mod list, ModMenu (if installed), or an unbound keybinding — no external config-mod dependency required
 
 ### Fixed
 
