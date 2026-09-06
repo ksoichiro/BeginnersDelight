@@ -22,10 +22,13 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureManager;
 import net.minecraft.world.phys.AABB;
 
+import java.util.ArrayDeque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.Random;
 
 /**
@@ -56,6 +59,26 @@ public class VillageHouseGenerator {
             "starter_house4", "starter_house5"
     };
 
+    // Footprint relief above which a candidate site is rejected as too uneven
+    // (cliff/ravine/cave edge) for the terrain fill/blend to handle naturally.
+    private static final int MAX_FOOTPRINT_RELIEF = 10;
+
+    // How far fillFoundation reaches below the floor to fill the gap with ground
+    // blocks. Must cover the worst case: footprint relief (MAX_FOOTPRINT_RELIEF)
+    // plus the floor being raised further to clear adjacent water (up to 9, see
+    // findSurfacePosition), with a small buffer.
+    private static final int FOUNDATION_FILL_DEPTH = 20;
+
+    // The foundation extends two blocks beyond the template and the terrain blend
+    // extends another three. A cave in this band is just as visible as one below
+    // the house, but previously only the sampled corners were checked.
+    private static final int TERRAIN_SAFETY_MARGIN = 5;
+
+    // Vanilla leaves can remain attached at a distance of up to seven blocks from
+    // a log. Search this far beyond the altered area for trunks whose canopy must
+    // be preserved.
+    private static final int MAX_LEAF_DISTANCE = 7;
+
     public record PlacementResult(BlockPos interiorPos, BlockPos doorFrontPos) {}
 
     public static boolean isSuitable(ServerLevel level, BlockPos plotCenter, int maxHeightDiff) {
@@ -84,22 +107,49 @@ public class VillageHouseGenerator {
         // space. Terrain blending cannot produce sane results there.
         if (hasVoidBelow(level, centerX, centerZ, centerY)) return false;
 
-        int halfSize = 7;
-        int[][] corners = {
-                {centerX - halfSize, centerZ - halfSize},
-                {centerX + halfSize, centerZ - halfSize},
-                {centerX - halfSize, centerZ + halfSize},
-                {centerX + halfSize, centerZ + halfSize}
-        };
+        // Scan the whole approximate footprint plus the margin fillFoundation
+        // reshapes beyond it (not just the 4 corners): a spot flat at the corners but
+        // dropping away sharply in between, or hiding a void under an edge midpoint,
+        // used to pass this check and then get bridged into an unnaturally tall
+        // pillar or a patchwork of holes.
+        int halfSize = 7; // approximate half of structure footprint
+        int margin = 2;
+        int minX = centerX - halfSize - margin;
+        int maxX = centerX + halfSize + margin;
+        int minZ = centerZ - halfSize - margin;
+        int maxZ = centerZ + halfSize + margin;
         int minY = centerY, maxY = centerY;
-        for (int[] corner : corners) {
-            int y = findGroundY(level, corner[0], corner[1]);
-            if (y == -1) return false;
-            if (hasVoidBelow(level, corner[0], corner[1], y)) return false;
-            minY = Math.min(minY, y);
-            maxY = Math.max(maxY, y);
+        for (int x = minX; x <= maxX; x++) {
+            for (int z = minZ; z <= maxZ; z++) {
+                int y = findGroundY(level, x, z);
+                if (y == -1) return false;
+                if (hasVoidBelow(level, x, z, y)) return false;
+                minY = Math.min(minY, y);
+                maxY = Math.max(maxY, y);
+            }
         }
-        return (maxY - minY) <= maxHeightDiff;
+        if (maxY - minY > maxHeightDiff) return false;
+
+        // Also check the wider band that blendSurroundingTerrain reaches beyond the
+        // margin: fillFoundation leaves unsupported columns alone instead of bridging
+        // a cave, so a void there would otherwise survive as a hole next to an
+        // approved site.
+        return isTerrainBandVoidFree(level,
+                centerX - halfSize - TERRAIN_SAFETY_MARGIN, centerZ - halfSize - TERRAIN_SAFETY_MARGIN,
+                (halfSize + TERRAIN_SAFETY_MARGIN) * 2 + 1, (halfSize + TERRAIN_SAFETY_MARGIN) * 2 + 1);
+    }
+
+    private static boolean isTerrainBandVoidFree(ServerLevel level, int startX, int startZ,
+                                                  int sizeX, int sizeZ) {
+        for (int x = startX; x < startX + sizeX; x++) {
+            for (int z = startZ; z < startZ + sizeZ; z++) {
+                int groundY = findGroundY(level, x, z);
+                if (groundY == -1 || hasVoidBelow(level, x, z, groundY)) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     /**
@@ -191,7 +241,8 @@ public class VillageHouseGenerator {
         removeMobs(level, placePos, size);
         // Remember the thin ground cover (snow, moss carpet, ...) before clearing it
         Map<Long, BlockState> groundCover = captureGroundCover(level, placePos, size);
-        clearVegetation(level, placePos, size);
+        Set<BlockPos> protectedTreeParts = clearIntersectingTrees(level, placePos, size);
+        clearVegetation(level, placePos, size, protectedTreeParts);
         template.placeInWorld(level, placePos, placePos, settings, random, 2 | 16);
         removeDroppedItems(level, placePos, size);
         assignLootTables(level, placePos, size, random);
@@ -210,6 +261,11 @@ public class VillageHouseGenerator {
 
         // Put the snow/carpet cover back so the house does not sit in a bare patch
         restoreGroundCover(level, placePos, size, placePos.getY(), groundCover);
+
+        // Terrain shaping can replace the supporting log of a protected canopy.
+        // Remove only the leaves that lost their matching outside tree, rather than
+        // leaving a curtain of detached leaves down to the ground.
+        clearDetachedProtectedLeaves(level, protectedTreeParts, placePos, size);
         removeDroppedItems(level, placePos, size);
 
         BlockPos interiorPos = placePos.offset(size.getX() / 2, 1, size.getZ() / 2);
@@ -236,7 +292,8 @@ public class VillageHouseGenerator {
         // needs the same XZ area, and restoring it later reads the template's own Y
         // band to tell which columns the structure occupies.
         Map<Long, BlockState> groundCover = captureGroundCover(level, placePos, size);
-        removeMobs(level, placePos, size); clearVegetation(level, placePos, size);
+        removeMobs(level, placePos, size); Set<BlockPos> protectedTreeParts = clearIntersectingTrees(level, placePos, size);
+        clearVegetation(level, placePos, size, protectedTreeParts);
         template.placeInWorld(level, placePos, placePos, settings, random, 2 | 16);
         removeDroppedItems(level, placePos, size);
         ResourceLocation lootTable = DECORATION_LOOT_TABLES.get(structureName);
@@ -256,6 +313,9 @@ public class VillageHouseGenerator {
 
         // Put the snow/carpet cover back so the structure does not sit in a bare patch
         restoreGroundCover(level, placePos, size, surfacePos.getY(), groundCover);
+
+        // Terrain shaping can replace the supporting log of a protected canopy.
+        clearDetachedProtectedLeaves(level, protectedTreeParts, placePos, size);
         removeDroppedItems(level, surfacePos, size);
         BlockPos interiorPos = surfacePos.offset(size.getX() / 2, 1, size.getZ() / 2);
         BlockPos doorFrontPos = StructureDoorUtil.findDoorFrontPos(level, surfacePos, size);
@@ -263,33 +323,60 @@ public class VillageHouseGenerator {
     }
     public static String selectRandomDecoration(Random random) { return DECORATION_VARIANTS[random.nextInt(DECORATION_VARIANTS.length)]; }
 
+    /**
+     * Scans every column of the footprint (not just corners/center) to find the
+     * lowest and highest ground surface, skipping vegetation the same way
+     * {@link #findGroundY} does. Returns {@code null} -- rejecting the site -- when
+     * any column has no ground, sits over a void (see {@link #hasVoidBelow}), or
+     * the footprint's relief exceeds {@link #MAX_FOOTPRINT_RELIEF}, since filling
+     * up to the highest point would then have to bridge a cliff, ravine, or cave
+     * mouth instead of a natural slope.
+     *
+     * @return {@code {minY, maxY}} of the footprint's ground surface, or
+     *         {@code null} if the footprint is unsuitable
+     */
+    private static int[] scanFootprintHeights(ServerLevel level, int startX, int startZ,
+                                               int sizeX, int sizeZ) {
+        int minY = Integer.MAX_VALUE;
+        int maxY = Integer.MIN_VALUE;
+        for (int x = startX; x < startX + sizeX; x++) {
+            for (int z = startZ; z < startZ + sizeZ; z++) {
+                int y = findGroundY(level, x, z);
+                if (y == -1) return null;
+                if (hasVoidBelow(level, x, z, y)) return null;
+                if (y < minY) minY = y;
+                if (y > maxY) maxY = y;
+            }
+        }
+        if (maxY - minY > MAX_FOOTPRINT_RELIEF) return null;
+        return new int[]{minY, maxY};
+    }
+
+    /**
+     * Scans surface Y across every column of the footprint (skipping vegetation)
+     * and uses the highest point so the structure sits flush with the tallest
+     * terrain under it. The gap under lower columns is filled in by
+     * {@link #fillFoundation} instead, so slopes keep their natural shape rather
+     * than being carved flat down to the lowest point.
+     */
     private static BlockPos findSurfacePosition(ServerLevel level, BlockPos center, Vec3i structureSize) {
         int halfX = structureSize.getX() / 2;
         int halfZ = structureSize.getZ() / 2;
         int startX = center.getX() - halfX;
         int startZ = center.getZ() - halfZ;
-        int endX = startX + structureSize.getX() - 1;
-        int endZ = startZ + structureSize.getZ() - 1;
 
-        int[][] samplePoints = {
-                {center.getX(), center.getZ()},
-                {startX, startZ}, {endX, startZ},
-                {startX, endZ}, {endX, endZ}
-        };
+        int[] range = scanFootprintHeights(level, startX, startZ,
+                structureSize.getX(), structureSize.getZ());
+        if (range == null) return null;
+        int resultY = range[1];
 
-        int resultY = Integer.MAX_VALUE;
-        for (int[] point : samplePoints) {
-            int y = findGroundY(level, point[0], point[1]);
-            if (y == -1) return null;
-            if (y < resultY) resultY = y;
-        }
-        if (resultY == Integer.MAX_VALUE) return null;
         // Keep the floor above the water surface of any ocean/lake that reaches the
-        // area being reshaped. The lowest sample is often dry ground that still lies
-        // below the waterline of adjacent water (a shoreline slope), and since the
-        // surroundings get flattened down to the floor, that water then floods the
-        // building. Dry ground below sea level (deep valleys) is left at its real
-        // height so the building sits on the ground instead of floating.
+        // area being reshaped. Even the footprint's highest point can still sit
+        // below the waterline of adjacent water (e.g. a valley bottom next to the
+        // sea), and since the surroundings get flattened up to the floor, that
+        // water would otherwise flood the building. Dry ground below sea level (deep
+        // valleys with no adjacent water) is left at its real height so the building
+        // sits on the ground instead of floating.
         // Raising the floor widens the scanned band, so repeat until it comes out
         // clear; a handful of rounds is plenty for terrain that holds water.
         int floorY = resultY;
@@ -300,10 +387,12 @@ public class VillageHouseGenerator {
             }
             floorY = waterSurfaceY + 1;
         }
-        // fillFoundation reaches 10 blocks below the floor, so a bigger lift than that
-        // would leave the building standing on nothing. A spot needing one (water
-        // perched on a cliff right beside the footprint) cannot be drained by raising
-        // at all, so keep the building on the real ground rather than float it.
+        // fillFoundation fills at most FOUNDATION_FILL_DEPTH blocks below the floor,
+        // and up to MAX_FOOTPRINT_RELIEF of that is already spent reaching the
+        // footprint's lowest column, so a bigger lift than 9 here would leave part
+        // of the building standing on nothing. A spot needing one (water perched on
+        // a cliff right beside the footprint) cannot be drained by raising at all,
+        // so keep the building on the real ground rather than float it above a gap.
         if (floorY - resultY <= 9) {
             resultY = floorY;
         }
@@ -358,6 +447,20 @@ public class VillageHouseGenerator {
 
     private static boolean isThinGroundCover(BlockState state) {
         return state.is(Blocks.SNOW) || state.is(Blocks.MOSS_CARPET);
+    }
+
+    /**
+     * Returns true for short growth that always sits directly on the solid block
+     * beneath it: thin ground cover plus grass and flowers. Used by
+     * {@link #fillFoundation} to decide what to fill straight through, since
+     * clearVegetation and Phase 1 of fillFoundation only scan from floorY up, so
+     * cover sitting below floorY survives untouched and would otherwise stop the
+     * fill loop one block short, leaving it standing in as the floor.
+     */
+    private static boolean isFillableShortCover(BlockState state) {
+        return isThinGroundCover(state)
+                || state.is(BlockTags.FLOWERS)
+                || state.is(Blocks.TALL_GRASS) || state.is(Blocks.GRASS);
     }
 
     // Records the thin ground cover standing on every column about to be reshaped so
@@ -496,7 +599,8 @@ public class VillageHouseGenerator {
                 || isMushroom(state);
     }
 
-    private static void clearVegetation(ServerLevel level, BlockPos placePos, Vec3i structureSize) {
+    private static void clearVegetation(ServerLevel level, BlockPos placePos, Vec3i structureSize,
+                                         Set<BlockPos> protectedTreeParts) {
         int extend = 6;
         int minX = placePos.getX() - extend;
         int maxX = placePos.getX() + structureSize.getX() + extend;
@@ -509,7 +613,7 @@ public class VillageHouseGenerator {
                 for (int y = maxY; y >= minY; y--) {
                     BlockPos pos = new BlockPos(x, y, z);
                     BlockState state = level.getBlockState(pos);
-                    if (!state.isAir() && isVegetation(state)) {
+                    if (!state.isAir() && !protectedTreeParts.contains(pos) && isVegetation(state)) {
                         level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2 | 16);
                     }
                 }
@@ -551,6 +655,274 @@ public class VillageHouseGenerator {
             if (!isNonGroundPlant(level.getBlockState(pos))) break;
             level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2 | 16);
         }
+    }
+
+    private static Set<BlockPos> clearIntersectingTrees(ServerLevel level, BlockPos placePos,
+                                                        net.minecraft.core.Vec3i structureSize) {
+        int margin = 2;
+        int blendRadius = 3;
+        int extend = margin + blendRadius + 1;
+        int minX = placePos.getX() - extend;
+        int maxX = placePos.getX() + structureSize.getX() + extend;
+        int minZ = placePos.getZ() - extend;
+        int maxZ = placePos.getZ() + structureSize.getZ() + extend;
+        int minY = placePos.getY();
+        int maxY = placePos.getY() + structureSize.getY() + 10;
+        Set<BlockPos> protectedParts = findProtectedTreeParts(level, minX, maxX, minZ, maxZ);
+        Set<BlockPos> visited = new HashSet<>();
+
+        for (int x = minX; x < maxX; x++) {
+            for (int z = minZ; z < maxZ; z++) {
+                for (int y = minY; y <= maxY; y++) {
+                    BlockPos pos = new BlockPos(x, y, z);
+                    if (visited.contains(pos) || protectedParts.contains(pos)
+                            || !isTreeBlock(level.getBlockState(pos))) {
+                        continue;
+                    }
+                    clearTree(level, pos, visited, protectedParts);
+                }
+            }
+        }
+        return protectedParts;
+    }
+
+    /**
+     * Finds the parts of trees whose trunks are outside the altered area. Leaves
+     * do not record which tree placed them, so a connected-canopy flood fill alone
+     * cannot distinguish adjacent trees. Starting from each outside trunk instead
+     * preserves every leaf that vanilla considers supported by that trunk.
+     */
+    private static Set<BlockPos> findProtectedTreeParts(ServerLevel level, int minX, int maxX,
+                                                         int minZ, int maxZ) {
+        Set<BlockPos> retainedLogs = new HashSet<>();
+        Set<BlockPos> removedLogs = new HashSet<>();
+        Set<BlockPos> visitedRetainedLogs = new HashSet<>();
+        Set<BlockPos> visitedRemovedLogs = new HashSet<>();
+
+        for (int x = minX - MAX_LEAF_DISTANCE; x < maxX + MAX_LEAF_DISTANCE; x++) {
+            for (int z = minZ - MAX_LEAF_DISTANCE; z < maxZ + MAX_LEAF_DISTANCE; z++) {
+                int groundY = findGroundY(level, x, z);
+                if (groundY == -1) {
+                    continue;
+                }
+                BlockPos trunkBase = new BlockPos(x, groundY, z);
+                if (!isTrunkBase(level, trunkBase)) {
+                    continue;
+                }
+                if (isInsideClearedArea(x, z, minX, maxX, minZ, maxZ)) {
+                    collectConnectedLogs(level, trunkBase, removedLogs, visitedRemovedLogs);
+                } else {
+                    collectConnectedLogs(level, trunkBase, retainedLogs, visitedRetainedLogs);
+                }
+            }
+        }
+
+        // Logs that directly connect an inside and outside trunk are ambiguous.
+        // Treat them as part of the removed tree so a shared branch cannot preserve
+        // an otherwise removable canopy.
+        retainedLogs.removeAll(removedLogs);
+
+        Map<BlockPos, Integer> retainedLeafDistances = findLeafDistances(level, retainedLogs);
+        Map<BlockPos, Integer> removedLeafDistances = findLeafDistances(level, removedLogs);
+        Set<BlockPos> protectedParts = new HashSet<>(retainedLogs);
+        for (Map.Entry<BlockPos, Integer> entry : retainedLeafDistances.entrySet()) {
+            int removedDistance = removedLeafDistances.getOrDefault(entry.getKey(),
+                    MAX_LEAF_DISTANCE + 1);
+            // A tie belongs to the removed tree. This trims the shared edge instead
+            // of leaving a curtain of leaves from the tree that was cut down.
+            if (entry.getValue() < removedDistance) {
+                protectedParts.add(entry.getKey());
+            }
+        }
+        return protectedParts;
+    }
+
+    private static boolean isInsideClearedArea(int x, int z, int minX, int maxX,
+                                               int minZ, int maxZ) {
+        return x >= minX && x < maxX && z >= minZ && z < maxZ;
+    }
+
+    /**
+     * A base log is anchored directly above the natural surface with another log
+     * above it. This excludes branches, so only trees rooted outside the cleared
+     * area contribute a protected canopy.
+     */
+    private static boolean isTrunkBase(ServerLevel level, BlockPos pos) {
+        return isTreeLog(level.getBlockState(pos))
+                && !isTreeLog(level.getBlockState(pos.below()))
+                && isTreeLog(level.getBlockState(pos.above()));
+    }
+
+    private static void collectConnectedLogs(ServerLevel level, BlockPos start,
+                                             Set<BlockPos> logs, Set<BlockPos> visited) {
+        ArrayDeque<BlockPos> pending = new ArrayDeque<>();
+        pending.add(start);
+        while (!pending.isEmpty()) {
+            BlockPos pos = pending.removeFirst();
+            if (!visited.add(pos) || !isTreeLog(level.getBlockState(pos))) {
+                continue;
+            }
+            logs.add(pos);
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dy = -1; dy <= 1; dy++) {
+                    for (int dz = -1; dz <= 1; dz++) {
+                        if (dx != 0 || dy != 0 || dz != 0) {
+                            pending.add(pos.offset(dx, dy, dz));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Returns the shortest leaf-path distance from any supplied log to each leaf
+     * of the matching species. Distances are calculated separately for retained
+     * and removed trees, which lets the caller assign a shared canopy to the
+     * nearest trunk instead of preserving it merely because some other tree is
+     * within vanilla's seven-block support distance.
+     */
+    private static Map<BlockPos, Integer> findLeafDistances(ServerLevel level, Set<BlockPos> logs) {
+        Map<BlockPos, Integer> distances = new HashMap<>();
+        for (BlockPos log : logs) {
+            collectLeafDistances(level, log, distances);
+        }
+        return distances;
+    }
+
+    private static void collectLeafDistances(ServerLevel level, BlockPos log,
+                                             Map<BlockPos, Integer> result) {
+        ArrayDeque<BlockPos> pending = new ArrayDeque<>();
+        Map<BlockPos, Integer> distances = new HashMap<>();
+        pending.add(log);
+        distances.put(log, 0);
+
+        while (!pending.isEmpty()) {
+            BlockPos pos = pending.removeFirst();
+            int distance = distances.get(pos);
+            if (distance == MAX_LEAF_DISTANCE) {
+                continue;
+            }
+            for (int[] direction : new int[][] {
+                    {1, 0, 0}, {-1, 0, 0}, {0, 1, 0},
+                    {0, -1, 0}, {0, 0, 1}, {0, 0, -1}}) {
+                BlockPos adjacent = pos.offset(direction[0], direction[1], direction[2]);
+                if (!isLeafForLog(level.getBlockState(log), level.getBlockState(adjacent))
+                        || distances.containsKey(adjacent)) {
+                    continue;
+                }
+                distances.put(adjacent, distance + 1);
+                result.merge(adjacent, distance + 1, Math::min);
+                pending.add(adjacent);
+            }
+        }
+    }
+
+    private static boolean isLeafForLog(BlockState log, BlockState leaf) {
+        if (isOakLog(log)) return leaf.is(Blocks.OAK_LEAVES);
+        if (isBirchLog(log)) return leaf.is(Blocks.BIRCH_LEAVES);
+        if (isSpruceLog(log)) return leaf.is(Blocks.SPRUCE_LEAVES);
+        if (isJungleLog(log)) return leaf.is(Blocks.JUNGLE_LEAVES);
+        if (isAcaciaLog(log)) return leaf.is(Blocks.ACACIA_LEAVES);
+        if (isDarkOakLog(log)) return leaf.is(Blocks.DARK_OAK_LEAVES);
+        return false;
+    }
+
+    private static boolean isOakLog(BlockState state) {
+        return state.is(Blocks.OAK_LOG) || state.is(Blocks.OAK_WOOD)
+                || state.is(Blocks.STRIPPED_OAK_LOG) || state.is(Blocks.STRIPPED_OAK_WOOD);
+    }
+
+    private static boolean isBirchLog(BlockState state) {
+        return state.is(Blocks.BIRCH_LOG) || state.is(Blocks.BIRCH_WOOD)
+                || state.is(Blocks.STRIPPED_BIRCH_LOG) || state.is(Blocks.STRIPPED_BIRCH_WOOD);
+    }
+
+    private static boolean isSpruceLog(BlockState state) {
+        return state.is(Blocks.SPRUCE_LOG) || state.is(Blocks.SPRUCE_WOOD)
+                || state.is(Blocks.STRIPPED_SPRUCE_LOG) || state.is(Blocks.STRIPPED_SPRUCE_WOOD);
+    }
+
+    private static boolean isJungleLog(BlockState state) {
+        return state.is(Blocks.JUNGLE_LOG) || state.is(Blocks.JUNGLE_WOOD)
+                || state.is(Blocks.STRIPPED_JUNGLE_LOG) || state.is(Blocks.STRIPPED_JUNGLE_WOOD);
+    }
+
+    private static boolean isAcaciaLog(BlockState state) {
+        return state.is(Blocks.ACACIA_LOG) || state.is(Blocks.ACACIA_WOOD)
+                || state.is(Blocks.STRIPPED_ACACIA_LOG) || state.is(Blocks.STRIPPED_ACACIA_WOOD);
+    }
+
+    private static boolean isDarkOakLog(BlockState state) {
+        return state.is(Blocks.DARK_OAK_LOG) || state.is(Blocks.DARK_OAK_WOOD)
+                || state.is(Blocks.STRIPPED_DARK_OAK_LOG) || state.is(Blocks.STRIPPED_DARK_OAK_WOOD);
+    }
+
+
+
+
+    private static void clearDetachedProtectedLeaves(ServerLevel level, Set<BlockPos> protectedParts,
+                                                      BlockPos placePos,
+                                                      net.minecraft.core.Vec3i structureSize) {
+        int extend = 6; // foundation margin (2) + blend radius (3) + shape-update neighbor
+        int minX = placePos.getX() - extend;
+        int maxX = placePos.getX() + structureSize.getX() + extend;
+        int minZ = placePos.getZ() - extend;
+        int maxZ = placePos.getZ() + structureSize.getZ() + extend;
+        Set<BlockPos> connectedParts = findProtectedTreeParts(level, minX, maxX, minZ, maxZ);
+
+        for (BlockPos pos : protectedParts) {
+            if (!connectedParts.contains(pos) && level.getBlockState(pos).is(BlockTags.LEAVES)) {
+                level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2 | 16);
+            }
+        }
+    }
+
+    private static void clearTree(ServerLevel level, BlockPos start, Set<BlockPos> visited,
+                                  Set<BlockPos> protectedParts) {
+        ArrayDeque<BlockPos> pending = new ArrayDeque<>();
+        Set<BlockPos> tree = new HashSet<>();
+        pending.add(start);
+
+        while (!pending.isEmpty()) {
+            BlockPos pos = pending.removeFirst();
+            if (!visited.add(pos) || protectedParts.contains(pos)
+                    || !isTreePart(level.getBlockState(pos))) {
+                continue;
+            }
+            tree.add(pos);
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dy = -1; dy <= 1; dy++) {
+                    for (int dz = -1; dz <= 1; dz++) {
+                        if (dx != 0 || dy != 0 || dz != 0) {
+                            pending.add(pos.offset(dx, dy, dz));
+                        }
+                    }
+                }
+            }
+        }
+
+        for (BlockPos pos : tree) {
+            // UPDATE_KNOWN_SHAPE suppresses the usual support check, so snow resting
+            // on a removed leaf/log would otherwise remain floating in the air.
+            BlockPos above = pos.above();
+            if (isSnowCover(level.getBlockState(above))) {
+                level.setBlock(above, Blocks.AIR.defaultBlockState(), 2 | 16);
+            }
+            level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2 | 16);
+        }
+    }
+
+    private static boolean isTreeBlock(BlockState state) {
+        return state.is(BlockTags.LEAVES) || isTreeLog(state);
+    }
+
+    private static boolean isTreeLog(BlockState state) {
+        return state.is(BlockTags.LOGS);
+    }
+
+    private static boolean isTreePart(BlockState state) {
+        return isTreeBlock(state) || state.is(Blocks.VINE);
     }
 
     private static void removeMobs(ServerLevel level, BlockPos placePos, Vec3i structureSize) {
@@ -677,15 +1049,16 @@ public class VillageHouseGenerator {
                 // Skip columns over a void (no solid ground within reach): filling here would
                 // leave floating dirt above a cave.
                 boolean solidWithinReach = false;
-                for (int sy = floorY - 1; sy >= floorY - 10; sy--) {
+                for (int sy = floorY - 1; sy >= floorY - FOUNDATION_FILL_DEPTH; sy--) {
                     BlockState below = level.getBlockState(new BlockPos(x, sy, z));
                     if (!below.isAir() && below.getFluidState().isEmpty()) { solidWithinReach = true; break; }
                 }
                 if (!solidWithinReach) continue;
-                for (int y = floorY - 1; y >= floorY - 10; y--) {
+                for (int y = floorY - 1; y >= floorY - FOUNDATION_FILL_DEPTH; y--) {
                     BlockPos pos = new BlockPos(x, y, z);
                     BlockState existing = level.getBlockState(pos);
-                    if (!existing.isAir() && existing.getFluidState().isEmpty()) break;
+                    if (!existing.isAir() && existing.getFluidState().isEmpty()
+                            && !isFillableShortCover(existing)) break;
                     level.setBlock(pos, (y == floorY - 1) ? surfaceBlock : subsurfaceBlock, 2);
                 }
             }
@@ -864,21 +1237,12 @@ public class VillageHouseGenerator {
 
         BlockState dominantBlock = detectDominantSurfaceBlock(level, placePos, structureSize, margin);
         BlockState surfaceBlock = mapToSurfaceBlock(dominantBlock);
+        BlockState subsurfaceBlock = mapToSubsurfaceBlock(surfaceBlock);
 
         // Only process corner points that were skipped by isOutsideChamfer
         for (int x = strMinX - margin; x < strMaxX + margin; x++) {
             for (int z = strMinZ - margin; z < strMaxZ + margin; z++) {
                 if (isOutsideChamfer(x, z, strMinX, strMaxX, strMinZ, strMaxZ, margin)) {
-                    // Find the top of the pillar (scan upward from floorY)
-                    int pillarTop = floorY;
-                    for (int y = floorY; y < floorY + 50; y++) {
-                        if (!level.getBlockState(new BlockPos(x, y, z)).isAir()) {
-                            pillarTop = y + 1;
-                        } else {
-                            break;
-                        }
-                    }
-
                     // Find target Y by sampling adjacent non-corner points
                     // that were already processed by blendSurroundingTerrain
                     int targetY = floorY;
@@ -909,18 +1273,33 @@ public class VillageHouseGenerator {
                         targetY = floorY;
                     }
 
-                    // Carve down to target level
-                    for (int y = targetY; y < pillarTop; y++) {
-                        level.setBlock(new BlockPos(x, y, z), Blocks.AIR.defaultBlockState(), 2);
-                    }
+                    int naturalY = findGroundY(level, x, z);
+                    if (naturalY == -1) continue;
 
-                    // Place surface block at target level
-                    if (targetY > level.getMinBuildHeight()) {
-                        // Don't leave a lone surface block floating over a void: only cap
-                        // when there is solid support directly beneath it.
-                        BlockState capSupport = level.getBlockState(new BlockPos(x, targetY - 2, z));
-                        if (!capSupport.isAir() && capSupport.getFluidState().isEmpty()) {
-                            level.setBlock(new BlockPos(x, targetY - 1, z), surfaceBlock, 2);
+                    if (naturalY > targetY) {
+                        // Terrain higher than target: carve down to create a flat corner
+                        clearTallPlantColumn(level, x, z, naturalY);
+                        for (int y = targetY; y < naturalY; y++) {
+                            level.setBlock(new BlockPos(x, y, z), Blocks.AIR.defaultBlockState(), 2);
+                        }
+                        // Place surface block at target level. Don't leave a lone surface
+                        // block floating over a void: only cap when there is solid support
+                        // directly beneath it.
+                        if (targetY > level.getMinBuildHeight()) {
+                            BlockState capSupport = level.getBlockState(new BlockPos(x, targetY - 2, z));
+                            if (!capSupport.isAir() && capSupport.getFluidState().isEmpty()) {
+                                level.setBlock(new BlockPos(x, targetY - 1, z), surfaceBlock, 2);
+                            }
+                        }
+                    } else if (naturalY < targetY) {
+                        // Don't bridge cliffs/voids: same guard as blendSurroundingTerrain.
+                        if (targetY - naturalY > 6) continue;
+                        // Terrain lower than target: fill up to close the gap left at this
+                        // chamfered corner instead of leaving it hollow.
+                        clearTallPlantColumn(level, x, z, naturalY);
+                        for (int y = naturalY; y < targetY; y++) {
+                            BlockState fill = (y == targetY - 1) ? surfaceBlock : subsurfaceBlock;
+                            level.setBlock(new BlockPos(x, y, z), fill, 2);
                         }
                     }
                 }

@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Stop starter-house tree clearing from removing the canopy of neighboring trees or leaving detached leaf remnants behind. Leaves are now assigned to the nearest matching tree trunk, so only the canopy belonging to trees in the terrain-shaping area is removed
 - Stop the starter house from towering over the surrounding terrain on top of a narrow natural spire. Site suitability only checked the footprint's own unevenness, not the margin foundation filling also reshapes around it, so a flat-topped spire passed the check and got filled straight down into an unnaturally tall pillar; that margin is now checked too, and such sites are avoided like existing cliffs and caves
 - Stop cactus and cactus flower items from being left around newly generated houses. Cactus columns in the terrain-shaping area, including those that could lose support through an adjacent block update, are now cleared before the terrain changes
+- Apply the same terrain fixes to Village Mode's houses and decorations as the starter house: entire intersecting trees are now cleared instead of leaving cut trunks or floating leaves, site suitability also checks the margin that terrain filling reshapes (not just the footprint corners), and foundation filling no longer stops a block short on leftover snow, grass or flowers below the floor
+- Stop Village Mode's houses and decorations from carving a large flattened pad into a hillside. Placement now levels up to the footprint's highest point and fills in the low side instead of digging down to the lowest, so a sloped build site keeps its shape instead of being excavated flat
 
 ## [0.6.0] - 2026-08-25
 
