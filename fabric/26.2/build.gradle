@@ -38,6 +38,21 @@ dependencies {
     shadowBundle project(path: commonModule, configuration: 'transformProductionFabric')
 }
 
+// Optional ModMenu integration: compile-time only, and only when
+// props/26.2.properties declares modmenu_version.
+if (project.hasProperty('modmenu_version')) {
+    repositories {
+        maven {
+            name = 'Modrinth'
+            url = 'https://api.modrinth.com/maven'
+            content { includeGroup 'maven.modrinth' }
+        }
+    }
+    dependencies {
+        compileOnly "maven.modrinth:modmenu:${modmenu_version}"
+    }
+}
+
 sourceSets {
     main {
         java {
