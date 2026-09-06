@@ -77,15 +77,6 @@ public class StarterHouseGenerator {
     // be preserved.
     private static final int MAX_LEAF_DISTANCE = 7;
 
-    private static final String[] STRUCTURE_VARIANTS = {
-            "starter_house1",
-            "starter_house2",
-            "starter_house3",
-            "starter_house4",
-            "starter_house5",
-            "starter_house6"
-    };
-
     /**
      * Attempts to generate the starter house at the world spawn point.
      * Does nothing if the house has already been generated.
@@ -127,10 +118,14 @@ public class StarterHouseGenerator {
         StructureTemplateManager templateManager = level.getStructureManager();
         RandomSource random = level.getRandom();
 
-        // Randomly select a structure variant
-        String variant = STRUCTURE_VARIANTS[random.nextInt(STRUCTURE_VARIANTS.length)];
-        Identifier structureId = Identifier.fromNamespaceAndPath(
-                BeginnersDelight.MOD_ID, variant);
+        Optional<StarterHousePool.Entry> entryOpt = StarterHousePool.select(
+                level.getServer().getResourceManager(), random);
+        if (entryOpt.isEmpty()) {
+            BeginnersDelight.LOGGER.error("Starter house pool has no usable entries");
+            return false;
+        }
+        StarterHousePool.Entry entry = entryOpt.get();
+        Identifier structureId = entry.template();
 
         Optional<StructureTemplate> templateOpt = templateManager.get(structureId);
         if (templateOpt.isEmpty()) {
@@ -152,7 +147,7 @@ public class StarterHouseGenerator {
             return false;
         }
 
-        BeginnersDelight.LOGGER.info("Placing structure '{}' at {}", variant, placePos);
+        BeginnersDelight.LOGGER.info("Placing structure '{}' at {}", structureId, placePos);
 
         // Remove mobs from the area to prevent them from being trapped
         // inside blocks during structure placement
@@ -178,8 +173,9 @@ public class StarterHouseGenerator {
         // Remove any item entities that were dropped during structure placement
         removeDroppedItems(level, placePos, template.getSize());
 
-        // Assign loot table to any chests placed by the structure template
-        assignLootTables(level, placePos, template.getSize(), random);
+        if (entry.lootMode() == StarterHousePool.LootMode.STARTER) {
+            assignLootTables(level, placePos, template.getSize(), random);
+        }
 
         // Blend surrounding terrain first so the terrain around the foundation
         // is flat before filling. This prevents corner pillars from being too high.
@@ -617,7 +613,8 @@ public class StarterHouseGenerator {
                 for (int z = placePos.getZ(); z < placePos.getZ() + structureSize.getZ(); z++) {
                     BlockPos pos = new BlockPos(x, y, z);
                     BlockEntity blockEntity = level.getBlockEntity(pos);
-                    if (blockEntity instanceof RandomizableContainerBlockEntity container) {
+                    if (blockEntity instanceof RandomizableContainerBlockEntity container
+                            && container.getLootTable() == null && container.isEmpty()) {
                         ResourceKey<LootTable> loot = pos.equals(primaryPos)
                                 ? STARTER_HOUSE_LOOT : STARTER_HOUSE_SUPPLIES_LOOT;
                         container.setLootTable(loot, random.nextLong());
@@ -643,7 +640,8 @@ public class StarterHouseGenerator {
                 for (int z = placePos.getZ(); z < placePos.getZ() + structureSize.getZ(); z++) {
                     BlockPos pos = new BlockPos(x, y, z);
                     BlockEntity blockEntity = level.getBlockEntity(pos);
-                    if (!(blockEntity instanceof RandomizableContainerBlockEntity)) {
+                    if (!(blockEntity instanceof RandomizableContainerBlockEntity container)
+                            || container.getLootTable() != null || !container.isEmpty()) {
                         continue;
                     }
                     if (blockEntity instanceof ChestBlockEntity) {

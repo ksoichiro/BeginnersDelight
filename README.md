@@ -11,6 +11,7 @@ A multi-loader Minecraft mod that generates a small starter house at the world s
 - **Starter House at Spawn**: Automatically generates a small shelter at the world spawn point on first world creation
 - **Survival Essentials**: The house includes a bed, a chest or barrel with starter items (food, tools, torches), and lighting. Designs with more than one container fill the extra ones with supplies (coal, oak planks, torches, wheat seeds) instead of a duplicate starter kit
 - **Multiple Variants**: Randomly selects from multiple house designs for variety
+- **Data Pack Structure Pools**: Modpacks can add, remove, replace, and weight starter-house templates. See [the data pack structure pool guide](docs/datapack-structure-pools.md)
 - **Multiplayer Support**: All players spawn at the same location with the starter house
 - **Safe Removal**: Uses only vanilla blocks, so the structure remains intact even after removing the mod
 - **No Regeneration**: The house is generated only once and never duplicated

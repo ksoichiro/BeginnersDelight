@@ -2,7 +2,9 @@ package com.beginnersdelight.village;
 
 import com.beginnersdelight.BeginnersDelight;
 import com.beginnersdelight.util.StructureDoorUtil;
+import com.beginnersdelight.worldgen.StarterHousePool;
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.core.Vec3i;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -214,8 +216,10 @@ public class VillageHouseGenerator {
         StructureTemplateManager templateManager = level.getStructureManager();
         RandomSource random = level.getRandom();
 
-        String variant = STRUCTURE_VARIANTS[random.nextInt(STRUCTURE_VARIANTS.length)];
-        ResourceLocation structureId = new ResourceLocation(BeginnersDelight.MOD_ID, variant);
+        Optional<StarterHousePool.Entry> entryOpt = StarterHousePool.select(level.getServer().getResourceManager(), random);
+        if (entryOpt.isEmpty()) return Optional.empty();
+        StarterHousePool.Entry entry = entryOpt.get();
+        ResourceLocation structureId = new ResourceLocation(entry.template().toString());
 
         Optional<StructureTemplate> templateOpt = templateManager.get(structureId);
         if (templateOpt.isEmpty()) {
@@ -235,7 +239,7 @@ public class VillageHouseGenerator {
             return Optional.empty();
         }
 
-        BeginnersDelight.LOGGER.info("Placing village house '{}' at {}", variant, placePos);
+        BeginnersDelight.LOGGER.info("Placing village house '{}' at {}", structureId, placePos);
 
         Vec3i size = template.getSize();
         removeMobs(level, placePos, size);
@@ -245,7 +249,7 @@ public class VillageHouseGenerator {
         clearVegetation(level, placePos, size, protectedTreeParts);
         template.placeInWorld(level, placePos, placePos, settings, random, 2 | 16);
         removeDroppedItems(level, placePos, size);
-        assignLootTables(level, placePos, size, random);
+        if (entry.lootMode() == StarterHousePool.LootMode.STARTER) assignLootTables(level, placePos, size, random);
         // Blend surrounding terrain first so the terrain around the foundation
         // is flat before filling. This prevents corner pillars from being too high.
         blendSurroundingTerrain(level, placePos, size);
@@ -965,7 +969,8 @@ public class VillageHouseGenerator {
                 for (int z = placePos.getZ(); z < placePos.getZ() + structureSize.getZ(); z++) {
                     BlockPos pos = new BlockPos(x, y, z);
                     BlockEntity blockEntity = level.getBlockEntity(pos);
-                    if (blockEntity instanceof RandomizableContainerBlockEntity container) {
+                    if (blockEntity instanceof RandomizableContainerBlockEntity container
+                            && !hasExistingLootTable(container) && container.isEmpty()) {
                         ResourceLocation loot = pos.equals(primaryPos)
                                 ? STARTER_HOUSE_LOOT : STARTER_HOUSE_SUPPLIES_LOOT;
                         container.setLootTable(loot, random.nextLong());
@@ -990,7 +995,8 @@ public class VillageHouseGenerator {
                 for (int z = placePos.getZ(); z < placePos.getZ() + structureSize.getZ(); z++) {
                     BlockPos pos = new BlockPos(x, y, z);
                     BlockEntity blockEntity = level.getBlockEntity(pos);
-                    if (!(blockEntity instanceof RandomizableContainerBlockEntity)) {
+                    if (!(blockEntity instanceof RandomizableContainerBlockEntity container)
+                            || hasExistingLootTable(container) || !container.isEmpty()) {
                         continue;
                     }
                     if (blockEntity instanceof ChestBlockEntity) {
@@ -1003,6 +1009,10 @@ public class VillageHouseGenerator {
             }
         }
         return firstContainer;
+    }
+
+    private static boolean hasExistingLootTable(RandomizableContainerBlockEntity container) {
+        return container.saveWithFullMetadata().contains("LootTable", 8);
     }
     private static void assignLootTablesWithKey(ServerLevel level, BlockPos placePos, Vec3i structureSize,
                                                  RandomSource random, ResourceLocation lootKey) {

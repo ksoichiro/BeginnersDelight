@@ -2,8 +2,10 @@ package com.beginnersdelight.village;
 
 import com.beginnersdelight.BeginnersDelight;
 import com.beginnersdelight.util.StructureDoorUtil;
+import com.beginnersdelight.worldgen.StarterHousePool;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BlockTags;
@@ -239,8 +241,10 @@ public class VillageHouseGenerator {
         StructureManager templateManager = level.getStructureManager();
         Random random = level.getRandom();
 
-        String variant = STRUCTURE_VARIANTS[random.nextInt(STRUCTURE_VARIANTS.length)];
-        ResourceLocation structureId = new ResourceLocation(BeginnersDelight.MOD_ID, variant);
+        Optional<StarterHousePool.Entry> entryOpt = StarterHousePool.select(level.getServer(), random);
+        if (!entryOpt.isPresent()) return Optional.empty();
+        StarterHousePool.Entry entry = entryOpt.get();
+        ResourceLocation structureId = entry.template();
 
         // In 1.16.5, get() returns StructureTemplate directly (not Optional)
         StructureTemplate template = templateManager.get(structureId);
@@ -260,7 +264,7 @@ public class VillageHouseGenerator {
             return Optional.empty();
         }
 
-        BeginnersDelight.LOGGER.info("Placing village house '{}' at {}", variant, placePos);
+        BeginnersDelight.LOGGER.info("Placing village house '{}' at {}", structureId, placePos);
 
         Vec3i size = template.getSize();
         removeMobs(level, placePos, size);
@@ -271,7 +275,7 @@ public class VillageHouseGenerator {
         // In 1.16.5, placeInWorld takes 4 params (no pivotPos, no flags)
         template.placeInWorld(level, placePos, settings, random);
         removeDroppedItems(level, placePos, size);
-        assignLootTables(level, placePos, size, random);
+        if (entry.lootMode() == StarterHousePool.LootMode.STARTER) assignLootTables(level, placePos, size, random);
         // Blend surrounding terrain first so the terrain around the foundation
         // is flat before filling. This prevents corner pillars from being too high.
         blendSurroundingTerrain(level, placePos, size);
@@ -993,6 +997,7 @@ public class VillageHouseGenerator {
                     BlockEntity blockEntity = level.getBlockEntity(pos);
                     if (blockEntity instanceof RandomizableContainerBlockEntity) {
                         RandomizableContainerBlockEntity container = (RandomizableContainerBlockEntity) blockEntity;
+                        if (hasExistingLootTable(container) || !container.isEmpty()) continue;
                         ResourceLocation loot = pos.equals(primaryPos)
                                 ? STARTER_HOUSE_LOOT : STARTER_HOUSE_SUPPLIES_LOOT;
                         container.setLootTable(loot, random.nextLong());
@@ -1020,6 +1025,8 @@ public class VillageHouseGenerator {
                     if (!(blockEntity instanceof RandomizableContainerBlockEntity)) {
                         continue;
                     }
+                    RandomizableContainerBlockEntity container = (RandomizableContainerBlockEntity) blockEntity;
+                    if (hasExistingLootTable(container) || !container.isEmpty()) continue;
                     if (blockEntity instanceof ChestBlockEntity) {
                         return pos;
                     }
@@ -1030,6 +1037,10 @@ public class VillageHouseGenerator {
             }
         }
         return firstContainer;
+    }
+
+    private static boolean hasExistingLootTable(RandomizableContainerBlockEntity container) {
+        return container.save(new CompoundTag()).contains("LootTable", 8);
     }
     private static void assignLootTablesWithKey(ServerLevel level, BlockPos placePos, Vec3i structureSize,
                                                  Random random, ResourceLocation lootKey) {
