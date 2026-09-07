@@ -18,6 +18,12 @@ Beginner's Delight automatically generates a small starter house at the world sp
 - **Multiple Designs**: Randomly selects from several house variants for variety
 - **Terrain Adaptive**: Placement adjusts to the local terrain surface
 
+### 🧩 Data Pack Structure Pools
+- **Modpack-friendly templates**: Add, remove, replace, and weight starter-house templates with a data pack
+- **Loot control per template**: Preserve the containers authored in a structure NBT, or opt into Beginner's Delight starter loot for otherwise empty containers
+- **Village Mode included**: The same pool is used for Village Mode player houses
+- **Guide and examples**: See the [data pack structure pool guide](https://github.com/ksoichiro/BeginnersDelight/blob/main/docs/datapack-structure-pools.md)
+
 ### 📦 Starter Supplies
 The starter container — a chest, or a barrel in the one design that has no chest — contains helpful items for early game:
 - Food (bread, apples)

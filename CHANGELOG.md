@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Allow data packs to extend the starter-house pool. Modpacks can add, remove, replace, and weight structure templates for both the world-spawn house and Village Mode player houses. Each entry can preserve the template's containers or opt into the normal starter loot. See `docs/datapack-structure-pools.md` for the versioned schema and examples
+
 ### Fixed
 
 - Build a house for every player in Village Mode. Players teleported to the starter house were bound to it instead, so no player house, path or decoration was ever generated. Affected worlds are repaired on the next server start, moving those players into their own house when they rejoin
