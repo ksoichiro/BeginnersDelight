@@ -6,6 +6,8 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.ServerResources;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 
@@ -19,7 +21,6 @@ import java.util.Random;
 import java.util.List;
 import java.util.Optional;
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 
 /**
  * Loads the data-pack-defined starter house candidate pool.
@@ -40,7 +41,7 @@ public final class StarterHousePool {
 
     private StarterHousePool() {}
 
-    public static Optional<Entry> select(Object server, Random random) {
+    public static Optional<Entry> select(MinecraftServer server, Random random) {
         List<Entry> entries = new ArrayList<>();
         ResourceManager resourceManager = findResourceManager(server);
         if (resourceManager != null) {
@@ -68,19 +69,16 @@ public final class StarterHousePool {
         return Optional.of(entries.get(entries.size() - 1));
     }
 
-    private static ResourceManager findResourceManager(Object server) {
-        for (Field field : server.getClass().getDeclaredFields()) {
+    private static ResourceManager findResourceManager(MinecraftServer server) {
+        for (Field field : MinecraftServer.class.getDeclaredFields()) {
+            if (!ServerResources.class.isAssignableFrom(field.getType())) {
+                continue;
+            }
             try {
                 field.setAccessible(true);
                 Object value = field.get(server);
-                if (value instanceof ResourceManager) return (ResourceManager) value;
-                if (value == null) continue;
-                for (Method method : value.getClass().getDeclaredMethods()) {
-                    if (method.getName().equals("getResourceManager")
-                            && ResourceManager.class.isAssignableFrom(method.getReturnType())) {
-                        method.setAccessible(true);
-                        return (ResourceManager) method.invoke(value);
-                    }
+                if (value instanceof ServerResources) {
+                    return ((ServerResources) value).getResourceManager();
                 }
             } catch (ReflectiveOperationException | RuntimeException ignored) {
             }

@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "remove": [
+    "beginnersdelight:starter_house1",
+    "beginnersdelight:starter_house2",
+    "beginnersdelight:starter_house3",
+    "beginnersdelight:starter_house4",
+    "beginnersdelight:starter_house5",
+    "beginnersdelight:starter_house6"
+  ],
+  "entries": [
+    {
+      "template": "beginnersdelight:starter_house2",
+      "loot": "starter"
+    }
+  ]
+}

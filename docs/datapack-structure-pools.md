@@ -133,3 +133,10 @@ experience without requiring their NBT files to embed loot table data.
 The pool is read when Beginner's Delight places a starter or village house.
 Use `/reload` after changing a data pack. Existing placed structures are never
 changed.
+
+## Validation packs
+
+Repository contributors can use the example packs in
+[`docs/test-datapacks/starter-house-pool-validation`](test-datapacks/starter-house-pool-validation/).
+They cover adding and removing candidates, complete replacement, and both loot
+modes.
