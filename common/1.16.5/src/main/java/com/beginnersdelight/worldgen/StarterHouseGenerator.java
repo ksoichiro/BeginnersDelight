@@ -138,6 +138,10 @@ public class StarterHouseGenerator {
 
         // Find appropriate placement position on the surface
         BlockPos center = findSuitableCenter(level, spawnPos, template.getSize());
+        if (center == null) {
+            BeginnersDelight.LOGGER.warn("Could not find suitable land near spawn for starter house");
+            return false;
+        }
         BlockPos placePos = findSurfacePosition(level, center, template.getSize());
         if (placePos == null) {
             BeginnersDelight.LOGGER.warn("Could not find suitable surface position for starter house");
@@ -310,7 +314,8 @@ public class StarterHouseGenerator {
                     || state.is(BlockTags.LEAVES) || state.is(BlockTags.LOGS)
                     || state.is(BlockTags.FLOWERS) || state.is(BlockTags.SAPLINGS)
                     || state.is(Blocks.TALL_GRASS) || state.is(Blocks.GRASS)
-                    || state.is(Blocks.SNOW);
+                    || state.is(Blocks.SNOW)
+                    || state.is(Blocks.LILY_PAD) || state.is(Blocks.VINE);
     }
 
     /**
@@ -364,12 +369,9 @@ public class StarterHouseGenerator {
     }
 
     /**
-     * Searches outward from the spawn point for a build center that is not sitting
-     * over a large void (e.g. a dripstone cave), where terrain blending would
-     * produce a broken, spike-covered foundation. Returns the spawn point itself
-     * when it is already suitable, or falls back to it when no better spot is found.
-     * The starter house defines the world spawn afterward, so relocating it stays
-     * transparent to the player.
+     * Searches outward from the spawn point for a build center with solid ground
+     * and no water in the terrain-shaping area. The starter house defines the
+     * world spawn afterward, so relocating it stays transparent to the player.
      */
     private static BlockPos findSuitableCenter(ServerLevel level, BlockPos spawnPos,
                                                 net.minecraft.core.Vec3i size) {
@@ -393,10 +395,9 @@ public class StarterHouseGenerator {
                 }
             }
         }
-        BeginnersDelight.LOGGER.warn(
-                "No void-free location found near spawn {}; building starter house there anyway",
+        BeginnersDelight.LOGGER.warn("No suitable land found near spawn {}; skipping starter house generation",
                 spawnPos);
-        return spawnPos;
+        return null;
     }
 
     /**
@@ -418,6 +419,22 @@ public class StarterHouseGenerator {
         int startZ = center.getZ() - halfZ - margin;
         if (scanFootprintHeights(level, startX, startZ,
                 size.getX() + margin * 2, size.getZ() + margin * 2) == null) {
+            return false;
+        }
+
+        // fillFoundation stops at fluids to preserve the terrain below, so even a
+        // shallow pond leaves the structure unsupported when its floor is raised.
+        // Reject any water in the shaping area and search for dry land instead.
+        int footprintStartX = center.getX() - halfX;
+        int footprintStartZ = center.getZ() - halfZ;
+        int[] footprintRange = scanFootprintHeights(level, footprintStartX, footprintStartZ,
+                size.getX(), size.getZ());
+        if (footprintRange == null) {
+            return false;
+        }
+        int waterSurfaceY = findHighestFluidSurface(level, footprintStartX, footprintStartZ,
+                size, footprintRange[1]);
+        if (waterSurfaceY != Integer.MIN_VALUE) {
             return false;
         }
 
@@ -1457,6 +1474,11 @@ public class StarterHouseGenerator {
                 double ratio = (double) dist / blendRadius;
                 int targetY = floorY + (int) Math.round((naturalY - floorY) * ratio);
 
+                // A lily pad or vine is not terrain that can support a new grass
+                // block. Likewise, do not blend through water or tree parts: doing
+                // so leaves isolated grass blocks on lily pads or attached to trees.
+                if (hasFluidOrTreeBetween(level, x, z, naturalY, targetY)) continue;
+
                 if (naturalY > targetY) {
                     // Take down any tall plant standing here first: carving the
                     // ground from under it would leave the stalk hanging in the air.
@@ -1546,6 +1568,8 @@ public class StarterHouseGenerator {
                     int naturalY = findGroundY(level, x, z);
                     if (naturalY == -1) continue;
 
+                    if (hasFluidOrTreeBetween(level, x, z, naturalY, targetY)) continue;
+
                     if (naturalY > targetY) {
                         // Terrain higher than target: carve down to create a flat corner
                         clearTallPlantColumn(level, x, z, naturalY);
@@ -1575,6 +1599,23 @@ public class StarterHouseGenerator {
                 }
             }
         }
+    }
+
+    /**
+     * Returns whether reshaping the column between two surface heights would
+     * overwrite water or connect generated terrain to a tree.
+     */
+    private static boolean hasFluidOrTreeBetween(ServerLevel level, int x, int z,
+                                                  int firstY, int secondY) {
+        int minY = Math.min(firstY, secondY);
+        int maxY = Math.max(firstY, secondY);
+        for (int y = minY; y < maxY; y++) {
+            BlockState state = level.getBlockState(new BlockPos(x, y, z));
+            if (!state.getFluidState().isEmpty() || isTreePart(state)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
