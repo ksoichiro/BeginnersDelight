@@ -108,6 +108,8 @@ public class VillageManager {
             VillageData data = VillageData.get(overworld);
             // Village mode can be switched off, or the player housed, during the wait.
             if (!data.isEnabled() || data.hasHouse(uuid)) continue;
+            registerStarterHouseIfEligible(overworld, player, data);
+            if (data.hasHouse(uuid)) continue;
             try {
                 assignHouse(overworld, player, data);
             } catch (RuntimeException e) {
@@ -173,6 +175,12 @@ public class VillageManager {
         return server.getServerDirectory().resolve("config");
     }
 
+    private static void registerStarterHouseIfEligible(ServerLevel overworld, ServerPlayer player, VillageData data) {
+        StarterHouseData starterData = StarterHouseData.get(overworld);
+        if (!starterData.hasBeenTeleported(player.getUUID()) || starterData.getSpawnPos() == null || data.getPlotState(new GridPos(0, 0)) == PlotState.OCCUPIED) return;
+        registerStarterHouseAsVillageHouse(overworld, player, data, starterData.getSpawnPos(), starterData.getDoorPos());
+    }
+
     private static void registerStarterHouseAsVillageHouse(ServerLevel overworld, ServerPlayer player, VillageData data, BlockPos starterHousePos, BlockPos starterDoorPos) {
         if (data.getCenterPos() == null) initializeGrid(overworld, data);
         GridPos centerGrid = new GridPos(0, 0);
@@ -196,6 +204,14 @@ public class VillageManager {
      * Forces a new house assignment for the player, ignoring existing binding.
      * Used by the test command to simulate multiple players joining.
      */
+    public static void onVillageModeEnabled(ServerPlayer player) {
+        ServerLevel overworld = player.level();
+        VillageData data = VillageData.get(overworld);
+        if (data.isEnabled() && !data.hasHouse(player.getUUID())) {
+            registerStarterHouseIfEligible(overworld, player, data);
+        }
+    }
+
     public static void forceAssignHouse(ServerPlayer player) {
         ServerLevel overworld = player.server.overworld();
         VillageData data = VillageData.get(overworld);

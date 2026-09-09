@@ -133,7 +133,7 @@ public class VillagePathGenerator {
     // never touches either, so paths generated there would skip almost every
     // column. Sand and terracotta are the natural ground blocks of those biomes.
     private static boolean isPavableGround(BlockState state) {
-        return state.is(Blocks.GRASS_BLOCK) || state.is(Blocks.DIRT)
+        return state.is(Blocks.GRASS_BLOCK) || state.is(Blocks.DIRT) || state.is(Blocks.PODZOL)
                 || state.is(Blocks.SAND) || state.is(Blocks.RED_SAND)
                 || state.is(Blocks.TERRACOTTA) || state.is(Blocks.WHITE_TERRACOTTA)
                 || state.is(Blocks.ORANGE_TERRACOTTA) || state.is(Blocks.MAGENTA_TERRACOTTA)

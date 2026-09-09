@@ -134,7 +134,7 @@ public class VillagePathGenerator {
     private static boolean isPavableGround(BlockState state) {
         // 26.2: the 16 colored terracotta blocks are no longer individual Blocks
         // constants, only reachable via the Blocks.DYED_TERRACOTTA ColorCollection
-        return state.is(Blocks.GRASS_BLOCK) || state.is(Blocks.DIRT)
+        return state.is(Blocks.GRASS_BLOCK) || state.is(Blocks.DIRT) || state.is(Blocks.PODZOL)
                 || state.is(Blocks.SAND) || state.is(Blocks.RED_SAND)
                 || state.is(Blocks.TERRACOTTA)
                 || Blocks.DYED_TERRACOTTA.asList().contains(state.getBlock());

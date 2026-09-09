@@ -43,8 +43,13 @@ public class VillageCommand {
             grid.initialize(overworld.getSharedSpawnPos());
         }
 
+        registerStarterHouseForCommandPlayer(source);
         source.sendSuccess(() -> Component.literal("Village mode enabled"), true);
         return 1;
+    }
+
+    private static void registerStarterHouseForCommandPlayer(CommandSourceStack source) {
+        if (source.getEntity() instanceof ServerPlayer) VillageManager.onVillageModeEnabled((ServerPlayer) source.getEntity());
     }
 
     private static int disable(CommandSourceStack source) {
