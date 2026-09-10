@@ -71,6 +71,16 @@ public class StarterHouseGenerator {
     // be preserved.
     private static final int MAX_LEAF_DISTANCE = 7;
 
+    // Jungle trees are unusually large (megatrees, 2x2 trunks) and grow densely
+    // packed, so the fixed 6-block trunk sweep above turns one nearby trunk into
+    // disproportionate canopy loss. Shrink it for jungle wood only, to keep
+    // clearing proportionate to tree size. The leaf search above stays at the
+    // full MAX_LEAF_DISTANCE for every species, jungle included: a removed
+    // tree's own canopy must be captured out to vanilla's real leaf-support
+    // distance, or leaves beyond a shorter cap are left floating, belonging to
+    // neither the removed tree (out of reach) nor a retained one (none nearby).
+    private static final int JUNGLE_INSIDE_SHRINK = 3;
+
     private static final String[] STRUCTURE_VARIANTS = {
             "starter_house1",
             "starter_house2",
@@ -857,6 +867,20 @@ public class StarterHouseGenerator {
      * cut-off trunks, unsupported leaves, and hanging vines behind, so collect
      * each connected canopy, trunk, and vine before removing it as a whole.
      */
+    /**
+     * Pairs the tree blocks a removal pass must clear with the ones neighboring
+     * trees need kept, so both plans are derived from the same trunk analysis.
+     */
+    private static final class TreeClearPlan {
+        private final Set<BlockPos> toRemove;
+        private final Set<BlockPos> protectedParts;
+
+        TreeClearPlan(Set<BlockPos> toRemove, Set<BlockPos> protectedParts) {
+            this.toRemove = toRemove;
+            this.protectedParts = protectedParts;
+        }
+    }
+
     private static Set<BlockPos> clearIntersectingTrees(ServerLevel level, BlockPos placePos,
                                                         net.minecraft.core.Vec3i structureSize) {
         int margin = 2;
@@ -866,34 +890,26 @@ public class StarterHouseGenerator {
         int maxX = placePos.getX() + structureSize.getX() + extend;
         int minZ = placePos.getZ() - extend;
         int maxZ = placePos.getZ() + structureSize.getZ() + extend;
-        int minY = placePos.getY();
-        int maxY = placePos.getY() + structureSize.getY() + 10;
-        Set<BlockPos> protectedParts = findProtectedTreeParts(level, minX, maxX, minZ, maxZ);
-        Set<BlockPos> visited = new HashSet<>();
 
-        for (int x = minX; x < maxX; x++) {
-            for (int z = minZ; z < maxZ; z++) {
-                for (int y = minY; y <= maxY; y++) {
-                    BlockPos pos = new BlockPos(x, y, z);
-                    if (visited.contains(pos) || protectedParts.contains(pos)
-                            || !isTreeBlock(level.getBlockState(pos))) {
-                        continue;
-                    }
-                    clearTree(level, pos, visited, protectedParts);
-                }
-            }
-        }
-        return protectedParts;
+        TreeClearPlan plan = planTreeClearing(level, minX, maxX, minZ, maxZ);
+        removeTreeParts(level, plan.toRemove);
+        return plan.protectedParts;
     }
 
     /**
-     * Finds the parts of trees whose trunks are outside the altered area. Leaves
-     * do not record which tree placed them, so a connected-canopy flood fill alone
-     * cannot distinguish adjacent trees. Starting from each outside trunk instead
-     * preserves every leaf that vanilla considers supported by that trunk.
+     * Identifies trees by trunk rather than by flood-filling touching canopy, so
+     * a removed tree's leaves cannot cascade into an adjacent, untouched tree
+     * through touching leaves the way a canopy-wide flood fill would. Trunks
+     * inside the altered area contribute their logs and, up to the leaf-support
+     * distance, their canopy to the removal set; trunks outside it are protected
+     * the same way, with a leaf shared by both assigned to the nearer trunk.
+     * A log/leaf that cannot be traced back to a trunk base (e.g. a stray branch
+     * from a player-altered or non-vanilla tree shape) is left untouched; vanilla
+     * world generation does not produce such trees, so this trades an unreachable
+     * edge case for bounding the removal to the trees actually being cleared.
      */
-    private static Set<BlockPos> findProtectedTreeParts(ServerLevel level, int minX, int maxX,
-                                                         int minZ, int maxZ) {
+    private static TreeClearPlan planTreeClearing(ServerLevel level, int minX, int maxX,
+                                                   int minZ, int maxZ) {
         Set<BlockPos> retainedLogs = new HashSet<>();
         Set<BlockPos> removedLogs = new HashSet<>();
         Set<BlockPos> visitedRetainedLogs = new HashSet<>();
@@ -909,7 +925,11 @@ public class StarterHouseGenerator {
                 if (!isTrunkBase(level, trunkBase)) {
                     continue;
                 }
-                if (isInsideClearedArea(x, z, minX, maxX, minZ, maxZ)) {
+                boolean inside = isJungleLog(level.getBlockState(trunkBase))
+                        ? isInsideClearedArea(x, z, minX + JUNGLE_INSIDE_SHRINK, maxX - JUNGLE_INSIDE_SHRINK,
+                                                     minZ + JUNGLE_INSIDE_SHRINK, maxZ - JUNGLE_INSIDE_SHRINK)
+                        : isInsideClearedArea(x, z, minX, maxX, minZ, maxZ);
+                if (inside) {
                     collectConnectedLogs(level, trunkBase, removedLogs, visitedRemovedLogs);
                 } else {
                     collectConnectedLogs(level, trunkBase, retainedLogs, visitedRetainedLogs);
@@ -934,7 +954,64 @@ public class StarterHouseGenerator {
                 protectedParts.add(entry.getKey());
             }
         }
-        return protectedParts;
+
+        Set<BlockPos> toRemove = new HashSet<>(removedLogs);
+        for (BlockPos leaf : removedLeafDistances.keySet()) {
+            if (!protectedParts.contains(leaf)) {
+                toRemove.add(leaf);
+            }
+        }
+        collectAttachedVines(level, toRemove);
+
+        return new TreeClearPlan(toRemove, protectedParts);
+    }
+
+    /**
+     * Adds every vine block reachable from the removal set by walking only
+     * through other vines, so a hanging strand attached to a removed tree comes
+     * down with it without the search crossing into an unrelated tree's logs
+     * or leaves.
+     */
+    private static void collectAttachedVines(ServerLevel level, Set<BlockPos> toRemove) {
+        ArrayDeque<BlockPos> pending = new ArrayDeque<>();
+        Set<BlockPos> visited = new HashSet<>(toRemove);
+        for (BlockPos pos : new HashSet<>(toRemove)) {
+            queueAdjacentVines(level, pos, visited, pending);
+        }
+        while (!pending.isEmpty()) {
+            BlockPos pos = pending.removeFirst();
+            toRemove.add(pos);
+            queueAdjacentVines(level, pos, visited, pending);
+        }
+    }
+
+    private static void queueAdjacentVines(ServerLevel level, BlockPos pos, Set<BlockPos> visited,
+                                           ArrayDeque<BlockPos> pending) {
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dy = -1; dy <= 1; dy++) {
+                for (int dz = -1; dz <= 1; dz++) {
+                    if (dx == 0 && dy == 0 && dz == 0) {
+                        continue;
+                    }
+                    BlockPos adjacent = pos.offset(dx, dy, dz);
+                    if (visited.add(adjacent) && level.getBlockState(adjacent).is(Blocks.VINE)) {
+                        pending.add(adjacent);
+                    }
+                }
+            }
+        }
+    }
+
+    private static void removeTreeParts(ServerLevel level, Set<BlockPos> toRemove) {
+        for (BlockPos pos : toRemove) {
+            // UPDATE_KNOWN_SHAPE suppresses the usual support check, so snow resting
+            // on a removed leaf/log would otherwise remain floating in the air.
+            BlockPos above = pos.above();
+            if (isSnowCover(level.getBlockState(above))) {
+                level.setBlock(above, Blocks.AIR.defaultBlockState(), 2 | 16);
+            }
+            level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2 | 16);
+        }
     }
 
     private static boolean isInsideClearedArea(int x, int z, int minX, int maxX,
@@ -1079,7 +1156,7 @@ public class StarterHouseGenerator {
         int maxX = placePos.getX() + structureSize.getX() + extend;
         int minZ = placePos.getZ() - extend;
         int maxZ = placePos.getZ() + structureSize.getZ() + extend;
-        Set<BlockPos> connectedParts = findProtectedTreeParts(level, minX, maxX, minZ, maxZ);
+        Set<BlockPos> connectedParts = planTreeClearing(level, minX, maxX, minZ, maxZ).protectedParts;
 
         for (BlockPos pos : protectedParts) {
             if (!connectedParts.contains(pos) && level.getBlockState(pos).is(BlockTags.LEAVES)) {
@@ -1088,51 +1165,8 @@ public class StarterHouseGenerator {
         }
     }
 
-    private static void clearTree(ServerLevel level, BlockPos start, Set<BlockPos> visited,
-                                  Set<BlockPos> protectedParts) {
-        ArrayDeque<BlockPos> pending = new ArrayDeque<>();
-        Set<BlockPos> tree = new HashSet<>();
-        pending.add(start);
-
-        while (!pending.isEmpty()) {
-            BlockPos pos = pending.removeFirst();
-            if (!visited.add(pos) || protectedParts.contains(pos)
-                    || !isTreePart(level.getBlockState(pos))) {
-                continue;
-            }
-            tree.add(pos);
-            for (int dx = -1; dx <= 1; dx++) {
-                for (int dy = -1; dy <= 1; dy++) {
-                    for (int dz = -1; dz <= 1; dz++) {
-                        if (dx != 0 || dy != 0 || dz != 0) {
-                            pending.add(pos.offset(dx, dy, dz));
-                        }
-                    }
-                }
-            }
-        }
-
-        for (BlockPos pos : tree) {
-            // UPDATE_KNOWN_SHAPE suppresses the usual support check, so snow resting
-            // on a removed leaf/log would otherwise remain floating in the air.
-            BlockPos above = pos.above();
-            if (isSnowCover(level.getBlockState(above))) {
-                level.setBlock(above, Blocks.AIR.defaultBlockState(), 2 | 16);
-            }
-            level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2 | 16);
-        }
-    }
-
-    private static boolean isTreeBlock(BlockState state) {
-        return state.is(BlockTags.LEAVES) || isTreeLog(state);
-    }
-
     private static boolean isTreeLog(BlockState state) {
         return state.is(BlockTags.LOGS);
-    }
-
-    private static boolean isTreePart(BlockState state) {
-        return isTreeBlock(state) || state.is(Blocks.VINE);
     }
 
     /**
