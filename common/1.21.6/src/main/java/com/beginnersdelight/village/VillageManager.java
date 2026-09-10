@@ -205,7 +205,7 @@ public class VillageManager {
      * Used by the test command to simulate multiple players joining.
      */
     public static void onVillageModeEnabled(ServerPlayer player) {
-        ServerLevel overworld = player.level();
+        ServerLevel overworld = player.getServer().overworld();
         VillageData data = VillageData.get(overworld);
         if (data.isEnabled() && !data.hasHouse(player.getUUID())) {
             registerStarterHouseIfEligible(overworld, player, data);
