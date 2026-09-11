@@ -58,13 +58,12 @@ public class VillageHouseGenerator {
         return null;
     }
 
-    private static final String[] DECORATION_VARIANTS = {"village_shed", "village_storehouse", "village_farm"};
+    private static final String[] DECORATION_VARIANTS = {"village_shed", "village_storehouse"};
 
-    // starter_house5 is excluded because it uses deepslate blocks added in 1.17
-    // starter_house6 is excluded because it uses cherry wood blocks added in 1.20
+    // starter_house2, starter_house4, and starter_house5 use blocks added in 1.17.
+    // starter_house6 uses cherry wood blocks added in 1.20.
     private static final String[] STRUCTURE_VARIANTS = {
-            "starter_house1", "starter_house2", "starter_house3",
-            "starter_house4"
+            "starter_house1", "starter_house3"
     };
 
     // Footprint relief above which a candidate site is rejected as too uneven

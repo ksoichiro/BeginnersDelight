@@ -32,11 +32,7 @@ public final class StarterHousePool {
             BeginnersDelight.MOD_ID, "beginners_delight/starter_house_pool.json");
     private static final List<Entry> FALLBACK_ENTRIES = Arrays.asList(
             new Entry(new ResourceLocation(BeginnersDelight.MOD_ID, "starter_house1"), 1, LootMode.STARTER),
-            new Entry(new ResourceLocation(BeginnersDelight.MOD_ID, "starter_house2"), 1, LootMode.STARTER),
-            new Entry(new ResourceLocation(BeginnersDelight.MOD_ID, "starter_house3"), 1, LootMode.STARTER),
-            new Entry(new ResourceLocation(BeginnersDelight.MOD_ID, "starter_house4"), 1, LootMode.STARTER),
-            new Entry(new ResourceLocation(BeginnersDelight.MOD_ID, "starter_house5"), 1, LootMode.STARTER),
-            new Entry(new ResourceLocation(BeginnersDelight.MOD_ID, "starter_house6"), 1, LootMode.STARTER)
+            new Entry(new ResourceLocation(BeginnersDelight.MOD_ID, "starter_house3"), 1, LootMode.STARTER)
     );
 
     private StarterHousePool() {}

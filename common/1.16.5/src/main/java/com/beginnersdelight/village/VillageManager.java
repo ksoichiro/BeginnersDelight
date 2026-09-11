@@ -306,7 +306,8 @@ public class VillageManager {
     private static void tryPlaceDecoration(ServerLevel overworld, VillageData data) {
         if (data.getCenterPos() == null) return;
         VillageGrid grid = new VillageGrid(data, config);
-        String structureName = data.getDecorationCount() == 0 ? "village_well" : VillageHouseGenerator.selectRandomDecoration(overworld.getRandom());
+        // village_well uses minecraft:iron_chain, whose identifier was introduced in 1.21.9.
+        String structureName = VillageHouseGenerator.selectRandomDecoration(overworld.getRandom());
         for (int attempt = 0; attempt < 10; attempt++) {
             Optional<GridPos> candidate = grid.findNextAvailablePlot();
             if (!candidate.isPresent()) { BeginnersDelight.LOGGER.warn("No available plots for decoration"); return; }

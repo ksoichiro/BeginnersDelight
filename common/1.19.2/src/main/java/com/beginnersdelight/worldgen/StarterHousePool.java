@@ -29,8 +29,7 @@ public final class StarterHousePool {
             new Entry(new ResourceLocation(BeginnersDelight.MOD_ID, "starter_house2"), 1, LootMode.STARTER),
             new Entry(new ResourceLocation(BeginnersDelight.MOD_ID, "starter_house3"), 1, LootMode.STARTER),
             new Entry(new ResourceLocation(BeginnersDelight.MOD_ID, "starter_house4"), 1, LootMode.STARTER),
-            new Entry(new ResourceLocation(BeginnersDelight.MOD_ID, "starter_house5"), 1, LootMode.STARTER),
-            new Entry(new ResourceLocation(BeginnersDelight.MOD_ID, "starter_house6"), 1, LootMode.STARTER)
+            new Entry(new ResourceLocation(BeginnersDelight.MOD_ID, "starter_house5"), 1, LootMode.STARTER)
     );
 
     private StarterHousePool() {}
@@ -156,4 +155,3 @@ public final class StarterHousePool {
         }
     }
 }
-

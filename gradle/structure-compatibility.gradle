@@ -1,0 +1,209 @@
+import groovy.json.JsonSlurper
+
+import java.util.zip.GZIPInputStream
+
+// Validates that every structure selected by a target version contains only
+// palette blocks whose IDs exist in that version. The manifest deliberately
+// lists every current palette ID, so adding a block to an NBT requires an
+// explicit compatibility decision instead of silently inheriting a baseline.
+ext.structureCompatibilityVersions = [
+        '1.16.5', '1.17.1', '1.18.2', '1.19.2', '1.20.1',
+        '1.21.1', '1.21.3', '1.21.4', '1.21.5', '1.21.6', '1.21.7',
+        '1.21.8', '1.21.9', '1.21.10', '1.21.11', '26.1', '26.1.1',
+        '26.1.2', '26.2'
+]
+def structureCompatibilitySourceDir = file('common/1.21.1/src/main/resources/data/beginnersdelight/structure')
+def structureCompatibilityManifest = file('gradle/structure-compatibility.json')
+
+tasks.register('validateStructureCompatibility') {
+    group = 'verification'
+    description = 'Validates NBT palette compatibility against every supported Minecraft version'
+    inputs.dir(structureCompatibilitySourceDir)
+    inputs.file(structureCompatibilityManifest)
+    inputs.files(fileTree('common') {
+        include '*/src/main/resources/data/beginnersdelight/beginners_delight/starter_house_pool.json'
+        include '*/src/main/java/com/beginnersdelight/worldgen/StarterHousePool.java'
+        include '*/src/main/java/com/beginnersdelight/village/VillageHouseGenerator.java'
+        include '*/src/main/java/com/beginnersdelight/village/VillageManager.java'
+    })
+
+    doLast {
+        if (!structureCompatibilitySourceDir.exists()) {
+            throw new GradleException("Structure source directory does not exist: ${structureCompatibilitySourceDir}")
+        }
+        def manifest = new JsonSlurper().parse(structureCompatibilityManifest)
+        if (manifest.schema_version != 1 || !(manifest.block_minimum_versions instanceof Map)) {
+            throw new GradleException("Invalid structure compatibility manifest: ${structureCompatibilityManifest}")
+        }
+        def blockMinimumVersions = manifest.block_minimum_versions as Map<String, String>
+        def errors = []
+        def structureMinimumVersions = [:]
+
+        fileTree(structureCompatibilitySourceDir) { include '*.nbt' }.files.sort().each { File nbt ->
+            def palette = readStructurePalette(nbt)
+            if (palette.isEmpty()) {
+                errors << "${relativePath(nbt)} has no palette entries"
+                return
+            }
+            palette.each { String blockId ->
+                if (!blockMinimumVersions.containsKey(blockId)) {
+                    errors << "${relativePath(nbt)} uses untracked palette block '${blockId}'"
+                }
+            }
+            def minimumVersions = palette.collect { blockMinimumVersions[it] }.findAll { it != null }
+            if (!minimumVersions.isEmpty()) {
+                def invalidVersions = minimumVersions.findAll { !structureCompatibilityVersions.contains(it) }
+                invalidVersions.each { errors << "${relativePath(nbt)} declares unsupported minimum version '${it}'" }
+                structureMinimumVersions[nbt.name.replace('.nbt', '')] = minimumVersions.max {
+                    structureCompatibilityVersions.indexOf(it)
+                }
+            }
+        }
+
+        if (errors.isEmpty()) {
+            structureCompatibilityVersions.each { String version ->
+                def targetDir = file("common/${version}")
+                validateStarterPool(version, targetDir, structureMinimumVersions, errors)
+                validateFallbackPool(version, targetDir, structureMinimumVersions, errors)
+                validateVillageSelections(version, targetDir, structureMinimumVersions, errors)
+            }
+        }
+
+        if (!errors.isEmpty()) {
+            errors.each { logger.error("  ERROR: ${it}") }
+            throw new GradleException("Structure compatibility validation failed with ${errors.size()} error(s)")
+        }
+        logger.lifecycle('Structure compatibility validation passed.')
+        structureMinimumVersions.sort().each { name, version ->
+            logger.lifecycle("  ${name}: Minecraft ${version}+")
+        }
+    }
+}
+
+subprojects {
+    tasks.matching { it.name == 'check' }.configureEach {
+        dependsOn(rootProject.tasks.named('validateStructureCompatibility'))
+    }
+}
+
+def validateStarterPool(String version, File targetDir, Map<String, String> minimumVersions, List<String> errors) {
+    def poolFile = new File(targetDir, 'src/main/resources/data/beginnersdelight/beginners_delight/starter_house_pool.json')
+    if (!poolFile.exists()) return
+    def pool = new JsonSlurper().parse(poolFile)
+    if (!(pool.entries instanceof List)) {
+        errors << "${relativePath(poolFile)} has no entries array"
+        return
+    }
+    pool.entries.each { entry ->
+        validateSelectedStructure(version, entry.template, poolFile, minimumVersions, errors)
+    }
+}
+
+def validateFallbackPool(String version, File targetDir, Map<String, String> minimumVersions, List<String> errors) {
+    def poolFile = new File(targetDir, 'src/main/java/com/beginnersdelight/worldgen/StarterHousePool.java')
+    if (!poolFile.exists()) return
+    def matcher = poolFile.text =~ /"(starter_house\d+)"/
+    matcher.each { validateSelectedStructure(version, it[1], poolFile, minimumVersions, errors) }
+}
+
+def validateVillageSelections(String version, File targetDir, Map<String, String> minimumVersions, List<String> errors) {
+    def generator = new File(targetDir, 'src/main/java/com/beginnersdelight/village/VillageHouseGenerator.java')
+    if (generator.exists()) {
+        ['STRUCTURE_VARIANTS', 'DECORATION_VARIANTS'].each { declaration ->
+            def matcher = generator.text =~ /(?s)${declaration}\s*=\s*\{(.*?)\};/
+            matcher.each { definition ->
+                def names = definition[1] =~ /"([a-z_\d]+)"/
+                names.each { validateSelectedStructure(version, it[1], generator, minimumVersions, errors) }
+            }
+        }
+    }
+
+    def manager = new File(targetDir, 'src/main/java/com/beginnersdelight/village/VillageManager.java')
+    if (manager.exists()) {
+        manager.readLines().findAll { it.contains('String structureName =') }.each { line ->
+            def names = line =~ /"([a-z_\d]+)"/
+            names.each { validateSelectedStructure(version, it[1], manager, minimumVersions, errors) }
+        }
+    }
+}
+
+def validateSelectedStructure(String targetVersion, Object selected, File source, Map<String, String> minimumVersions, List<String> errors) {
+    if (!(selected instanceof String)) {
+        errors << "${relativePath(source)} has a structure selection without a string template"
+        return
+    }
+    def structure = selected.tokenize(':').last()
+    def minimumVersion = minimumVersions[structure]
+    if (minimumVersion == null) {
+        errors << "${relativePath(source)} selects unknown structure '${selected}'"
+        return
+    }
+    if (rootProject.ext.structureCompatibilityVersions.indexOf(targetVersion) < rootProject.ext.structureCompatibilityVersions.indexOf(minimumVersion)) {
+        errors << "${relativePath(source)} selects '${structure}' for Minecraft ${targetVersion}, but it requires ${minimumVersion}+"
+    }
+}
+
+def readStructurePalette(File file) {
+    def input = new DataInputStream(new GZIPInputStream(new FileInputStream(file)))
+    try {
+        if (input.readUnsignedByte() != 10) {
+            throw new GradleException("${relativePath(file)} does not have a compound root tag")
+        }
+        readNbtString(input)
+        def root = readNbtPayload(input, 10)
+        if (!(root instanceof Map) || !(root.palette instanceof List)) {
+            throw new GradleException("${relativePath(file)} has no palette list")
+        }
+        return root.palette.collect { it instanceof Map ? it.Name : null }.findAll { it instanceof String } as Set
+    } catch (EOFException exception) {
+        throw new GradleException("Could not fully parse ${relativePath(file)}", exception)
+    } finally {
+        input.close()
+    }
+}
+
+def readNbtPayload(DataInputStream input, int type) {
+    switch (type) {
+        case 0: return null
+        case 1: return input.readByte()
+        case 2: return input.readShort()
+        case 3: return input.readInt()
+        case 4: return input.readLong()
+        case 5: return input.readFloat()
+        case 6: return input.readDouble()
+        case 7:
+            input.skipNBytes(input.readInt())
+            return null
+        case 8: return readNbtString(input)
+        case 9:
+            def elementType = input.readUnsignedByte()
+            def length = input.readInt()
+            return (0..<length).collect { readNbtPayload(input, elementType) }
+        case 10:
+            def compound = [:]
+            while (true) {
+                def childType = input.readUnsignedByte()
+                if (childType == 0) return compound
+                def childName = readNbtString(input)
+                def childValue = readNbtPayload(input, childType)
+                compound[childName] = childValue
+            }
+        case 11:
+            input.skipNBytes(input.readInt() * Integer.BYTES)
+            return null
+        case 12:
+            input.skipNBytes(input.readInt() * Long.BYTES)
+            return null
+        default: throw new GradleException("Unknown NBT tag type ${type}")
+    }
+}
+
+def readNbtString(DataInputStream input) {
+    def bytes = new byte[input.readUnsignedShort()]
+    input.readFully(bytes)
+    return new String(bytes, 'UTF-8')
+}
+
+def relativePath(File file) {
+    rootProject.projectDir.toPath().relativize(file.toPath()).toString()
+}

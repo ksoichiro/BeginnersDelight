@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Stop starter houses and Village Mode decorations from containing gaps on older Minecraft versions. Structures now generate only when every block in their NBT palette is supported by the target version
 - Stop the Forge 1.20.1 starter house from generating underwater on ocean spawns. The generator now uses nearby loaded dry land when available, or builds a reclaimed foundation at sea level without loading distant chunks during world creation
 - Stop the 1.16.5 starter house from generating in water or floating above it. The placement search now moves to nearby dry land, and terrain blending skips water, lily pads, trees, and vines so it does not leave isolated grass blocks on them
 - Connect the first Village Mode house to the starter house when Village Mode is enabled after the player reaches the starter house. The starter house is now registered immediately, so the first path is generated without requiring a reconnect

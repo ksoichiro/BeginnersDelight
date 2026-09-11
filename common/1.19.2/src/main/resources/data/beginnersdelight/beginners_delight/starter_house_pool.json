@@ -5,9 +5,7 @@
     { "template": "beginnersdelight:starter_house2", "loot": "starter" },
     { "template": "beginnersdelight:starter_house3", "loot": "starter" },
     { "template": "beginnersdelight:starter_house4", "loot": "starter" },
-    { "template": "beginnersdelight:starter_house5", "loot": "starter" },
-    { "template": "beginnersdelight:starter_house6", "loot": "starter" }
+    { "template": "beginnersdelight:starter_house5", "loot": "starter" }
   ]
 }
-
 

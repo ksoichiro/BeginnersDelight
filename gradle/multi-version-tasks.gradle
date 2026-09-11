@@ -136,6 +136,63 @@ tasks.register('buildAll') {
 }
 
 // ============================================================
+// Verification Tasks
+// ============================================================
+
+tasks.register('checkAll') {
+    group = taskGroup
+    description = "Run check for all supported Minecraft versions (${supportedVersions.join(', ')})"
+
+    doFirst {
+        logger.lifecycle('')
+        logger.lifecycle('====================================================')
+        logger.lifecycle('Running checks for ALL supported Minecraft versions...')
+        logger.lifecycle("Versions: ${supportedVersions.join(', ')}")
+        logger.lifecycle('====================================================')
+        logger.lifecycle('')
+    }
+
+    doLast {
+        def failed = []
+
+        supportedVersions.each { version ->
+            logger.lifecycle('')
+            logger.lifecycle(">>> Running check for Minecraft ${version}...")
+            logger.lifecycle('')
+
+            try {
+                execOperations.exec {
+                    workingDir = rootDir
+                    commandLine './gradlew', 'check', "-Ptarget_mc_version=${version}"
+                    errorOutput = System.err
+                }
+                logger.lifecycle("SUCCESS: Minecraft ${version}")
+            } catch (Exception exception) {
+                logger.error("FAILED: Minecraft ${version}")
+                failed.add(version)
+            }
+        }
+
+        logger.lifecycle('')
+        logger.lifecycle('====================================================')
+        logger.lifecycle('Check Summary:')
+        logger.lifecycle('====================================================')
+
+        if (failed.isEmpty()) {
+            logger.lifecycle('All versions passed!')
+            supportedVersions.each { version -> logger.lifecycle("   - Minecraft ${version}") }
+        } else {
+            logger.error("${failed.size()} version(s) failed:")
+            failed.each { version -> logger.error("   - Minecraft ${version}") }
+            throw new GradleException("Check failed for: ${failed.join(', ')}")
+        }
+
+        logger.lifecycle('====================================================')
+        logger.lifecycle('')
+    }
+}
+
+// ============================================================
 // Collect Release JARs
 // ============================================================
 

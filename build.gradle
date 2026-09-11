@@ -151,6 +151,7 @@ subprojects {
 
 // Multi-version build tasks (cleanAll, buildAll, etc.)
 apply from: 'gradle/multi-version-tasks.gradle'
+apply from: 'gradle/structure-compatibility.gradle'
 
 // Shared release tasks (git submodule).
 // Provides releaseModrinth / releaseCurseForge, replacing scripts/release*.sh.
