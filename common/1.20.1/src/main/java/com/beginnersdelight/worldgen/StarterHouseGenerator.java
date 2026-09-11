@@ -56,10 +56,9 @@ public class StarterHouseGenerator {
     private static final int MAX_FOOTPRINT_RELIEF = 10;
 
     // How far fillFoundation reaches below the floor to fill the gap with ground
-    // blocks. Must cover the worst case: footprint relief (MAX_FOOTPRINT_RELIEF)
-    // plus the floor being raised further to clear adjacent water (up to 9, see
-    // findSurfacePosition), with a small buffer.
-    private static final int FOUNDATION_FILL_DEPTH = 20;
+    // blocks. It must also reach a typical ocean floor when the spawn area is all
+    // water and the fallback builds a small reclaimed platform at sea level.
+    private static final int FOUNDATION_FILL_DEPTH = 40;
 
     // The foundation extends two blocks beyond the template and the terrain blend
     // extends another three. A cave in this band is just as visible as one below
@@ -80,6 +79,12 @@ public class StarterHouseGenerator {
     // distance, or leaves beyond a shorter cap are left floating, belonging to
     // neither the removed tree (out of reach) nor a retained one (none nearby).
     private static final int JUNGLE_INSIDE_SHRINK = 3;
+
+    // Search a reasonably broad square around spawn before giving up on dry land.
+    // Candidates are one house-width apart, so a usable shore is not skipped while
+    // the startup-time search remains bounded.
+    private static final int LAND_SEARCH_STEP = 16;
+    private static final int LAND_SEARCH_RADIUS = 512;
 
     private static final String[] STRUCTURE_VARIANTS = {
             "starter_house1",
@@ -264,20 +269,19 @@ public class StarterHouseGenerator {
         // Raising the floor widens the scanned band, so repeat until it comes out
         // clear; a handful of rounds is plenty for terrain that holds water.
         int floorY = resultY;
+        boolean fluidAtFloor = false;
         for (int round = 0; round < 4; round++) {
             int waterSurfaceY = findHighestFluidSurface(level, startX, startZ, structureSize, floorY);
             if (waterSurfaceY < floorY) {
                 break;
             }
+            fluidAtFloor = true;
             floorY = waterSurfaceY + 1;
         }
-        // fillFoundation fills at most FOUNDATION_FILL_DEPTH blocks below the floor,
-        // and up to MAX_FOOTPRINT_RELIEF of that is already spent reaching the
-        // footprint's lowest column, so a bigger lift than 9 here would leave part
-        // of the house standing on nothing. A spot needing one (water perched on a
-        // cliff right beside the footprint) cannot be drained by raising at all, so
-        // keep the house on the real ground rather than float it above a gap.
-        if (floorY - resultY <= 9) {
+        // A dry site only needs a small lift to avoid water beside it. When no dry
+        // site was found, however, deliberately reclaim a platform at the water
+        // surface instead of leaving the starter house on the ocean floor.
+        if (floorY - resultY <= 9 || fluidAtFloor) {
             resultY = floorY;
         }
 
@@ -376,39 +380,105 @@ public class StarterHouseGenerator {
     }
 
     /**
-     * Searches outward from the spawn point for a build center that is not sitting
-     * over a large void (e.g. a dripstone cave), where terrain blending would
-     * produce a broken, spike-covered foundation. Returns the spawn point itself
-     * when it is already suitable, or falls back to it when no better spot is found.
-     * The starter house defines the world spawn afterward, so relocating it stays
-     * transparent to the player.
+     * Searches outward from the spawn point for a dry, solid build center. The
+     * starter house defines the world spawn afterward, so relocating it stays
+     * transparent to the player. If no dry land exists in the bounded search area,
+     * it falls back to the nearest solid site, where findSurfacePosition creates a
+     * reclaimed platform at the water surface.
      */
     private static BlockPos findSuitableCenter(ServerLevel level, BlockPos spawnPos,
                                                 net.minecraft.core.Vec3i size) {
-        if (isCenterSuitable(level, spawnPos, size)) {
+        if (isDryCenterSuitable(level, spawnPos, size)) {
             return spawnPos;
         }
-        int step = 8;
-        int maxRadius = 96;
-        for (int r = step; r <= maxRadius; r += step) {
-            int[][] offsets = {
-                    {r, 0}, {-r, 0}, {0, r}, {0, -r},
-                    {r, r}, {r, -r}, {-r, r}, {-r, -r}
-            };
-            for (int[] o : offsets) {
-                BlockPos candidate = spawnPos.offset(o[0], 0, o[1]);
-                if (isCenterSuitable(level, candidate, size)) {
-                    BeginnersDelight.LOGGER.info(
-                            "Relocated starter house from {} to {} to avoid a void/cave below spawn",
-                            spawnPos, candidate);
+        for (int radius = LAND_SEARCH_STEP; radius <= LAND_SEARCH_RADIUS; radius += LAND_SEARCH_STEP) {
+            for (int offset = -radius; offset <= radius; offset += LAND_SEARCH_STEP) {
+                BlockPos[] candidates = {
+                        spawnPos.offset(offset, 0, -radius), spawnPos.offset(offset, 0, radius),
+                        spawnPos.offset(-radius, 0, offset), spawnPos.offset(radius, 0, offset)
+                };
+                for (BlockPos candidate : candidates) {
+                    if (isDryCenterSuitable(level, candidate, size)) {
+                        BeginnersDelight.LOGGER.info(
+                                "Relocated starter house from {} to dry land at {}",
+                                spawnPos, candidate);
+                        return candidate;
+                    }
+                }
+            }
+        }
+        BeginnersDelight.LOGGER.warn(
+                "No dry location found within {} blocks of spawn {}; reclaiming a platform at the nearest suitable site",
+                LAND_SEARCH_RADIUS, spawnPos);
+        return findFallbackCenter(level, spawnPos, size);
+    }
+
+    private static BlockPos findFallbackCenter(ServerLevel level, BlockPos spawnPos,
+                                                net.minecraft.core.Vec3i size) {
+        if (isBuildAreaLoaded(level, spawnPos, size) && isCenterSuitable(level, spawnPos, size)) return spawnPos;
+        for (int radius = LAND_SEARCH_STEP; radius <= 96; radius += LAND_SEARCH_STEP) {
+            int[][] offsets = {{radius, 0}, {-radius, 0}, {0, radius}, {0, -radius},
+                    {radius, radius}, {radius, -radius}, {-radius, radius}, {-radius, -radius}};
+            for (int[] offset : offsets) {
+                BlockPos candidate = spawnPos.offset(offset[0], 0, offset[1]);
+                if (isBuildAreaLoaded(level, candidate, size) && isCenterSuitable(level, candidate, size)) {
                     return candidate;
                 }
             }
         }
         BeginnersDelight.LOGGER.warn(
-                "No void-free location found near spawn {}; building starter house there anyway",
+                "No solid location found near spawn {}; building starter house there anyway",
                 spawnPos);
         return spawnPos;
+    }
+
+    private static boolean isDryCenterSuitable(ServerLevel level, BlockPos center,
+                                                net.minecraft.core.Vec3i size) {
+        int startX = center.getX() - size.getX() / 2;
+        int startZ = center.getZ() - size.getZ() / 2;
+        return isBuildAreaLoaded(level, center, size)
+                && !hasSeaLevelFluidInBuildArea(level, startX, startZ, size)
+                && isCenterSuitable(level, center, size);
+    }
+
+    /**
+     * Never make the initial starter-house search generate distant chunks. At
+     * ServerStarted only the spawn area is normally loaded, and forcing hundreds
+     * of ocean chunks to load here stalls world creation for a long time.
+     */
+    private static boolean isBuildAreaLoaded(ServerLevel level, BlockPos center,
+                                             net.minecraft.core.Vec3i size) {
+        int extend = 2 + 3;
+        int minX = center.getX() - size.getX() / 2 - extend;
+        int maxX = center.getX() + (size.getX() - 1) / 2 + extend;
+        int minZ = center.getZ() - size.getZ() / 2 - extend;
+        int maxZ = center.getZ() + (size.getZ() - 1) / 2 + extend;
+        for (int chunkX = Math.floorDiv(minX, 16); chunkX <= Math.floorDiv(maxX, 16); chunkX++) {
+            for (int chunkZ = Math.floorDiv(minZ, 16); chunkZ <= Math.floorDiv(maxZ, 16); chunkZ++) {
+                if (!level.hasChunk(chunkX, chunkZ)) return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * A fast ocean check used before the more expensive terrain and cave scan.
+     * Vanilla overworld oceans occupy the sea-level block or the block immediately
+     * below it, which also catches coasts close enough to flood the build area.
+     */
+    private static boolean hasSeaLevelFluidInBuildArea(ServerLevel level, int startX, int startZ,
+                                                        net.minecraft.core.Vec3i size) {
+        int extend = 2 + 3;
+        int seaLevel = level.getSeaLevel();
+        for (int x = startX - extend; x < startX + size.getX() + extend; x++) {
+            for (int z = startZ - extend; z < startZ + size.getZ() + extend; z++) {
+                if (!level.getBlockState(new BlockPos(x, seaLevel, z)).getFluidState().isEmpty()
+                        || !level.getBlockState(new BlockPos(x, seaLevel - 1, z)).getFluidState().isEmpty()) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**
