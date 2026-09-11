@@ -22,6 +22,7 @@ import java.util.Optional;
 public final class StarterHousePool {
 
     public static final int SCHEMA_VERSION = 1;
+    private static final String CURRENT_MINECRAFT_VERSION = "1.21.11";
     private static final Identifier RESOURCE = Identifier.fromNamespaceAndPath(
             BeginnersDelight.MOD_ID, "beginners_delight/starter_house_pool.json");
     private static final List<Entry> FALLBACK_ENTRIES = List.of(
@@ -133,7 +134,57 @@ public final class StarterHousePool {
                 return Optional.empty();
             }
         }
+        if (object.has("minimum_minecraft_version")) {
+            if (!object.get("minimum_minecraft_version").isJsonPrimitive()
+                    || !object.getAsJsonPrimitive("minimum_minecraft_version").isString()) {
+                BeginnersDelight.LOGGER.error("Ignoring starter house pool entry from {}: minimum_minecraft_version must be a string",
+                        source);
+                return Optional.empty();
+            }
+
+            String minimumMinecraftVersion = object.get("minimum_minecraft_version").getAsString();
+            if (!isMinecraftVersion(minimumMinecraftVersion)) {
+                BeginnersDelight.LOGGER.error("Ignoring starter house pool entry from {}: minimum_minecraft_version '{}' is invalid",
+                        source, minimumMinecraftVersion);
+                return Optional.empty();
+            }
+
+            if (compareMinecraftVersions(CURRENT_MINECRAFT_VERSION, minimumMinecraftVersion) < 0) {
+                BeginnersDelight.LOGGER.debug("Skipping starter house pool entry {} from {}: requires Minecraft {}+",
+                        template, source, minimumMinecraftVersion);
+                return Optional.empty();
+            }
+        }
+
         return Optional.of(new Entry(template, weight, lootMode));
+    }
+
+    private static boolean isMinecraftVersion(String version) {
+        if (!version.matches("\\d+(\\.\\d+){1,2}")) {
+            return false;
+        }
+        for (String part : version.split("\\.")) {
+            try {
+                Integer.parseInt(part);
+            } catch (NumberFormatException exception) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static int compareMinecraftVersions(String first, String second) {
+        String[] firstParts = first.split("\\.");
+        String[] secondParts = second.split("\\.");
+        int partCount = Math.max(firstParts.length, secondParts.length);
+        for (int index = 0; index < partCount; index++) {
+            int firstPart = index < firstParts.length ? Integer.parseInt(firstParts[index]) : 0;
+            int secondPart = index < secondParts.length ? Integer.parseInt(secondParts[index]) : 0;
+            if (firstPart != secondPart) {
+                return Integer.compare(firstPart, secondPart);
+            }
+        }
+        return 0;
     }
 
     public record Entry(Identifier template, int weight, LootMode lootMode) {}
@@ -156,4 +207,3 @@ public final class StarterHousePool {
         }
     }
 }
-

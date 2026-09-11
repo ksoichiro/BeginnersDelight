@@ -35,7 +35,8 @@ versions unless the release notes explicitly state otherwise.
     {
       "template": "architecturemod:starter_houses/brick_cottage",
       "weight": 3,
-      "loot": "preserve"
+      "loot": "preserve",
+      "minimum_minecraft_version": "1.21.9"
     }
   ]
 }
@@ -57,11 +58,13 @@ An entry contains the following fields.
 | `template` | resource location | required | The structure template ID, such as `example:starter_houses/cottage`. The NBT file belongs at `data/example/structure/starter_houses/cottage.nbt`. |
 | `weight` | positive integer | `1` | Relative selection weight. A candidate with weight `2` is selected twice as often as one with weight `1`. |
 | `loot` | `preserve` or `starter` | `preserve` | Controls Beginner's Delight's post-placement loot handling. |
+| `minimum_minecraft_version` | numeric version string | none | The oldest Minecraft version that may select this candidate, such as `"1.21.9"`. The entry is skipped on older versions. |
 
 Unknown fields are ignored. This allows a newer Beginner's Delight release to
 add optional fields without invalidating existing modpacks. Invalid resource
-locations, non-positive weights, and unknown loot modes cause only the affected
-entry to be skipped and are reported in the server log.
+locations, non-positive weights, unknown loot modes, and malformed minimum
+Minecraft versions cause only the affected entry to be skipped and are reported
+in the server log.
 
 ## Adding a house
 
@@ -74,7 +77,8 @@ entry to the pool file:
   "entries": [
     {
       "template": "my_pack:starter_houses/spruce_cottage",
-      "weight": 2
+      "weight": 2,
+      "minimum_minecraft_version": "1.21.9"
     }
   ]
 }
@@ -83,6 +87,10 @@ entry to the pool file:
 The default `preserve` mode leaves every container in the template unchanged.
 The template may contain items, a vanilla `LootTable` tag, or empty decorative
 containers.
+
+Omit `minimum_minecraft_version` when the template works on every Minecraft
+version supported by the installed Beginner's Delight build. Use it when the
+template uses blocks, entities, or NBT features that were introduced later.
 
 ## Replacing or removing houses
 
