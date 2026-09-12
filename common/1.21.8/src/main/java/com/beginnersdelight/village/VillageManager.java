@@ -24,6 +24,13 @@ public class VillageManager {
     private static VillageConfig config = VillageConfigDefaults.defaults();
     private static Path clientConfigDir;
 
+    // Lazily computed from the starter house pool's actual templates and cached for
+    // the life of the server, since loading every template on each house assignment
+    // would be wasteful. Reset on config reload so a datapack change (which can
+    // shrink or grow the pool) is picked up the next time a plot is needed.
+    private static Integer cachedMaxFootprintHalfSize;
+    private static boolean warnedSmallPlotSize;
+
     // Upper bound only: the build normally starts as soon as the client reports that it
     // has finished loading. The cap is there for a client that never sends that report.
     private static final int JOIN_ASSIGNMENT_MAX_WAIT_TICKS = 200;
@@ -186,7 +193,39 @@ public class VillageManager {
      */
     public static void reloadConfig(MinecraftServer server) {
         config = VillageConfigLoader.load(resolveConfigDir(server));
+        cachedMaxFootprintHalfSize = null;
+        warnedSmallPlotSize = false;
         BeginnersDelight.LOGGER.info("Reloaded config");
+    }
+
+    /**
+     * Half of the largest starter house footprint currently loaded, computed once
+     * per server run (or since the last config reload) rather than assumed ahead of
+     * time, since the pool is datapack-extensible.
+     */
+    private static int getMaxFootprintHalfSize(ServerLevel overworld) {
+        if (cachedMaxFootprintHalfSize == null) {
+            cachedMaxFootprintHalfSize = VillageHouseGenerator.computeMaxFootprintHalfSize(overworld);
+        }
+        return cachedMaxFootprintHalfSize;
+    }
+
+    /**
+     * Smallest distance between adjacent plot centers that keeps the largest loaded
+     * structure, plus the terrain shaping around it, from reaching a neighboring
+     * plot. Used instead of the raw configured plot size whenever that size would
+     * be too small for what is actually going to be built there.
+     */
+    private static int getMinPlotSpacing(ServerLevel overworld) {
+        int spacing = getMaxFootprintHalfSize(overworld) * 2 + VillageHouseGenerator.TERRAIN_SAFETY_MARGIN;
+        if (config.getPlotSize() < spacing && !warnedSmallPlotSize) {
+            warnedSmallPlotSize = true;
+            BeginnersDelight.LOGGER.warn(
+                    "Configured plot size ({}) is smaller than the loaded starter houses need ({}); "
+                            + "widening plot spacing to avoid overlapping houses",
+                    config.getPlotSize(), spacing);
+        }
+        return spacing;
     }
 
     /**
@@ -217,7 +256,7 @@ public class VillageManager {
 
     private static void initializeGrid(ServerLevel overworld, VillageData data) {
         BlockPos spawnPos = overworld.getSharedSpawnPos();
-        VillageGrid grid = new VillageGrid(data, config);
+        VillageGrid grid = new VillageGrid(data, config, getMinPlotSpacing(overworld));
         grid.initialize(spawnPos);
         BeginnersDelight.LOGGER.info("Village grid initialized at center: {}", spawnPos);
     }
@@ -245,7 +284,8 @@ public class VillageManager {
             initializeGrid(overworld, data);
         }
 
-        VillageGrid grid = new VillageGrid(data, config);
+        int halfFootprint = getMaxFootprintHalfSize(overworld);
+        VillageGrid grid = new VillageGrid(data, config, getMinPlotSpacing(overworld));
 
         // Find next available plot, checking suitability
         Optional<GridPos> plotOpt = Optional.empty();
@@ -260,7 +300,7 @@ public class VillageManager {
             GridPos candidatePos = candidate.get();
             BlockPos worldPos = grid.gridToWorld(candidatePos);
 
-            if (VillageHouseGenerator.isSuitable(overworld, worldPos, config.getMaxHeightDifference())) {
+            if (VillageHouseGenerator.isSuitable(overworld, worldPos, config.getMaxHeightDifference(), halfFootprint)) {
                 plotOpt = candidate;
                 break;
             } else {
@@ -326,14 +366,15 @@ public class VillageManager {
 
     private static void tryPlaceDecoration(ServerLevel overworld, VillageData data) {
         if (data.getCenterPos() == null) return;
-        VillageGrid grid = new VillageGrid(data, config);
+        int halfFootprint = getMaxFootprintHalfSize(overworld);
+        VillageGrid grid = new VillageGrid(data, config, getMinPlotSpacing(overworld));
         // village_well uses minecraft:iron_chain, whose identifier was introduced in 1.21.9.
         String structureName = VillageHouseGenerator.selectRandomDecoration(overworld.getRandom());
         for (int attempt = 0; attempt < 10; attempt++) {
             Optional<GridPos> candidate = grid.findNextAvailablePlot();
             if (candidate.isEmpty()) { BeginnersDelight.LOGGER.warn("No available plots for decoration"); return; }
             GridPos candidatePos = candidate.get(); BlockPos worldPos = grid.gridToWorld(candidatePos);
-            if (!VillageHouseGenerator.isSuitable(overworld, worldPos, config.getMaxHeightDifference())) { data.setPlotState(candidatePos, PlotState.UNSUITABLE); continue; }
+            if (!VillageHouseGenerator.isSuitable(overworld, worldPos, config.getMaxHeightDifference(), halfFootprint)) { data.setPlotState(candidatePos, PlotState.UNSUITABLE); continue; }
             Optional<VillageHouseGenerator.PlacementResult> result = VillageHouseGenerator.placeDecoration(overworld, worldPos, structureName);
             if (result.isEmpty()) { data.setPlotState(candidatePos, PlotState.UNSUITABLE); continue; }
             VillageHouseGenerator.PlacementResult placement = result.get();

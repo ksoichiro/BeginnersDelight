@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Stop the Village Mode settings screen from crashing on the first Tab press before clicking into a field. Present on every version shipped with the screen, including 0.7.0's Fabric/NeoForge 1.21.1+ release, not just the versions added in this release
+- Stop Village Mode houses from overlapping and eroding each other when `plot_size` is configured smaller than the loaded starter house structures. Plot spacing now widens automatically to fit whatever structures are actually registered, including through data packs
 
 ## [0.7.0] - 2026-09-12
 

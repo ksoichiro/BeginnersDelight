@@ -39,6 +39,29 @@ public final class StarterHousePool {
     private StarterHousePool() {}
 
     public static Optional<Entry> select(MinecraftServer server, Random random) {
+        List<Entry> entries = loadMergedEntries(server);
+
+        int totalWeight = entries.stream().mapToInt(Entry::weight).sum();
+        int selectedWeight = random.nextInt(totalWeight);
+        for (Entry entry : entries) {
+            selectedWeight -= entry.weight();
+            if (selectedWeight < 0) {
+                return Optional.of(entry);
+            }
+        }
+        return Optional.of(entries.get(entries.size() - 1));
+    }
+
+    /**
+     * Returns every entry currently registered in the pool (datapack-merged, with
+     * built-in fallbacks applied), without picking one. Used to inspect the whole
+     * candidate set, e.g. to size plots to whatever structures are actually loaded.
+     */
+    public static List<Entry> allEntries(MinecraftServer server) {
+        return loadMergedEntries(server);
+    }
+
+    private static List<Entry> loadMergedEntries(MinecraftServer server) {
         List<Entry> entries = new ArrayList<>();
         ResourceManager resourceManager = findResourceManager(server);
         if (resourceManager != null) {
@@ -54,16 +77,7 @@ public final class StarterHousePool {
             BeginnersDelight.LOGGER.warn("Starter house pool is empty; using built-in defaults");
             entries.addAll(FALLBACK_ENTRIES);
         }
-
-        int totalWeight = entries.stream().mapToInt(Entry::weight).sum();
-        int selectedWeight = random.nextInt(totalWeight);
-        for (Entry entry : entries) {
-            selectedWeight -= entry.weight();
-            if (selectedWeight < 0) {
-                return Optional.of(entry);
-            }
-        }
-        return Optional.of(entries.get(entries.size() - 1));
+        return entries;
     }
 
     private static ResourceManager findResourceManager(MinecraftServer server) {

@@ -12,10 +12,25 @@ public class VillageGrid {
 
     private final VillageData data;
     private final VillageConfig config;
+    private final int minPlotSpacing;
 
     public VillageGrid(VillageData data, VillageConfig config) {
+        this(data, config, 0);
+    }
+
+    /**
+     * @param minPlotSpacing smallest safe distance between adjacent plot centers,
+     *                       derived from the structures actually registered in the
+     *                       starter house pool (see
+     *                       {@link VillageHouseGenerator#computeMaxFootprintHalfSize}).
+     *                       Grid spacing never goes below this, even if the
+     *                       configured plot size is smaller, so neighboring houses
+     *                       cannot overlap or erode one another.
+     */
+    public VillageGrid(VillageData data, VillageConfig config, int minPlotSpacing) {
         this.data = data;
         this.config = config;
+        this.minPlotSpacing = minPlotSpacing;
     }
 
     /**
@@ -72,7 +87,7 @@ public class VillageGrid {
      */
     public BlockPos gridToWorld(GridPos gridPos) {
         BlockPos center = data.getCenterPos();
-        int plotSize = config.getPlotSize();
+        int plotSize = Math.max(config.getPlotSize(), minPlotSpacing);
         int baseX = center.getX() + (gridPos.x() * plotSize);
         int baseZ = center.getZ() + (gridPos.z() * plotSize);
 

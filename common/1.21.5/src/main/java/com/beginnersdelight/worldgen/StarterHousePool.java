@@ -37,14 +37,7 @@ public final class StarterHousePool {
     private StarterHousePool() {}
 
     public static Optional<Entry> select(ResourceManager resourceManager, RandomSource random) {
-        List<Entry> entries = new ArrayList<>();
-        for (Resource resource : resourceManager.getResourceStack(RESOURCE)) {
-            applyResource(resource, entries);
-        }
-        if (entries.isEmpty()) {
-            BeginnersDelight.LOGGER.warn("Starter house pool is empty; using built-in defaults");
-            entries.addAll(FALLBACK_ENTRIES);
-        }
+        List<Entry> entries = loadMergedEntries(resourceManager);
 
         int totalWeight = entries.stream().mapToInt(Entry::weight).sum();
         int selectedWeight = random.nextInt(totalWeight);
@@ -55,6 +48,27 @@ public final class StarterHousePool {
             }
         }
         return Optional.of(entries.get(entries.size() - 1));
+    }
+
+    /**
+     * Returns every entry currently registered in the pool (datapack-merged, with
+     * built-in fallbacks applied), without picking one. Used to inspect the whole
+     * candidate set, e.g. to size plots to whatever structures are actually loaded.
+     */
+    public static List<Entry> allEntries(ResourceManager resourceManager) {
+        return loadMergedEntries(resourceManager);
+    }
+
+    private static List<Entry> loadMergedEntries(ResourceManager resourceManager) {
+        List<Entry> entries = new ArrayList<>();
+        for (Resource resource : resourceManager.getResourceStack(RESOURCE)) {
+            applyResource(resource, entries);
+        }
+        if (entries.isEmpty()) {
+            BeginnersDelight.LOGGER.warn("Starter house pool is empty; using built-in defaults");
+            entries.addAll(FALLBACK_ENTRIES);
+        }
+        return entries;
     }
 
     private static void applyResource(Resource resource, List<Entry> entries) {

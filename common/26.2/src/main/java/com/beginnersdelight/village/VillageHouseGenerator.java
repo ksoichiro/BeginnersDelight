@@ -88,7 +88,7 @@ public class VillageHouseGenerator {
     // The foundation extends two blocks beyond the template and the terrain blend
     // extends another three. A cave in this band is just as visible as one below
     // the house, but previously only the sampled corners were checked.
-    private static final int TERRAIN_SAFETY_MARGIN = 5;
+    static final int TERRAIN_SAFETY_MARGIN = 5;
 
     // Vanilla leaves can remain attached at a distance of up to seven blocks from
     // a log. Search this far beyond the altered area for trunks whose canopy must
@@ -105,16 +105,44 @@ public class VillageHouseGenerator {
     // neither the removed tree (out of reach) nor a retained one (none nearby).
     private static final int JUNGLE_INSIDE_SHRINK = 3;
 
+    // Fallback half-footprint used only when no starter house template could be
+    // loaded at all (e.g. a corrupt datapack); matches the historical fixed value.
+    private static final int DEFAULT_HALF_FOOTPRINT = 7;
+
     /**
      * Result of a successful house placement.
      */
     public record PlacementResult(BlockPos interiorPos, BlockPos doorFrontPos) {}
 
     /**
+     * Computes half the largest footprint (X or Z) among every structure currently
+     * registered in the starter house pool, by actually loading each template.
+     * Structures are datapack-extensible, so this is derived at runtime from
+     * whatever is loaded rather than assumed in advance.
+     */
+    public static int computeMaxFootprintHalfSize(ServerLevel level) {
+        StructureTemplateManager templateManager = level.getStructureManager();
+        int maxDimension = 0;
+        for (StarterHousePool.Entry entry : StarterHousePool.allEntries(level.getServer().getResourceManager())) {
+            Optional<StructureTemplate> templateOpt = templateManager.get(entry.template());
+            if (templateOpt.isEmpty()) continue;
+            Vec3i size = templateOpt.get().getSize();
+            maxDimension = Math.max(maxDimension, Math.max(size.getX(), size.getZ()));
+        }
+        if (maxDimension == 0) return DEFAULT_HALF_FOOTPRINT;
+        // Round up so an odd footprint is not under-covered by integer division.
+        return (maxDimension + 1) / 2;
+    }
+
+    /**
      * Checks whether a plot location is suitable for house placement.
      * Returns false if height difference exceeds the threshold or center is underwater.
+     *
+     * @param halfSize approximate half of the largest structure footprint that may
+     *                 be placed here (see {@link #computeMaxFootprintHalfSize}),
+     *                 used to size the terrain scan to what will actually be built.
      */
-    public static boolean isSuitable(ServerLevel level, BlockPos plotCenter, int maxHeightDiff) {
+    public static boolean isSuitable(ServerLevel level, BlockPos plotCenter, int maxHeightDiff, int halfSize) {
         // Check if center is underwater: scan from sea level upward for water
         int centerX = plotCenter.getX();
         int centerZ = plotCenter.getZ();
@@ -147,7 +175,6 @@ public class VillageHouseGenerator {
         // dropping away sharply in between, or hiding a void under an edge midpoint,
         // used to pass this check and then get bridged into an unnaturally tall
         // pillar or a patchwork of holes.
-        int halfSize = 7; // approximate half of structure footprint
         int margin = 2;
         int minX = centerX - halfSize - margin;
         int maxX = centerX + halfSize + margin;
