@@ -65,6 +65,12 @@ dependencies {
 }
 
 tasks.named("processResources", ProcessResources).configure {
+    // Task path (a String) rather than tasks.named(...): copyStructures is registered
+    // in the common project's own build.gradle, which may not have been evaluated yet
+    // while this project is being configured. Gradle resolves the path when it builds
+    // the task graph, by which time the registration has happened.
+    dependsOn "${commonModule}:copyStructures"
+
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     inputs.property "version", project.version
 

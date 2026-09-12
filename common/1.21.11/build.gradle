@@ -20,8 +20,20 @@ dependencies {
     compileOnly "com.electronwill.night-config:toml:3.8.3"
 }
 
+// Copy structure NBT files from the canonical common/1.21.1 source (byte-identical
+// across this version range, no DataVersion conversion needed).
+def structureSourceDir = rootProject.file('common/1.21.1/src/main/resources/data/beginnersdelight/structure')
+
+tasks.register('copyStructures', Copy) {
+    from structureSourceDir
+    into 'build/generated/structure/data/beginnersdelight/structure'
+}
+
+sourceSets.main.resources.srcDir 'build/generated/structure'
+
 // Expand pack_format variable in pack.mcmeta
 processResources {
+    dependsOn 'copyStructures'
     inputs.property 'pack_format', project.ext.pack_format
 
     filesMatching('pack.mcmeta') {
@@ -31,5 +43,6 @@ processResources {
 
 // Set duplicates strategy for sourcesJar to avoid conflicts
 tasks.named('sourcesJar') {
+    dependsOn 'copyStructures'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }

@@ -47,11 +47,14 @@ shadow_version=9.4.2
 ### 2. Create `common/{version}/`
 
 Copy `src/` and `build.gradle` from `common/{base_version}/` (do NOT copy `build/`):
-- `build.gradle` (usually no changes needed)
+- `build.gradle` (usually no changes needed; if `{base_version}` is 1.21.3 or
+  later it already carries the `copyStructures` task that copies structure
+  NBT files from `common/1.21.1` at build time — do NOT copy the `structure/`
+  directory itself, it should not exist in the new version)
 - `src/main/java/com/beginnersdelight/` (entry point, worldgen/, village/, util/)
 - `src/main/resources/pack.mcmeta` (template, expanded from `pack_format`)
 - `src/main/resources/beginnersdelight-default-config.toml`
-- `src/main/resources/data/beginnersdelight/` (structures, loot tables)
+- `src/main/resources/data/beginnersdelight/` (loot tables only — skip `structure/`, see above)
 
 ### 3. Create `fabric/{version}/`
 
