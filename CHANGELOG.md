@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-09-12
+
 ### Added
 
 - Allow data packs to extend the starter-house pool. Modpacks can add, remove, replace, and weight structure templates for both the world-spawn house and Village Mode player houses. Each entry can preserve the template's containers or opt into the normal starter loot. See `docs/datapack-structure-pools.md` for the versioned schema and examples
@@ -140,7 +142,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Structure generation state persistence using SavedData to prevent regeneration
 - One-time generation per world with per-player tracking
 
-[Unreleased]: https://github.com/ksoichiro/BeginnersDelight/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/ksoichiro/BeginnersDelight/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/ksoichiro/BeginnersDelight/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/ksoichiro/BeginnersDelight/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/ksoichiro/BeginnersDelight/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/ksoichiro/BeginnersDelight/compare/v0.3.0...v0.4.0
