@@ -12,6 +12,7 @@ A multi-loader Minecraft mod that generates a small starter house at the world s
 - **Survival Essentials**: The house includes a bed, a chest or barrel with starter items (food, tools, torches), and lighting. Designs with more than one container fill the extra ones with supplies (coal, oak planks, torches, wheat seeds) instead of a duplicate starter kit
 - **Multiple Variants**: Randomly selects from multiple house designs for variety
 - **Data Pack Structure Pools**: Modpacks can add, remove, replace, and weight starter-house templates. See [the data pack structure pool guide](docs/datapack-structure-pools.md)
+- **Modpack Integration**: Configure generation defaults, replace the starter-house pool, or override starter loot. See the [modpack integration guide](docs/modpack-integration.md)
 - **Multiplayer Support**: All players spawn at the same location with the starter house
 - **Safe Removal**: Uses only vanilla blocks, so the structure remains intact even after removing the mod
 - **No Regeneration**: The house is generated only once and never duplicated
@@ -563,6 +564,12 @@ BeginnersDelight/
 - **Shadow Plugin**: Bundles common module into loader-specific JARs
 - **Structure Files**: NBT format, placed in `common/26.2/src/main/resources/data/beginnersdelight/structure/`
 - **Persistence**: Uses `SavedData` to prevent structure regeneration across server restarts
+
+## Compatibility
+
+Beginner's Delight changes the world spawn area only when it places a starter house or a Village Mode building. It uses vanilla blocks and items, and does not add a runtime dependency beyond Fabric API on Fabric.
+
+For a modpack that also changes spawn handling, terrain, structures, or world generation, test a new world with the complete pack before release. Use the [modpack integration guide](docs/modpack-integration.md) to disable the starter house, choose it per world, or replace its templates. Existing placed structures are not changed by a configuration or data pack update.
 
 ## License
 

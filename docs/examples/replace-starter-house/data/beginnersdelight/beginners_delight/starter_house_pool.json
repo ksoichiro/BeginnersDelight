@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "replace": true,
+  "entries": [
+    {
+      "template": "my_pack:starter_houses/cottage",
+      "weight": 1,
+      "loot": "preserve"
+    }
+  ]
+}

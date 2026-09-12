@@ -1,0 +1,14 @@
+# Beginner's Delight configuration for a modpack that does not generate a
+# starter house in newly created worlds. Existing worlds keep their own game
+# rule value.
+
+schema_version = 2
+
+[village]
+plot_size = 20
+max_height_difference = 10
+generate_paths = true
+respawn_at_house = true
+
+[starter_house]
+auto_generate = false
