@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - In-game settings screen for Village Mode on Forge and Fabric, MC 1.16.5 through 1.20.1 — reachable from Forge's mods-list "Config" button or an unbound keybinding on either loader, completing the rollout started in 0.7.0 for Fabric/NeoForge on 1.21.1+
 
+### Fixed
+
+- Stop the Village Mode settings screen from crashing on the first Tab press before clicking into a field. Present on every version shipped with the screen, including 0.7.0's Fabric/NeoForge 1.21.1+ release, not just the versions added in this release
+
 ## [0.7.0] - 2026-09-12
 
 ### Added

@@ -21,6 +21,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.List;
 
 public class VillageConfigScreen extends Screen {
@@ -226,12 +227,12 @@ public class VillageConfigScreen extends Screen {
 
         @Override
         public List<? extends GuiEventListener> children() {
-            return List.of();
+            return Collections.emptyList();
         }
 
         @Override
         public List<? extends NarratableEntry> narratables() {
-            return List.of();
+            return Collections.emptyList();
         }
     }
 
@@ -304,12 +305,12 @@ public class VillageConfigScreen extends Screen {
 
         @Override
         public List<? extends GuiEventListener> children() {
-            return List.of(this.editBox);
+            return Collections.singletonList(this.editBox);
         }
 
         @Override
         public List<? extends NarratableEntry> narratables() {
-            return List.of(this.editBox);
+            return Collections.singletonList(this.editBox);
         }
     }
 
@@ -345,12 +346,12 @@ public class VillageConfigScreen extends Screen {
 
         @Override
         public List<? extends GuiEventListener> children() {
-            return List.of(this.button);
+            return Collections.singletonList(this.button);
         }
 
         @Override
         public List<? extends NarratableEntry> narratables() {
-            return List.of(this.button);
+            return Collections.singletonList(this.button);
         }
     }
 }
