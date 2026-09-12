@@ -1,6 +1,7 @@
 package com.beginnersdelight.forge;
 
 import com.beginnersdelight.BeginnersDelight;
+import com.beginnersdelight.forge.client.BeginnersDelightForgeClient;
 import com.beginnersdelight.village.VillageCommand;
 import com.beginnersdelight.village.VillageConfigLoader;
 import com.beginnersdelight.village.VillageManager;
@@ -9,12 +10,15 @@ import com.beginnersdelight.worldgen.StarterHouseGenerator;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.GameRules;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.fml.loading.FMLPaths;
 import net.minecraftforge.server.ServerLifecycleHooks;
 
@@ -22,6 +26,10 @@ import net.minecraftforge.server.ServerLifecycleHooks;
 public class BeginnersDelightForge {
     public BeginnersDelightForge() {
         BeginnersDelight.init();
+
+        if (FMLEnvironment.dist == Dist.CLIENT) {
+            BeginnersDelightForgeClient.init(FMLJavaModLoadingContext.get().getModEventBus());
+        }
 
         // The rule table is a plain static map on this version, and Forge's access transformer
         // opens up both GameRules.register and BooleanValue.create, so registering straight from
