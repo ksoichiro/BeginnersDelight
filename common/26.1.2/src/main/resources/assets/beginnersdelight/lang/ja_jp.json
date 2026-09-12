@@ -1,4 +1,23 @@
 {
   "gamerule.beginnersdelight.generate_starter_house": "Beginner's Delight: スターターハウスを生成",
-  "gamerule.beginnersdelight.generate_starter_house.description": "新しく作成するワールドでスポーン地点にスターターハウスを生成するかどうか。ワールド作成時に設定するのが最適です。後から変更しても、まだ生成されていないワールドにのみ影響します。"
+  "gamerule.beginnersdelight.generate_starter_house.description": "新しく作成するワールドでスポーン地点にスターターハウスを生成するかどうか。ワールド作成時に設定するのが最適です。後から変更しても、まだ生成されていないワールドにのみ影響します。",
+  "config.beginnersdelight.title": "Beginner's Delight 設定",
+  "config.beginnersdelight.category.village": "村",
+  "config.beginnersdelight.category.starter_house": "スターターハウス",
+  "config.beginnersdelight.option.plot_size": "区画サイズ",
+  "config.beginnersdelight.option.plot_size.tooltip": "各村区画のサイズ(ブロック数、グリッド間隔)。変更は新しく配置される家にのみ影響します。",
+  "config.beginnersdelight.option.max_height_difference": "許容する高低差",
+  "config.beginnersdelight.option.max_height_difference.tooltip": "区画が建築可能とみなされる、区画内の最大地形高低差(ブロック数)。",
+  "config.beginnersdelight.option.generate_paths": "道を生成",
+  "config.beginnersdelight.option.generate_paths.tooltip": "ONの場合、家や装飾物を結ぶ土の道が生成されます。",
+  "config.beginnersdelight.option.respawn_at_house": "自宅でリスポーン",
+  "config.beginnersdelight.option.respawn_at_house.tooltip": "ONの場合、ベッドを持たないプレイヤーはワールドスポーンではなく自分の村の家でリスポーンします。",
+  "config.beginnersdelight.option.auto_generate_starter_house": "スターターハウスを既定で生成",
+  "config.beginnersdelight.option.auto_generate_starter_house.tooltip": "新しく作成するワールドにおけるスターターハウスのゲームルールの既定値。既に存在するワールドには影響しません。この設定を変更するにはゲームの再起動が必要です。",
+  "config.beginnersdelight.valid_range": "有効範囲: %s ~ %s",
+  "config.beginnersdelight.reset": "初期値に戻す",
+  "config.beginnersdelight.note_local": "ローカル設定です。あなたがホストするワールドに適用されます。",
+  "config.beginnersdelight.note_not_host": "ホストではありません。変更はこのワールドには反映されません。",
+  "key.beginnersdelight.open_village_config": "Beginner's Delight 設定を開く",
+  "key.category.beginnersdelight.main": "Beginner's Delight"
 }

@@ -16,6 +16,12 @@
   "entrypoints": {
     "main": [
       "com.beginnersdelight.fabric.BeginnersDelightFabric"
+    ],
+    "client": [
+      "com.beginnersdelight.fabric.client.BeginnersDelightFabricClient"
+    ],
+    "modmenu": [
+      "com.beginnersdelight.fabric.client.ModMenuIntegration"
     ]
   },
   "depends": {

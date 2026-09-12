@@ -18,7 +18,8 @@ configurations {
 sourceSets {
     main {
         java {
-            srcDir '../base/src/main/java'
+            // NOTE: no '../base/src/main/java' — this version has a local fork of
+            // BeginnersDelightNeoForge.java (adds a client hook), unlike other NeoForge versions.
             srcDir 'src/main/java'
             srcDir '../gamerule-legacy/src/main/java'
         }

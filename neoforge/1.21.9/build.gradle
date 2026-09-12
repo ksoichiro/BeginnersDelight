@@ -18,7 +18,6 @@ configurations {
 sourceSets {
     main {
         java {
-            srcDir '../base/src/main/java'
             srcDir 'src/main/java'
             srcDir '../gamerule-legacy/src/main/java'
         }

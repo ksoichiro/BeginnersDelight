@@ -18,6 +18,6 @@
   "config.beginnersdelight.reset": "Reset to Defaults",
   "config.beginnersdelight.note_local": "Local settings: applied to worlds you host.",
   "config.beginnersdelight.note_not_host": "Not the host: changes won't affect this world.",
-  "key.beginnersdelight.open_village_config": "Open Village Config Screen",
+  "key.beginnersdelight.open_village_config": "Open Beginner's Delight Settings",
   "key.category.beginnersdelight.main": "Beginner's Delight"
 }

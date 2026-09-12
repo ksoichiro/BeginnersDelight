@@ -37,6 +37,21 @@ dependencies {
     modImplementation include("com.electronwill.night-config:toml:3.8.3")
 }
 
+// Optional ModMenu integration: compile-time only, and only when
+// props/1.21.4.properties declares modmenu_version.
+if (project.hasProperty('modmenu_version')) {
+    repositories {
+        maven {
+            name = 'Modrinth'
+            url = 'https://api.modrinth.com/maven'
+            content { includeGroup 'maven.modrinth' }
+        }
+    }
+    dependencies {
+        modCompileOnly "maven.modrinth:modmenu:${modmenu_version}"
+    }
+}
+
 sourceSets {
     main {
         java {

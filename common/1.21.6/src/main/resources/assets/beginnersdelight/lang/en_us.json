@@ -1,4 +1,23 @@
 {
   "gamerule.beginnersdelight:generate_starter_house": "Beginner's Delight: Generate starter house",
-  "gamerule.beginnersdelight:generate_starter_house.description": "Whether newly created worlds generate a starter house at spawn. Best set when creating a world; changing it later only affects worlds that have not generated one yet."
+  "gamerule.beginnersdelight:generate_starter_house.description": "Whether newly created worlds generate a starter house at spawn. Best set when creating a world; changing it later only affects worlds that have not generated one yet.",
+  "config.beginnersdelight.title": "Beginner's Delight Settings",
+  "config.beginnersdelight.category.village": "Village",
+  "config.beginnersdelight.category.starter_house": "Starter House",
+  "config.beginnersdelight.option.plot_size": "Plot Size",
+  "config.beginnersdelight.option.plot_size.tooltip": "Size of each village plot in blocks (grid spacing). Changing this only affects newly placed houses.",
+  "config.beginnersdelight.option.max_height_difference": "Max Height Difference",
+  "config.beginnersdelight.option.max_height_difference.tooltip": "Maximum terrain height difference (in blocks) allowed within a plot for it to be considered buildable.",
+  "config.beginnersdelight.option.generate_paths": "Generate Paths",
+  "config.beginnersdelight.option.generate_paths.tooltip": "If ON, dirt paths are generated to connect houses and decorations.",
+  "config.beginnersdelight.option.respawn_at_house": "Respawn At House",
+  "config.beginnersdelight.option.respawn_at_house.tooltip": "If ON, players who have no bed respawn at their village house instead of the world spawn.",
+  "config.beginnersdelight.option.auto_generate_starter_house": "Generate Starter House By Default",
+  "config.beginnersdelight.option.auto_generate_starter_house.tooltip": "Default value of the starter house game rule for newly created worlds. Does not affect worlds that already exist. Changing this requires restarting the game to take effect.",
+  "config.beginnersdelight.valid_range": "Valid range: %s - %s",
+  "config.beginnersdelight.reset": "Reset to Defaults",
+  "config.beginnersdelight.note_local": "Local settings: applied to worlds you host.",
+  "config.beginnersdelight.note_not_host": "Not the host: changes won't affect this world.",
+  "key.beginnersdelight.open_village_config": "Open Beginner's Delight Settings",
+  "key.categories.beginnersdelight": "Beginner's Delight"
 }

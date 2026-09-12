@@ -18,6 +18,6 @@
   "config.beginnersdelight.reset": "初期値に戻す",
   "config.beginnersdelight.note_local": "ローカル設定です。あなたがホストするワールドに適用されます。",
   "config.beginnersdelight.note_not_host": "ホストではありません。変更はこのワールドには反映されません。",
-  "key.beginnersdelight.open_village_config": "村の設定画面を開く",
+  "key.beginnersdelight.open_village_config": "Beginner's Delight 設定を開く",
   "key.category.beginnersdelight.main": "Beginner's Delight"
 }

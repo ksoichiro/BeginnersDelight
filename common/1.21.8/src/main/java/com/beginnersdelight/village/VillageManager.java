@@ -22,6 +22,7 @@ import java.util.UUID;
 public class VillageManager {
 
     private static VillageConfig config = VillageConfigDefaults.defaults();
+    private static Path clientConfigDir;
 
     // Upper bound only: the build normally starts as soon as the client reports that it
     // has finished loading. The cap is there for a client that never sends that report.
@@ -154,6 +155,29 @@ public class VillageManager {
 
     public static VillageConfig getConfig() {
         return config;
+    }
+
+    /**
+     * Replaces the in-memory config without touching disk. Called by the config screen's
+     * Done button: in singleplayer/LAN the client and the integrated server share one JVM,
+     * so this takes effect immediately. On a dedicated server it only affects the calling
+     * client's own process (which has no server), matching the screen's non-host warning.
+     */
+    public static void setConfig(VillageConfig newConfig) {
+        config = newConfig;
+    }
+
+    /**
+     * Records the loader-provided config directory for client-side use (the config screen
+     * and its writer need this without a {@link MinecraftServer} reference, unlike
+     * {@link #resolveConfigDir}). Set once by each loader's client entrypoint.
+     */
+    public static void setClientConfigDir(Path configDir) {
+        clientConfigDir = configDir;
+    }
+
+    public static Path getClientConfigDir() {
+        return clientConfigDir;
     }
 
     /**

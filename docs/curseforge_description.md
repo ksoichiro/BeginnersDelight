@@ -42,7 +42,7 @@ Some house designs come with more than one chest or barrel. Only one of them hol
 - **A house per player**: Each new player gets their own house, connected to the village by dirt paths
 - **Decoration buildings**: Wells, sheds, storehouses, and farms appear as the village grows
 - **Respawn at home**: Players can respawn at their own house
-- **Configurable**: Adjust plot size, path generation, and respawn behavior in a `config/beginnersdelight.toml` file, reloadable in-game with `/beginnersdelight config reload`, or via an in-game settings screen (NeoForge's mod-list "Config" button, ModMenu if installed on Fabric, or an unbound keybinding on either loader) — MC 26.2 only for now, the host player's edits apply immediately for singleplayer/LAN
+- **Configurable**: Adjust plot size, path generation, and respawn behavior in a `config/beginnersdelight.toml` file, reloadable in-game with `/beginnersdelight config reload`, or via an in-game settings screen on Fabric and NeoForge (MC 1.21.1 and later; Forge support is planned) — NeoForge's mod-list "Config" button, ModMenu if installed on Fabric, or an unbound keybinding on either loader; the host player's edits apply immediately for singleplayer/LAN
 
 ### 🎚️ Per-World Toggle
 - **Choose per world**: Uncheck `beginnersdelight:generate_starter_house` in the "Game Rules" screen while creating a world to skip the starter house for that world only

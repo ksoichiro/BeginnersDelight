@@ -36,11 +36,6 @@ public final class VillageConfigLoader {
     private static final String K_STARTER_HOUSE = "starter_house";
     private static final String K_AUTO_GENERATE = "auto_generate";
 
-    private static final int MIN_PLOT_SIZE = 5;
-    private static final int MAX_PLOT_SIZE = 256;
-    private static final int MIN_HEIGHT_DIFFERENCE = 0;
-    private static final int MAX_HEIGHT_DIFFERENCE = 256;
-
     private VillageConfigLoader() {
     }
 
@@ -94,9 +89,9 @@ public final class VillageConfigLoader {
         }
 
         int plotSize = readInt(parsed, K_VILLAGE + "." + K_PLOT_SIZE,
-                VillageConfigDefaults.PLOT_SIZE, MIN_PLOT_SIZE, MAX_PLOT_SIZE);
+                VillageConfigDefaults.PLOT_SIZE, VillageConfigRanges.MIN_PLOT_SIZE, VillageConfigRanges.MAX_PLOT_SIZE);
         int maxHeightDifference = readInt(parsed, K_VILLAGE + "." + K_MAX_HEIGHT_DIFFERENCE,
-                VillageConfigDefaults.MAX_HEIGHT_DIFFERENCE, MIN_HEIGHT_DIFFERENCE, MAX_HEIGHT_DIFFERENCE);
+                VillageConfigDefaults.MAX_HEIGHT_DIFFERENCE, VillageConfigRanges.MIN_HEIGHT_DIFFERENCE, VillageConfigRanges.MAX_HEIGHT_DIFFERENCE);
         boolean generatePaths = readBoolean(parsed, K_VILLAGE + "." + K_GENERATE_PATHS,
                 VillageConfigDefaults.GENERATE_PATHS);
         boolean respawnAtHouse = readBoolean(parsed, K_VILLAGE + "." + K_RESPAWN_AT_HOUSE,
