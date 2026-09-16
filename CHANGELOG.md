@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Support for Minecraft 26.3 (Fabric and NeoForge)
 - In-game settings screen for Village Mode on Forge and Fabric, MC 1.16.5 through 1.20.1 — reachable from Forge's mods-list "Config" button or an unbound keybinding on either loader, completing the rollout started in 0.7.0 for Fabric/NeoForge on 1.21.1+
 
 ### Fixed

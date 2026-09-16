@@ -12,6 +12,7 @@
 
 ## Active Technologies
 
+- Java 25 (Minecraft Java Edition 26.3) + NeoForge 26.3.0.x, Fabric Loader
 - Java 25 (Minecraft Java Edition 26.2) + NeoForge 26.2.0.x, Fabric Loader
 - Java 25 (Minecraft Java Edition 26.1.2) + NeoForge 26.1.2.x, Fabric Loader
 - Java 25 (Minecraft Java Edition 26.1.1) + NeoForge 26.1.1.x, Fabric Loader
@@ -36,16 +37,19 @@
 
 ```
 common/
+  26.3/               (version-specific common module)
   26.2/               (version-specific common module)
   26.1.2/             (version-specific common module)
   ...                 (26.1.1, 26.1, 1.21.11, ..., 1.16.5)
 fabric/
   base/               (shared Fabric sources, NOT a Gradle subproject)
+  26.3/               (version-specific Fabric subproject)
   26.2/               (version-specific Fabric subproject)
   26.1.2/             (version-specific Fabric subproject)
   ...                 (26.1.1, 26.1, 1.21.11, ..., 1.16.5)
 neoforge/
   base/               (shared NeoForge sources, NOT a Gradle subproject)
+  26.3/               (version-specific NeoForge subproject)
   26.2/               (version-specific NeoForge subproject)
   26.1.2/             (version-specific NeoForge subproject)
   ...                 (26.1.1, 26.1, 1.21.11, ..., 1.21.1)
@@ -61,10 +65,10 @@ docs/                 (documentation)
 
 - **Mod ID**: `beginnersdelight`
 - **Package**: `com.beginnersdelight`
-- **Minecraft**: 26.2, 26.1.2, 26.1.1, 26.1, 1.21.11, 1.21.10, 1.21.9, 1.21.8, 1.21.7, 1.21.6, 1.21.5, 1.21.4, 1.21.3, 1.21.1, 1.20.1, 1.19.2, 1.18.2, 1.17.1, 1.16.5
+- **Minecraft**: 26.3, 26.2, 26.1.2, 26.1.1, 26.1, 1.21.11, 1.21.10, 1.21.9, 1.21.8, 1.21.7, 1.21.6, 1.21.5, 1.21.4, 1.21.3, 1.21.1, 1.20.1, 1.19.2, 1.18.2, 1.17.1, 1.16.5
 - **Fabric Loader**: 0.19.3 (26.x), 0.17.3 (1.16.5–1.21.11)
-- **Fabric API**: 0.154.2+26.2 (26.2), 0.154.2+26.1.2 (26.1.2), 0.145.4+26.1.1 (26.1.1), 0.145.1+26.1 (26.1), 0.141.3+1.21.11 (1.21.11), 0.138.4+1.21.10 (1.21.10), 0.134.1+1.21.9 (1.21.9), 0.136.1+1.21.8 (1.21.8), 0.129.0+1.21.7 (1.21.7), 0.128.1+1.21.6 (1.21.6), 0.128.1+1.21.5 (1.21.5), 0.119.4+1.21.4 (1.21.4), 0.112.1+1.21.3 (1.21.3), 0.116.7+1.21.1 (1.21.1), 0.92.2+1.20.1 (1.20.1), 0.77.0+1.19.2 (1.19.2), 0.76.0+1.18.2 (1.18.2), 0.46.1+1.17 (1.17.1), 0.42.0+1.16 (1.16.5)
-- **NeoForge**: 26.2.0.16-beta (26.2), 26.1.2.80 (26.1.2), 26.1.1.15-beta (26.1.1), 26.1.0.19-beta (26.1), 21.11.37-beta (1.21.11), 21.10.64 (1.21.10), 21.9.16-beta (1.21.9), 21.8.52 (1.21.8), 21.7.2-beta (1.21.7), 21.6.20-beta (1.21.6), 21.5.96 (1.21.5), 21.4.156 (1.21.4), 21.3.95 (1.21.3), 21.1.209 (1.21.1)
+- **Fabric API**: 0.160.6+26.3 (26.3), 0.154.2+26.2 (26.2), 0.154.2+26.1.2 (26.1.2), 0.145.4+26.1.1 (26.1.1), 0.145.1+26.1 (26.1), 0.141.3+1.21.11 (1.21.11), 0.138.4+1.21.10 (1.21.10), 0.134.1+1.21.9 (1.21.9), 0.136.1+1.21.8 (1.21.8), 0.129.0+1.21.7 (1.21.7), 0.128.1+1.21.6 (1.21.6), 0.128.1+1.21.5 (1.21.5), 0.119.4+1.21.4 (1.21.4), 0.112.1+1.21.3 (1.21.3), 0.116.7+1.21.1 (1.21.1), 0.92.2+1.20.1 (1.20.1), 0.77.0+1.19.2 (1.19.2), 0.76.0+1.18.2 (1.18.2), 0.46.1+1.17 (1.17.1), 0.42.0+1.16 (1.16.5)
+- **NeoForge**: 26.3.0.1-beta (26.3), 26.2.0.16-beta (26.2), 26.1.2.80 (26.1.2), 26.1.1.15-beta (26.1.1), 26.1.0.19-beta (26.1), 21.11.37-beta (1.21.11), 21.10.64 (1.21.10), 21.9.16-beta (1.21.9), 21.8.52 (1.21.8), 21.7.2-beta (1.21.7), 21.6.20-beta (1.21.6), 21.5.96 (1.21.5), 21.4.156 (1.21.4), 21.3.95 (1.21.3), 21.1.209 (1.21.1)
 - **Forge**: 47.4.0 (1.20.1), 43.4.0 (1.19.2), 40.2.0 (1.18.2), 37.1.1 (1.17.1), 36.2.34 (1.16.5)
 
 ## Build Configuration
@@ -78,16 +82,20 @@ docs/                 (documentation)
 ## Commands
 
 **Build**:
-- `./gradlew build` - Build for default version (26.2)
+- `./gradlew build` - Build for default version (26.3)
 - `./gradlew build -Ptarget_mc_version=1.20.1` - Build for specific version
-- `./gradlew buildAll` - Build for all supported versions (1.16.5, 1.17.1, 1.18.2, 1.19.2, 1.20.1, 1.21.1, 1.21.3, 1.21.4, 1.21.5, 1.21.6, 1.21.7, 1.21.8, 1.21.9, 1.21.10, 1.21.11, 26.1, 26.1.1, 26.1.2, 26.2)
+- `./gradlew buildAll` - Build for all supported versions (1.16.5, 1.17.1, 1.18.2, 1.19.2, 1.20.1, 1.21.1, 1.21.3, 1.21.4, 1.21.5, 1.21.6, 1.21.7, 1.21.8, 1.21.9, 1.21.10, 1.21.11, 26.1, 26.1.1, 26.1.2, 26.2, 26.3)
 
 **Clean**:
 - `./gradlew cleanAll` - Clean all supported versions
 
-**Run Client** (26.2):
+**Run Client** (26.3):
 - Fabric: `./gradlew :fabric:runClient`
 - NeoForge: `./gradlew :neoforge:runClient`
+
+**Run Client** (26.2):
+- Fabric: `./gradlew :fabric:runClient -Ptarget_mc_version=26.2`
+- NeoForge: `./gradlew :neoforge:runClient -Ptarget_mc_version=26.2`
 
 **Run Client** (26.1.2):
 - Fabric: `./gradlew :fabric:runClient -Ptarget_mc_version=26.1.2`
@@ -187,7 +195,8 @@ docs/                 (documentation)
 - **MC 1.21.11 API differences from 1.21.10**: `ResourceLocation` renamed to `Identifier` (same package `net.minecraft.resources`). `GameRules` moved from `net.minecraft.world.level.GameRules` to `net.minecraft.world.level.gamerules.GameRules`. `RULE_SPAWN_RADIUS` renamed to `RESPAWN_RADIUS`. GameRules API changed: `getGameRules().getRule(key).set(value, server)` → `getGameRules().set(key, value, server)`. `ServerPlayer.hasClientLoaded()` (added in 1.21.4) moved onto the connection — use `player.connection.hasClientLoaded()`.
 - **MC 26.1 differences from 1.21.11 (unobfuscated Minecraft)**: MC 26.1+ ships unobfuscated and requires Java 25 (also for the Gradle JVM). Build changes: use `dev.architectury.loom-no-remap` (1.17.x) + architectury-plugin 3.5-SNAPSHOT + Shadow 9.x, no `mappings` dependency, `modImplementation`/`modApi` → `implementation`/`api`, no `remapJar`/`remapSourcesJar` (final jar = `shadowJar`; Loom's `include()` for jar-in-jar still works and is applied by the plain `jar` task), common project dependency uses the default configuration (not `namedElements`). Fabric Loader minimum is 0.18.4. NeoForge versioning is now 4-part (`26.1.0.19-beta` for MC 26.1) and `neoforge.mods.toml` no longer declares `modLoader`/`loaderVersion`. API: `SavedDataType` takes an `Identifier` instead of a String name, and saved data files move from flat `data/<name>.dat` to `data/<namespace>/<path>.dat` — `com.beginnersdelight.util.SavedDataMigration` copies the legacy file on first access so upgraded worlds do not regenerate structures.
 - **MC 26.2 API differences from 26.1.2**: `BlockTags.SAPLINGS` constant removed (the vanilla `minecraft:saplings` data tag still exists) — use `com.beginnersdelight.util.ModBlockTags.SAPLINGS`. pack_format is `[107, 1]` (26.1–26.1.2 use `[101, 1]`). The 16 colored variants of terracotta (and other dyed block families: wool, concrete, glass, etc.) are no longer individual `Blocks` constants (`Blocks.WHITE_TERRACOTTA` and siblings are gone) — only reachable via `Blocks.DYED_TERRACOTTA` (a `ColorCollection<Block>`, e.g. `.asList()`/`.pick(DyeColor)`); the plain `Blocks.TERRACOTTA` constant is unaffected. `Minecraft`/client accessors also differ: 26.2 adds a `Gui.screen()` accessor (`client.gui.screen()` / `minecraft.gui.screen()`) for reading the currently-open screen when opening a new one on top; 26.1/26.1.1/26.1.2 don't have it — use the `Minecraft.screen` field directly (`client.screen` / `minecraft.screen`) instead.
-- **NeoForge `FMLEnvironment.dist` field removed in FancyModLoader 10.x**: 1.21.1–1.21.8 (FancyModLoader ≤9.x) expose `dist` as a public static field (`FMLEnvironment.dist == Dist.CLIENT`); 1.21.9 onward through 26.2 (FancyModLoader 10.x+) removed the field and require the `FMLEnvironment.getDist()` method instead. This is a hard split (not additive), so a single `neoforge/base` source file cannot target both — client-only entry-point classes that check the dist must stay forked per version-group until/unless a version-conditional shim is introduced.
+- **NeoForge `FMLEnvironment.dist` field removed in FancyModLoader 10.x**: 1.21.1–1.21.8 (FancyModLoader ≤9.x) expose `dist` as a public static field (`FMLEnvironment.dist == Dist.CLIENT`); 1.21.9 onward through 26.3 (FancyModLoader 10.x+) removed the field and require the `FMLEnvironment.getDist()` method instead. This is a hard split (not additive), so a single `neoforge/base` source file cannot target both — client-only entry-point classes that check the dist must stay forked per version-group until/unless a version-conditional shim is introduced.
+- **MC 26.3 API differences from 26.2**: `ServerLevel.getStructureManager()` removed — use `level.getServer().getStructureTemplateManager()` instead (the method moved onto `MinecraftServer`). pack_format is `[121, 0]` (26.2 uses `[107, 1]`).
 - **Known dev-only issue: "Client shutdown from post-main" watchdog crash on MC 26.x Fabric `runClient` exit**: MC 26.1+ added `ClientShutdownWatchdog`, which dumps a crash report if the JVM does not exit shortly after main returns. In the dev environment, Fabric Loader's runtime remapper (TinyRemapper bundled in `net.fabricmc.loader.impl` — `RuntimeModRemapper`/`GameProviderHelper`) leaves non-daemon `pool-N-thread-M` fixed thread pools (sized to CPU cores) running, which blocks JVM exit. Happens only in dev, only after the world is fully saved ("Stopping!" already logged), and not on every run (cached remap results skip pool creation). Not caused by this mod (mod code, night-config, and Architectury Transformer create no executors — verified 2026-07). Production players are unaffected. No action needed; ignore these crash reports.
 
 ## Workflow Guidelines

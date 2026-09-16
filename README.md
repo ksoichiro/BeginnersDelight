@@ -23,6 +23,8 @@ A multi-loader Minecraft mod that generates a small starter house at the world s
 
 | Minecraft | Mod Loader |
 |-----------|-----------|
+| 26.3 | Fabric Loader 0.18.4+ with Fabric API 0.160.6+26.3 |
+| 26.3 | NeoForge 26.3.0.1-beta+ |
 | 26.2 | Fabric Loader 0.18.4+ with Fabric API 0.154.2+26.2 |
 | 26.2 | NeoForge 26.2.0.16-beta+ |
 | 26.1.2 | Fabric Loader 0.18.4+ with Fabric API 0.154.2+26.1.2 |
@@ -65,8 +67,9 @@ A multi-loader Minecraft mod that generates a small starter house at the world s
 ## Requirements
 
 ### For Players
-- **Minecraft**: Java Edition 26.2, 26.1.2, 26.1.1, 26.1, 1.21.11, 1.21.10, 1.21.9, 1.21.8, 1.21.7, 1.21.6, 1.21.5, 1.21.4, 1.21.3, 1.21.1, 1.20.1, 1.19.2, 1.18.2, 1.17.1, or 1.16.5
+- **Minecraft**: Java Edition 26.3, 26.2, 26.1.2, 26.1.1, 26.1, 1.21.11, 1.21.10, 1.21.9, 1.21.8, 1.21.7, 1.21.6, 1.21.5, 1.21.4, 1.21.3, 1.21.1, 1.20.1, 1.19.2, 1.18.2, 1.17.1, or 1.16.5
 - **Mod Loader** (choose one for your Minecraft version):
+  - **26.3**: Fabric Loader 0.18.4+ with Fabric API, OR NeoForge 26.3.0.1-beta+
   - **26.2**: Fabric Loader 0.18.4+ with Fabric API, OR NeoForge 26.2.0.16-beta+
   - **26.1.2**: Fabric Loader 0.18.4+ with Fabric API, OR NeoForge 26.1.2.80+
   - **26.1.1**: Fabric Loader 0.18.4+ with Fabric API, OR NeoForge 26.1.1.15-beta+
@@ -104,9 +107,9 @@ cd BeginnersDelight
 ./gradlew build -Ptarget_mc_version=1.20.1
 ```
 
-**Output Files** (26.2, default):
-- `fabric/26.2/build/libs/beginnersdelight-<version>+26.2-fabric.jar` - Fabric loader JAR
-- `neoforge/26.2/build/libs/beginnersdelight-<version>+26.2-neoforge.jar` - NeoForge loader JAR
+**Output Files** (26.3, default):
+- `fabric/26.3/build/libs/beginnersdelight-<version>+26.3-fabric.jar` - Fabric loader JAR
+- `neoforge/26.3/build/libs/beginnersdelight-<version>+26.3-neoforge.jar` - NeoForge loader JAR
 
 **Output Files** (1.20.1):
 - `fabric/1.20.1/build/libs/beginnersdelight-<version>+1.20.1-fabric.jar` - Fabric loader JAR
@@ -125,11 +128,17 @@ cd BeginnersDelight
 ### Run in Development Environment
 
 ```bash
-# Fabric client (26.2)
+# Fabric client (26.3)
 ./gradlew :fabric:runClient
 
-# NeoForge client (26.2)
+# NeoForge client (26.3)
 ./gradlew :neoforge:runClient
+
+# Fabric client (26.2)
+./gradlew :fabric:runClient -Ptarget_mc_version=26.2
+
+# NeoForge client (26.2)
+./gradlew :neoforge:runClient -Ptarget_mc_version=26.2
 
 # Fabric client (26.1.2)
 ./gradlew :fabric:runClient -Ptarget_mc_version=26.1.2
@@ -241,6 +250,21 @@ cd BeginnersDelight
 ```
 
 ## Installation
+
+### For Minecraft 26.3
+
+#### Fabric
+1. Install Minecraft 26.3
+2. Install Fabric Loader 0.18.4+
+3. Download and install Fabric API 0.160.6+26.3
+4. Copy the Fabric JAR to `.minecraft/mods/` folder
+5. Launch Minecraft with Fabric profile
+
+#### NeoForge
+1. Install Minecraft 26.3
+2. Install NeoForge 26.3.0.1-beta+
+3. Copy the NeoForge JAR to `.minecraft/mods/` folder
+4. Launch Minecraft with NeoForge profile
 
 ### For Minecraft 26.2
 
@@ -533,7 +557,7 @@ cd BeginnersDelight
 BeginnersDelight/
 ├── common/
 │   ├── shared/              # Version-agnostic reference sources (not a Gradle subproject; not built)
-│   ├── 26.2/                # Common module for MC 26.2
+│   ├── 26.3/                # Common module for MC 26.3
 │   │   └── src/main/
 │   │       ├── java/com/beginnersdelight/
 │   │       │   ├── BeginnersDelight.java    # Common entry point
@@ -541,13 +565,13 @@ BeginnersDelight/
 │   │       │   └── registry/                # Registry management
 │   │       └── resources/
 │   │           └── data/beginnersdelight/   # Structures, loot tables
-│   ├── 26.1.2/ ... 1.16.5/  # Version-specific common modules
+│   ├── 26.2/ ... 1.16.5/    # Version-specific common modules
 ├── fabric/
 │   ├── base/                # Shared Fabric sources
-│   ├── 26.2/ ... 1.16.5/    # Version-specific Fabric subprojects
+│   ├── 26.3/ ... 1.16.5/    # Version-specific Fabric subprojects
 ├── neoforge/
 │   ├── base/                # Shared NeoForge sources
-│   ├── 26.2/ ... 1.21.1/    # Version-specific NeoForge subprojects
+│   ├── 26.3/ ... 1.21.1/    # Version-specific NeoForge subprojects
 ├── forge/
 │   ├── base/                # Shared Forge sources
 │   ├── 1.20.1/ ... 1.16.5/ # Version-specific Forge subprojects
@@ -562,7 +586,7 @@ BeginnersDelight/
 - **Build DSL**: Groovy DSL (for Architectury Loom compatibility)
 - **Mappings**: Mojang mappings (official Minecraft class names); MC 26.1+ is unobfuscated and uses no mappings
 - **Shadow Plugin**: Bundles common module into loader-specific JARs
-- **Structure Files**: NBT format, placed in `common/26.2/src/main/resources/data/beginnersdelight/structure/`
+- **Structure Files**: NBT format, placed in `common/26.3/src/main/resources/data/beginnersdelight/structure/`
 - **Persistence**: Uses `SavedData` to prevent structure regeneration across server restarts
 
 ## Compatibility
@@ -590,4 +614,4 @@ For issues, feature requests, or questions:
 
 ---
 
-**Developed for Minecraft Java Edition 26.2 / 26.1.2 / 26.1.1 / 26.1 / 1.21.11 / 1.21.10 / 1.21.9 / 1.21.8 / 1.21.7 / 1.21.6 / 1.21.5 / 1.21.4 / 1.21.3 / 1.21.1 / 1.20.1 / 1.19.2 / 1.18.2 / 1.17.1 / 1.16.5**
+**Developed for Minecraft Java Edition 26.3 / 26.2 / 26.1.2 / 26.1.1 / 26.1 / 1.21.11 / 1.21.10 / 1.21.9 / 1.21.8 / 1.21.7 / 1.21.6 / 1.21.5 / 1.21.4 / 1.21.3 / 1.21.1 / 1.20.1 / 1.19.2 / 1.18.2 / 1.17.1 / 1.16.5**

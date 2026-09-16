@@ -70,6 +70,7 @@ Some house designs come with more than one chest or barrel. Only one of them hol
 
 ### Multi-Loader & Multi-Version Support
 This mod supports **multiple Minecraft versions and mod loaders**!
+- **26.3**: Fabric and NeoForge
 - **26.2**: Fabric and NeoForge
 - **26.1.2**: Fabric and NeoForge
 - **26.1.1**: Fabric and NeoForge
@@ -93,6 +94,11 @@ This mod supports **multiple Minecraft versions and mod loaders**!
 - Shared codebase ensures consistent experience across versions and loaders
 
 ### Requirements
+
+#### Minecraft 26.3
+- **Mod Loader**:
+  - Fabric Loader 0.18.4+ with Fabric API 0.160.6+26.3, OR
+  - NeoForge 26.3.0.1-beta+
 
 #### Minecraft 26.2
 - **Mod Loader**:
@@ -238,6 +244,6 @@ Check out the **Gallery** above for screenshots showcasing:
 
 ---
 
-**Developed for Minecraft Java Edition 26.2 / 26.1.2 / 26.1.1 / 26.1 / 1.21.11 / 1.21.10 / 1.21.9 / 1.21.8 / 1.21.7 / 1.21.6 / 1.21.5 / 1.21.4 / 1.21.3 / 1.21.1 / 1.20.1 / 1.19.2 / 1.18.2 / 1.17.1 / 1.16.5**
+**Developed for Minecraft Java Edition 26.3 / 26.2 / 26.1.2 / 26.1.1 / 26.1 / 1.21.11 / 1.21.10 / 1.21.9 / 1.21.8 / 1.21.7 / 1.21.6 / 1.21.5 / 1.21.4 / 1.21.3 / 1.21.1 / 1.20.1 / 1.19.2 / 1.18.2 / 1.17.1 / 1.16.5**
 
 A safe start for every adventure. 🏠
