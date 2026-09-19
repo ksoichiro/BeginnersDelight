@@ -1112,7 +1112,7 @@ public class VillageHouseGenerator {
                     BlockPos pos = new BlockPos(x, y, z);
                     BlockEntity blockEntity = level.getBlockEntity(pos);
                     if (blockEntity instanceof RandomizableContainerBlockEntity container
-                            && container.getLootTable() == null && container.isEmpty()) {
+                            && container.getLootTable() == null) {
                         ResourceKey<LootTable> loot = pos.equals(primaryPos)
                                 ? STARTER_HOUSE_LOOT : STARTER_HOUSE_SUPPLIES_LOOT;
                         container.setLootTable(loot, random.nextLong());
@@ -1138,7 +1138,7 @@ public class VillageHouseGenerator {
                     BlockPos pos = new BlockPos(x, y, z);
                     BlockEntity blockEntity = level.getBlockEntity(pos);
                     if (!(blockEntity instanceof RandomizableContainerBlockEntity container)
-                            || container.getLootTable() != null || !container.isEmpty()) {
+                            || container.getLootTable() != null) {
                         continue;
                     }
                     if (blockEntity instanceof ChestBlockEntity) {

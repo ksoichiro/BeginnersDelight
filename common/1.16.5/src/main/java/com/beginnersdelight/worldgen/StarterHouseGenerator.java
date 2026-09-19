@@ -634,7 +634,7 @@ public class StarterHouseGenerator {
                     BlockEntity blockEntity = level.getBlockEntity(pos);
                     if (blockEntity instanceof RandomizableContainerBlockEntity) {
                         RandomizableContainerBlockEntity container = (RandomizableContainerBlockEntity) blockEntity;
-                        if (hasExistingLootTable(container) || !container.isEmpty()) continue;
+                        if (hasExistingLootTable(container)) continue;
                         ResourceLocation loot = pos.equals(primaryPos)
                                 ? STARTER_HOUSE_LOOT : STARTER_HOUSE_SUPPLIES_LOOT;
                         container.setLootTable(loot, random.nextLong());
@@ -664,7 +664,7 @@ public class StarterHouseGenerator {
                         continue;
                     }
                     RandomizableContainerBlockEntity container = (RandomizableContainerBlockEntity) blockEntity;
-                    if (hasExistingLootTable(container) || !container.isEmpty()) continue;
+                    if (hasExistingLootTable(container)) continue;
                     if (blockEntity instanceof ChestBlockEntity) {
                         return pos;
                     }

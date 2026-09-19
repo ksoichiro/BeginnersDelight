@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Stop starter house and Village Mode containers from being skipped when they ship with decorative filler items. The 0.7.0 data pack pool feature started treating any non-empty container as pre-configured, so barrels with a few decorative items never received a loot table and stayed empty for the player
+
 ## [0.8.0] - 2026-09-17
 
 ### Added

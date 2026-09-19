@@ -128,10 +128,11 @@ the desired weight in the same file.
 not inspect or change their containers.
 
 `starter` asks Beginner's Delight to provide the normal starter-house loot.
-Existing inventories and containers that already have a loot table remain
-unchanged. Among otherwise empty containers, the first chest receives the
-starter kit and later containers receive the supplies loot table. Use this mode
-only when the template is intended to participate in that behavior.
+Containers that already have a loot table remain unchanged; every other
+container is assigned one, regardless of any items already placed in it. The
+first chest receives the starter kit and later containers receive the
+supplies loot table. Use this mode only when the template is intended to
+participate in that behavior.
 
 The bundled Beginner's Delight entries use `starter`, preserving the existing
 experience without requiring their NBT files to embed loot table data.
