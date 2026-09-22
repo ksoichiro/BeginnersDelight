@@ -1,7 +1,7 @@
 plugins { id 'net.minecraftforge.gradle' }
 
 minecraft { runs { configureEach { workingDir = layout.projectDirectory.dir('run'); if (org.gradle.internal.os.OperatingSystem.current().isMacOsX()) jvmArgs '-XstartOnFirstThread' }; register('client'); register('server') } }
-repositories { minecraft.mavenizer(it); maven fg.forgeMaven; maven fg.minecraftLibsMaven; mavenCentral() }
+repositories { clear(); minecraft.mavenizer(it); maven fg.forgeMaven; maven fg.minecraftLibsMaven; mavenCentral() }
 dependencies { implementation minecraft.dependency("net.minecraftforge:forge:${forge_version}"); compileOnly "com.electronwill.night-config:core:3.8.3"; compileOnly "com.electronwill.night-config:toml:3.8.3" }
 sourceSets.main { java.srcDir rootProject.file('forge/base/src/main/java'); java.srcDir rootProject.file('common/1.21.4/src/main/java'); resources.srcDir rootProject.file('common/1.21.4/src/main/resources') }
 tasks.named('processResources') { inputs.property 'version', project.version; filesMatching('META-INF/mods.toml') { expand(version: project.version, minecraft_version: minecraft_version, forge_major_version: forge_major_version) } }

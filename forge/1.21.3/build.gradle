@@ -16,6 +16,8 @@ minecraft {
 }
 
 repositories {
+    // Forge's macOS LWJGL patch is published on Forge Maven, not NeoForge Maven.
+    clear()
     minecraft.mavenizer(it)
     maven fg.forgeMaven
     maven fg.minecraftLibsMaven
