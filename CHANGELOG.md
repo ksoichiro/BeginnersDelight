@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Forge 52.1.16+ support for Minecraft 1.21.1
+
 ## [0.8.1] - 2026-09-19
 
 ### Fixed

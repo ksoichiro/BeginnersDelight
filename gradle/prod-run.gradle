@@ -20,9 +20,13 @@ interface ProdRunExecOps {
 }
 def prodExecOperations = project.objects.newInstance(ProdRunExecOps).execOperations
 
-// MC 26.1+ (unobfuscated) has no remapJar; the final artifact comes from shadowJar.
-def prodFinalJarTask = rootProject.ext.has('is_unobfuscated') && rootProject.ext.is_unobfuscated
-    ? 'shadowJar' : 'remapJar'
+// MC 26.1+ (unobfuscated) has no remapJar, and ForgeGradle 7 writes its final
+// Forge 1.21.1 artifact directly with jar. Both cases therefore skip remapJar.
+def prodFinalJarTask = project.plugins.hasPlugin('net.minecraftforge.gradle')
+    ? 'jar'
+    : rootProject.ext.has('is_unobfuscated') && rootProject.ext.is_unobfuscated
+        ? 'shadowJar'
+        : 'remapJar'
 
 // --- Helper: Download file with caching ---
 // Skips download if file already exists. Delete run-prod/cache/ to force re-download.

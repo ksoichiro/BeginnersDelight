@@ -20,6 +20,11 @@ buildscript {
         def bsLoomPluginId = bsProps.getProperty('loom_plugin', 'dev.architectury.loom')
         def bsLoomVersion = bsProps.getProperty('loom_version', '1.13-SNAPSHOT')
         classpath "${bsLoomPluginId}:${bsLoomPluginId}.gradle.plugin:${bsLoomVersion}"
+        // Forge 1.21.1 needs ForgeGradle 7, unlike the older Forge targets that
+        // are handled by Architectury Loom.
+        if (bsTargetVersion == '1.21.1') {
+            classpath 'net.minecraftforge.gradle:net.minecraftforge.gradle.gradle.plugin:[7.0.17,8.0)'
+        }
     }
 }
 
@@ -71,8 +76,14 @@ allprojects {
 }
 
 subprojects {
-    apply plugin: loomPluginId
-    apply plugin: 'architectury-plugin'
+    def usesForgeGradle = project.name == 'forge' && rootProject.ext.minecraft_version == '1.21.1'
+    if (usesForgeGradle) {
+        apply plugin: 'java'
+        apply plugin: 'net.minecraftforge.gradle'
+    } else {
+        apply plugin: loomPluginId
+        apply plugin: 'architectury-plugin'
+    }
     apply plugin: 'maven-publish'
 
     // Propagate version-specific properties to subprojects
@@ -100,10 +111,12 @@ subprojects {
     }
 
     dependencies {
-        minecraft "com.mojang:minecraft:$rootProject.ext.minecraft_version"
-        // Unobfuscated versions (MC 26.1+) have no mappings to apply
-        if (!isUnobfuscated) {
-            mappings loom.officialMojangMappings()
+        if (!usesForgeGradle) {
+            minecraft "com.mojang:minecraft:$rootProject.ext.minecraft_version"
+            // Unobfuscated versions (MC 26.1+) have no mappings to apply
+            if (!isUnobfuscated) {
+                mappings loom.officialMojangMappings()
+            }
         }
     }
 

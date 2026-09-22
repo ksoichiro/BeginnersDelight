@@ -1,0 +1,71 @@
+plugins {
+    id 'net.minecraftforge.gradle'
+}
+
+minecraft {
+    runs {
+        configureEach {
+            workingDir = layout.projectDirectory.dir('run')
+            // ForgeGradle does not add this macOS GLFW option automatically.
+            if (org.gradle.internal.os.OperatingSystem.current().isMacOsX()) {
+                jvmArgs '-XstartOnFirstThread'
+            }
+        }
+        register('client')
+        register('server')
+    }
+}
+
+repositories {
+    // The root project adds NeoForge's Maven repository for the other 1.21.1
+    // target. Forge's macOS LWJGL patch exists only on Forge Maven, so keep the
+    // ForgeGradle repositories ahead of that inherited repository.
+    clear()
+    minecraft.mavenizer(it)
+    maven fg.forgeMaven
+    maven fg.minecraftLibsMaven
+    mavenCentral()
+}
+
+dependencies {
+    implementation minecraft.dependency("net.minecraftforge:forge:${forge_version}")
+
+    // Forge ships NightConfig at runtime. The common sources only require it to compile.
+    compileOnly "com.electronwill.night-config:core:3.8.3"
+    compileOnly "com.electronwill.night-config:toml:3.8.3"
+}
+
+sourceSets.main {
+    java.srcDir rootProject.file('common/1.21.1/src/main/java')
+    resources.srcDir rootProject.file('common/1.21.1/src/main/resources')
+}
+
+tasks.named('processResources') {
+    inputs.property 'version', project.version
+
+    filesMatching('META-INF/mods.toml') {
+        expand(
+                version: project.version,
+                minecraft_version: minecraft_version,
+                forge_version: forge_version)
+    }
+}
+
+tasks.named('jar') {
+    archiveBaseName = rootProject.archives_name
+    archiveVersion = "${rootProject.mod_version}+${minecraft_version}-forge"
+    archiveClassifier = null
+}
+
+tasks.named('sourcesJar') {
+    archiveBaseName = rootProject.archives_name
+    archiveVersion = "${rootProject.mod_version}+${minecraft_version}-forge"
+    archiveClassifier = 'sources'
+}
+
+// ForgeGradle expects resources and classes in one output directory for the Java module path.
+sourceSets.each {
+    def outputDir = layout.buildDirectory.dir("sourceSets/$it.name")
+    it.output.resourcesDir = outputDir
+    it.java.destinationDirectory = outputDir
+}

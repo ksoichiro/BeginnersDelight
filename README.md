@@ -53,6 +53,7 @@ A multi-loader Minecraft mod that generates a small starter house at the world s
 | 1.21.3 | NeoForge 21.3.95+ |
 | 1.21.1 | Fabric Loader 0.17.3+ with Fabric API 0.116.7+1.21.1 |
 | 1.21.1 | NeoForge 21.1.209+ |
+| 1.21.1 | Forge 52.1.16+ |
 | 1.20.1 | Fabric Loader 0.17.3+ with Fabric API 0.92.2+1.20.1 |
 | 1.20.1 | Forge 47.4.0+ |
 | 1.19.2 | Fabric Loader 0.17.3+ with Fabric API 0.77.0+1.19.2 |
@@ -83,7 +84,7 @@ A multi-loader Minecraft mod that generates a small starter house at the world s
   - **1.21.5**: Fabric Loader 0.17.3+ with Fabric API, OR NeoForge 21.5.96+
   - **1.21.4**: Fabric Loader 0.17.3+ with Fabric API, OR NeoForge 21.4.156+
   - **1.21.3**: Fabric Loader 0.17.3+ with Fabric API, OR NeoForge 21.3.95+
-  - **1.21.1**: Fabric Loader 0.17.3+ with Fabric API, OR NeoForge 21.1.209+
+  - **1.21.1**: Fabric Loader 0.17.3+ with Fabric API, NeoForge 21.1.209+, or Forge 52.1.16+
   - **1.20.1**: Fabric Loader 0.17.3+ with Fabric API, OR Forge 47.4.0+
   - **1.19.2**: Fabric Loader 0.17.3+ with Fabric API, OR Forge 43.4.0+
   - **1.18.2**: Fabric Loader 0.17.3+ with Fabric API, OR Forge 40.2.0+
@@ -114,6 +115,11 @@ cd BeginnersDelight
 **Output Files** (1.20.1):
 - `fabric/1.20.1/build/libs/beginnersdelight-<version>+1.20.1-fabric.jar` - Fabric loader JAR
 - `forge/1.20.1/build/libs/beginnersdelight-<version>+1.20.1-forge.jar` - Forge loader JAR
+
+**Output Files** (1.21.1):
+- `fabric/1.21.1/build/libs/beginnersdelight-<version>+1.21.1-fabric.jar` - Fabric loader JAR
+- `neoforge/1.21.1/build/libs/beginnersdelight-<version>+1.21.1-neoforge.jar` - NeoForge loader JAR
+- `forge/1.21.1/build/libs/beginnersdelight-<version>+1.21.1-forge.jar` - Forge loader JAR
 
 ## Development Setup
 
@@ -217,6 +223,9 @@ cd BeginnersDelight
 
 # NeoForge client (1.21.1)
 ./gradlew :neoforge:runClient -Ptarget_mc_version=1.21.1
+
+# Forge client (1.21.1)
+./gradlew :forge:runClient -Ptarget_mc_version=1.21.1
 
 # Fabric client (1.20.1)
 ./gradlew :fabric:runClient -Ptarget_mc_version=1.20.1
@@ -476,6 +485,12 @@ cd BeginnersDelight
 3. Copy the NeoForge JAR to `.minecraft/mods/` folder
 4. Launch Minecraft with NeoForge profile
 
+#### Forge
+1. Install Minecraft 1.21.1
+2. Install Forge 52.1.16+
+3. Copy the Forge JAR to `.minecraft/mods/` folder
+4. Launch Minecraft with Forge profile
+
 ### For Minecraft 1.20.1
 
 #### Fabric
@@ -574,7 +589,7 @@ BeginnersDelight/
 │   ├── 26.3/ ... 1.21.1/    # Version-specific NeoForge subprojects
 ├── forge/
 │   ├── base/                # Shared Forge sources
-│   ├── 1.20.1/ ... 1.16.5/ # Version-specific Forge subprojects
+│   ├── 1.21.1/ ... 1.16.5/ # Version-specific Forge subprojects
 ├── props/                   # Version-specific properties
 ├── build.gradle             # Root build configuration (Groovy DSL)
 ├── settings.gradle          # Multi-module settings

@@ -84,7 +84,7 @@ This mod supports **multiple Minecraft versions and mod loaders**!
 - **1.21.5**: Fabric and NeoForge
 - **1.21.4**: Fabric and NeoForge
 - **1.21.3**: Fabric and NeoForge
-- **1.21.1**: Fabric and NeoForge
+- **1.21.1**: Fabric, NeoForge, and Forge
 - **1.20.1**: Fabric and Forge
 - **1.19.2**: Fabric and Forge
 - **1.18.2**: Fabric and Forge
@@ -168,7 +168,8 @@ This mod supports **multiple Minecraft versions and mod loaders**!
 #### Minecraft 1.21.1
 - **Mod Loader**:
   - Fabric Loader 0.17.3+ with Fabric API 0.116.7+1.21.1, OR
-  - NeoForge 21.1.209+
+  - NeoForge 21.1.209+, OR
+  - Forge 52.1.16+
 
 #### Minecraft 1.20.1
 - **Mod Loader**:
