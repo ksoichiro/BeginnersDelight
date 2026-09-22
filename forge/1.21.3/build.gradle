@@ -36,7 +36,11 @@ sourceSets.main {
     resources.srcDir rootProject.file('common/1.21.3/src/main/resources')
 }
 
+def structureSourceDir = rootProject.file('common/1.21.3/build/generated/structure')
+
 tasks.named('processResources') {
+    dependsOn ':common-1.21.3:copyStructures'
+    from structureSourceDir
     inputs.property 'version', project.version
     filesMatching('META-INF/mods.toml') {
         expand(version: project.version, minecraft_version: minecraft_version,
