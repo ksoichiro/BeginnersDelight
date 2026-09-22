@@ -1,0 +1,28 @@
+modLoader="javafml"
+loaderVersion="[${forge_major_version},)"
+license="LGPL-3.0"
+showAsResourcePack=false
+
+[[mods]]
+modId="beginnersdelight"
+version="${version}"
+displayName="Beginner's Delight"
+description='''
+Generates a small base structure at the world spawn point to help beginners proceed safely through early-game adventures.
+'''
+authors="ksoichiro"
+displayURL="https://github.com/ksoichiro/BeginnersDelight"
+
+[[dependencies.beginnersdelight]]
+modId="forge"
+mandatory=true
+versionRange="[${forge_major_version},)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.beginnersdelight]]
+modId="minecraft"
+mandatory=true
+versionRange="[${minecraft_version},1.22)"
+ordering="NONE"
+side="BOTH"

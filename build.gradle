@@ -20,9 +20,9 @@ buildscript {
         def bsLoomPluginId = bsProps.getProperty('loom_plugin', 'dev.architectury.loom')
         def bsLoomVersion = bsProps.getProperty('loom_version', '1.13-SNAPSHOT')
         classpath "${bsLoomPluginId}:${bsLoomPluginId}.gradle.plugin:${bsLoomVersion}"
-        // Forge 1.21.1 needs ForgeGradle 7, unlike the older Forge targets that
+        // Forge 1.21.x uses ForgeGradle 7, unlike the older Forge targets that
         // are handled by Architectury Loom.
-        if (bsTargetVersion == '1.21.1') {
+        if (bsTargetVersion != null && bsTargetVersion.startsWith('1.21.')) {
             classpath 'net.minecraftforge.gradle:net.minecraftforge.gradle.gradle.plugin:[7.0.17,8.0)'
         }
     }
@@ -76,7 +76,7 @@ allprojects {
 }
 
 subprojects {
-    def usesForgeGradle = project.name == 'forge' && rootProject.ext.minecraft_version == '1.21.1'
+    def usesForgeGradle = project.name == 'forge' && rootProject.ext.minecraft_version.startsWith('1.21.')
     if (usesForgeGradle) {
         apply plugin: 'java'
         apply plugin: 'net.minecraftforge.gradle'
