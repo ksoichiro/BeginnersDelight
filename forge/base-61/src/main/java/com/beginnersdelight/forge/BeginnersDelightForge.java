@@ -56,7 +56,7 @@ public class BeginnersDelightForge {
     }
 
     @Mod.EventBusSubscriber(modid = BeginnersDelight.MOD_ID, value = Dist.CLIENT,
-            bus = Mod.EventBusSubscriber.Bus.MOD)
+            bus = Mod.EventBusSubscriber.Bus.FORGE)
     public static class ClientModEvents {
         @SubscribeEvent public static void registerKeyMappings(net.minecraftforge.client.event.RegisterKeyMappingsEvent event) {
             event.register(BeginnersDelightForgeClient.openConfigKey());
