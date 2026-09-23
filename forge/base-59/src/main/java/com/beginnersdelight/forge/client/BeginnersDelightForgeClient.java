@@ -15,7 +15,7 @@ import net.minecraftforge.fml.loading.FMLPaths;
 /** Client-only setup, loaded only after the loader-side distribution check. */
 public final class BeginnersDelightForgeClient {
     private static final KeyMapping.Category CATEGORY = KeyMapping.Category.register(
-            ResourceLocation.fromNamespaceAndPath(BeginnersDelight.MOD_ID, BeginnersDelight.MOD_ID));
+            ResourceLocation.fromNamespaceAndPath(BeginnersDelight.MOD_ID, "main"));
     private static final KeyMapping OPEN_CONFIG_KEY = new KeyMapping(
             "key.beginnersdelight.open_village_config", InputConstants.Type.KEYSYM,
             InputConstants.UNKNOWN.getValue(), CATEGORY);
