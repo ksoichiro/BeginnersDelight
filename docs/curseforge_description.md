@@ -75,15 +75,15 @@ This mod supports **multiple Minecraft versions and mod loaders**!
 - **26.1.2**: Fabric and NeoForge
 - **26.1.1**: Fabric and NeoForge
 - **26.1**: Fabric and NeoForge
-- **1.21.11**: Fabric and NeoForge
-- **1.21.10**: Fabric and NeoForge
-- **1.21.9**: Fabric and NeoForge
-- **1.21.8**: Fabric and NeoForge
-- **1.21.7**: Fabric and NeoForge
-- **1.21.6**: Fabric and NeoForge
-- **1.21.5**: Fabric and NeoForge
-- **1.21.4**: Fabric and NeoForge
-- **1.21.3**: Fabric and NeoForge
+- **1.21.11**: Fabric, NeoForge, and Forge
+- **1.21.10**: Fabric, NeoForge, and Forge
+- **1.21.9**: Fabric, NeoForge, and Forge
+- **1.21.8**: Fabric, NeoForge, and Forge
+- **1.21.7**: Fabric, NeoForge, and Forge
+- **1.21.6**: Fabric, NeoForge, and Forge
+- **1.21.5**: Fabric, NeoForge, and Forge
+- **1.21.4**: Fabric, NeoForge, and Forge
+- **1.21.3**: Fabric, NeoForge, and Forge
 - **1.21.1**: Fabric, NeoForge, and Forge
 - **1.20.1**: Fabric and Forge
 - **1.19.2**: Fabric and Forge
@@ -123,47 +123,56 @@ This mod supports **multiple Minecraft versions and mod loaders**!
 #### Minecraft 1.21.11
 - **Mod Loader**:
   - Fabric Loader 0.17.3+ with Fabric API 0.141.3+1.21.11, OR
-  - NeoForge 21.11.37-beta+
+  - NeoForge 21.11.37-beta+, OR
+  - Forge 61.0.8+
 
 #### Minecraft 1.21.10
 - **Mod Loader**:
   - Fabric Loader 0.17.3+ with Fabric API 0.138.4+1.21.10, OR
-  - NeoForge 21.10.64+
+  - NeoForge 21.10.64+, OR
+  - Forge 60.1.8+
 
 #### Minecraft 1.21.9
 - **Mod Loader**:
   - Fabric Loader 0.17.3+ with Fabric API 0.134.1+1.21.9, OR
-  - NeoForge 21.9.16-beta+
+  - NeoForge 21.9.16-beta+, OR
+  - Forge 59.0.5+
 
 #### Minecraft 1.21.8
 - **Mod Loader**:
   - Fabric Loader 0.17.3+ with Fabric API 0.136.1+1.21.8, OR
-  - NeoForge 21.8.52+
+  - NeoForge 21.8.52+, OR
+  - Forge 58.1.14+
 
 #### Minecraft 1.21.7
 - **Mod Loader**:
   - Fabric Loader 0.17.3+ with Fabric API 0.129.0+1.21.7, OR
-  - NeoForge 21.7.2-beta+
+  - NeoForge 21.7.2-beta+, OR
+  - Forge 57.0.3+
 
 #### Minecraft 1.21.6
 - **Mod Loader**:
   - Fabric Loader 0.17.3+ with Fabric API 0.128.1+1.21.6, OR
-  - NeoForge 21.6.20-beta+
+  - NeoForge 21.6.20-beta+, OR
+  - Forge 56.0.9+
 
 #### Minecraft 1.21.5
 - **Mod Loader**:
   - Fabric Loader 0.17.3+ with Fabric API 0.128.1+1.21.5, OR
-  - NeoForge 21.5.96+
+  - NeoForge 21.5.96+, OR
+  - Forge 55.1.0+
 
 #### Minecraft 1.21.4
 - **Mod Loader**:
   - Fabric Loader 0.17.3+ with Fabric API 0.119.4+1.21.4, OR
-  - NeoForge 21.4.156+
+  - NeoForge 21.4.156+, OR
+  - Forge 54.1.0+
 
 #### Minecraft 1.21.3
 - **Mod Loader**:
   - Fabric Loader 0.17.3+ with Fabric API 0.112.1+1.21.3, OR
-  - NeoForge 21.3.95+
+  - NeoForge 21.3.95+, OR
+  - Forge 53.1.7+
 
 #### Minecraft 1.21.1
 - **Mod Loader**:

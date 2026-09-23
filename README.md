@@ -35,22 +35,31 @@ A multi-loader Minecraft mod that generates a small starter house at the world s
 | 26.1 | NeoForge 26.1.0.19-beta+ |
 | 1.21.11 | Fabric Loader 0.17.3+ with Fabric API 0.141.3+1.21.11 |
 | 1.21.11 | NeoForge 21.11.37-beta+ |
+| 1.21.11 | Forge 61.0.8+ |
 | 1.21.10 | Fabric Loader 0.17.3+ with Fabric API 0.138.4+1.21.10 |
 | 1.21.10 | NeoForge 21.10.64+ |
+| 1.21.10 | Forge 60.1.8+ |
 | 1.21.9 | Fabric Loader 0.17.3+ with Fabric API 0.134.1+1.21.9 |
 | 1.21.9 | NeoForge 21.9.16-beta+ |
+| 1.21.9 | Forge 59.0.5+ |
 | 1.21.8 | Fabric Loader 0.17.3+ with Fabric API 0.136.1+1.21.8 |
 | 1.21.8 | NeoForge 21.8.52+ |
+| 1.21.8 | Forge 58.1.14+ |
 | 1.21.7 | Fabric Loader 0.17.3+ with Fabric API 0.129.0+1.21.7 |
 | 1.21.7 | NeoForge 21.7.2-beta+ |
+| 1.21.7 | Forge 57.0.3+ |
 | 1.21.6 | Fabric Loader 0.17.3+ with Fabric API 0.128.1+1.21.6 |
 | 1.21.6 | NeoForge 21.6.20-beta+ |
+| 1.21.6 | Forge 56.0.9+ |
 | 1.21.5 | Fabric Loader 0.17.3+ with Fabric API 0.128.1+1.21.5 |
 | 1.21.5 | NeoForge 21.5.96+ |
+| 1.21.5 | Forge 55.1.0+ |
 | 1.21.4 | Fabric Loader 0.17.3+ with Fabric API 0.119.4+1.21.4 |
 | 1.21.4 | NeoForge 21.4.156+ |
+| 1.21.4 | Forge 54.1.0+ |
 | 1.21.3 | Fabric Loader 0.17.3+ with Fabric API 0.112.1+1.21.3 |
 | 1.21.3 | NeoForge 21.3.95+ |
+| 1.21.3 | Forge 53.1.7+ |
 | 1.21.1 | Fabric Loader 0.17.3+ with Fabric API 0.116.7+1.21.1 |
 | 1.21.1 | NeoForge 21.1.209+ |
 | 1.21.1 | Forge 52.1.16+ |
@@ -75,15 +84,15 @@ A multi-loader Minecraft mod that generates a small starter house at the world s
   - **26.1.2**: Fabric Loader 0.18.4+ with Fabric API, OR NeoForge 26.1.2.80+
   - **26.1.1**: Fabric Loader 0.18.4+ with Fabric API, OR NeoForge 26.1.1.15-beta+
   - **26.1**: Fabric Loader 0.18.4+ with Fabric API, OR NeoForge 26.1.0.19-beta+
-  - **1.21.11**: Fabric Loader 0.17.3+ with Fabric API, OR NeoForge 21.11.37-beta+
-  - **1.21.10**: Fabric Loader 0.17.3+ with Fabric API, OR NeoForge 21.10.64+
-  - **1.21.9**: Fabric Loader 0.17.3+ with Fabric API, OR NeoForge 21.9.16-beta+
-  - **1.21.8**: Fabric Loader 0.17.3+ with Fabric API, OR NeoForge 21.8.52+
-  - **1.21.7**: Fabric Loader 0.17.3+ with Fabric API, OR NeoForge 21.7.2-beta+
-  - **1.21.6**: Fabric Loader 0.17.3+ with Fabric API, OR NeoForge 21.6.20-beta+
-  - **1.21.5**: Fabric Loader 0.17.3+ with Fabric API, OR NeoForge 21.5.96+
-  - **1.21.4**: Fabric Loader 0.17.3+ with Fabric API, OR NeoForge 21.4.156+
-  - **1.21.3**: Fabric Loader 0.17.3+ with Fabric API, OR NeoForge 21.3.95+
+  - **1.21.11**: Fabric Loader 0.17.3+ with Fabric API, NeoForge 21.11.37-beta+, or Forge 61.0.8+
+  - **1.21.10**: Fabric Loader 0.17.3+ with Fabric API, NeoForge 21.10.64+, or Forge 60.1.8+
+  - **1.21.9**: Fabric Loader 0.17.3+ with Fabric API, NeoForge 21.9.16-beta+, or Forge 59.0.5+
+  - **1.21.8**: Fabric Loader 0.17.3+ with Fabric API, NeoForge 21.8.52+, or Forge 58.1.14+
+  - **1.21.7**: Fabric Loader 0.17.3+ with Fabric API, NeoForge 21.7.2-beta+, or Forge 57.0.3+
+  - **1.21.6**: Fabric Loader 0.17.3+ with Fabric API, NeoForge 21.6.20-beta+, or Forge 56.0.9+
+  - **1.21.5**: Fabric Loader 0.17.3+ with Fabric API, NeoForge 21.5.96+, or Forge 55.1.0+
+  - **1.21.4**: Fabric Loader 0.17.3+ with Fabric API, NeoForge 21.4.156+, or Forge 54.1.0+
+  - **1.21.3**: Fabric Loader 0.17.3+ with Fabric API, NeoForge 21.3.95+, or Forge 53.1.7+
   - **1.21.1**: Fabric Loader 0.17.3+ with Fabric API, NeoForge 21.1.209+, or Forge 52.1.16+
   - **1.20.1**: Fabric Loader 0.17.3+ with Fabric API, OR Forge 47.4.0+
   - **1.19.2**: Fabric Loader 0.17.3+ with Fabric API, OR Forge 43.4.0+
